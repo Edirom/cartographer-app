@@ -6,10 +6,16 @@
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
     "test:unit": "vue-cli-service test:unit",
+    "test:lint": "npx standard --fix | npx snazzy",
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
+    "@recogito/annotorious-openseadragon": "^2.7.6",
     "core-js": "^3.6.5",
+    "openseadragon": "^3.0.0",
+    "save-dev": "^0.0.1-security",
+    "snazzy": "^9.0.0",
+    "standard": "^17.0.0",
     "vue": "^2.6.11",
     "vuex": "^3.4.0"
   },
