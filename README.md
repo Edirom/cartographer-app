@@ -8,6 +8,12 @@ independent. It optionally uses the *Measure Detector* for automatic recognition
 of measure positions, but allows manual correction of these results.
 
 
+## Important Tools and their Documentation
+
+* Vectre, which is a VueJS version of Spectre CSS. See https://vectrejs.github.io/docs/#/pages/getting-started
+* OpenSeadragon. See http://openseadragon.github.io/
+* Annotorious OpenSeadragon Plugin. See https://recogito.github.io/annotorious/getting-started/osd-plugin/
+
 ## About the Name
 
 Gerhard Mercator (Gheert Cremer) was a famous 16th century cartographer. He is

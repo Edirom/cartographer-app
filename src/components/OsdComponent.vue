@@ -1,5 +1,5 @@
 <template>
-  <div id="osd" class="osdContainer">RenderMe</div>
+  <div id="osd" class="osdContainer"></div>
 </template>
 
 <script>

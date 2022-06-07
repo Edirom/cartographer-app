@@ -1,22 +1,26 @@
 <template>
   <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png">
-
+    <AppHeader/>
+    <ImageSelectionModal/>
     <OsdComponent/>
-
+    <img alt="Vue logo" src="./assets/logo.png">
     <HelloWorld msg="Welcome to Your Vue.js App"/>
   </div>
 </template>
 
 <script>
 import HelloWorld from './components/HelloWorld.vue'
+import AppHeader from './components/AppHeader.vue'
 import OsdComponent from './components/OsdComponent.vue'
+import ImageSelectionModal from './components/ImageSelectionModal.vue'
 
 export default {
   name: 'App',
   components: {
     HelloWorld,
-    OsdComponent
+    AppHeader,
+    OsdComponent,
+    ImageSelectionModal
   }
 }
 </script>
