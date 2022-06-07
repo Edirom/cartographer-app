@@ -1,8 +1,10 @@
 <template>
   <div id="app">
+    <h1>Hello Mercator!</h1>
     <AppHeader/>
     <ImageSelectionModal/>
     <OsdComponent/>
+    <!-- todo: the following two lines can safely go away, just kept for reference -->
     <img alt="Vue logo" src="./assets/logo.png">
     <HelloWorld msg="Welcome to Your Vue.js App"/>
   </div>
@@ -25,7 +27,7 @@ export default {
 }
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -33,5 +35,9 @@ export default {
   text-align: center;
   color: #2c3e50;
   margin-top: 60px;
+
+  h1 {
+    color: red;
+  }
 }
 </style>

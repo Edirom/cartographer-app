@@ -1,16 +1,18 @@
 <template>
-  <container gapless oneline>
-    <columns>
-      <column col=4>
-        MercatorApp
-      </column>
-      <column col=4>
-      </column>
-      <column col=4>
-        <btn action icon="menu" @click="showImageSelectionOverlay"/>
-      </column>
-    </columns>
-  </container>
+  <div class="appHeader">
+    <container gapless oneline>
+      <columns>
+        <column col=4>
+          MercatorApp
+        </column>
+        <column col=4>
+        </column>
+        <column col=4>
+          <btn action icon="menu" @click="showImageSelectionOverlay"/>
+        </column>
+      </columns>
+    </container>
+  </div>
 </template>
 
 <script>
@@ -34,5 +36,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-
+.appHeader {
+  background-color: palegoldenrod;
+}
 </style>
