@@ -1,5 +1,19 @@
 # mercator-app
 
+The Mercator App is used to provide placement information of zones of interest
+in (historical) documents. The first and foremost use case is the identification
+of bounding boxes of measures in music documents. It is a successor of the
+*Vertaktoid*, but other than that uses web technology and is thus platform
+independent. It optionally uses the *Measure Detector* for automatic recognition
+of measure positions, but allows manual correction of these results.
+
+
+## About the Name
+
+Gerhard Mercator (Gheert Cremer) was a famous 16th century cartographer. He is
+best known for his 1569 world map, in which he introduced a new projection still
+used today.
+
 ## Project setup
 ```
 npm install
@@ -23,6 +37,11 @@ npm run test:unit
 ### Lints and fixes files
 ```
 npm run lint
+```
+
+### Other approaach to linting which automatically fixes code and gives a nicer rendition of errors using snazzy
+```
+npm run test:lint
 ```
 
 ### Customize configuration
