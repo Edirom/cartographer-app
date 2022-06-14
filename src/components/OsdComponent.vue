@@ -12,14 +12,22 @@ export default {
   components: {
 
   },
+  computed: {
+    imageArray: function () {
+      return this.$store.getters.imageArray
+    }
+  },
+  beforeDestroy () {
+    this.unwatch()
+  },
   mounted: function () {
-    const viewer = OpenSeadragon({
+    this.viewer = OpenSeadragon({
       id: 'osd',
       preserveViewport: true,
       visibilityRatio: 1,
       minZoomLevel: 1,
       defaultZoomLevel: 1,
-      sequenceMode: true,
+      sequenceMode: true/*,
       tileSources: [
         'https://libimages1.princeton.edu/loris/pudl0001%2F4609321%2Fs42%2F00000001.jp2/info.json',
         'https://libimages1.princeton.edu/loris/pudl0001%2F4609321%2Fs42%2F00000002.jp2/info.json',
@@ -28,15 +36,15 @@ export default {
         'https://libimages1.princeton.edu/loris/pudl0001%2F4609321%2Fs42%2F00000005.jp2/info.json',
         'https://libimages1.princeton.edu/loris/pudl0001%2F4609321%2Fs42%2F00000006.jp2/info.json',
         'https://libimages1.princeton.edu/loris/pudl0001%2F4609321%2Fs42%2F00000007.jp2/info.json'
-      ]
+      ] */
     })
 
-    console.log(viewer)
+    console.log('hello', this.viewer)
 
     const annotoriousConfig = {}
 
     // Initialize the Annotorious plugin
-    const anno = Annotorious(viewer, annotoriousConfig)
+    const anno = Annotorious(this.viewer, annotoriousConfig)
 
     // Load annotations in W3C WebAnnotation format
     // anno.loadAnnotations('annotations.w3c.json');
@@ -49,6 +57,18 @@ export default {
       image: this.$refs.tag_img
     }, {})
     anno.setDrawingTool('polygon') */
+
+    this.unwatch = this.$store.watch(
+      (state, getters) => getters.imageArray,
+      (newArr, oldArr) => {
+        console.log('We had following images:', oldArr)
+        console.log('We now have these images:', newArr)
+
+        console.log(this.viewer)
+
+        this.viewer.open(newArr)
+      }
+    )
   }
 }
 </script>
