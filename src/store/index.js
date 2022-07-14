@@ -49,19 +49,28 @@ export default new Vuex.Store({
     getUri ({ commit }, val) {
       commit('UPDATE_URI', val)
     },
-    getManifestWithoutParameter ({ commit }) {
-      // fetch(state.uri)
+
+    async getManifestWithoutParameter ({ commit }) {
+      // fetch(state.uri
+
+      const blob = await fetch('https://digital.blb-karlsruhe.de/i3f/v21/6295250/full/304/0/default.jpg').then(r => r.blob())
+      const dataUrl = await new Promise(resolve => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(reader.result)
+        reader.readAsDataURL(blob)
+      })
+      console.log(typeof dataUrl)
       var myHeaders = new Headers()
       myHeaders.append('method', 'post')
       myHeaders.append('path', '/upload')
       myHeaders.append('Access-Control-Allow-Origin', '*')
       myHeaders.append('Accept', 'application/json, text/plain, */*')
-      myHeaders.append('Content-Disposition', 'form-data; name="image"; filename="https://digital.blb-karlsruhe.de/i3f/v21/6295250/full/304/0/default.jpg"')
+      myHeaders.append('Content-Disposition', 'form-data; name="image"; filename="testjpeg.jpeg"')
 
       var formdata = new FormData()
       formdata.append('Content-Type', 'image/jpg')
       formdata.append('filename', 'test.jpg')
-      formdata.append('image', 'https://digital.blb-karlsruhe.de/i3f/v21/6295250/full/304/0/default.jpg')
+      formdata.append('image', blob, 'testjpeg.jpeg')
 
       var requestOptions = {
         method: 'POST',
@@ -69,7 +78,7 @@ export default new Vuex.Store({
         body: formdata,
         redirect: 'follow'
       }
-      fetch('https://measure-detector.edirom.de/upload', requestOptions)
+      fetch('https://measure-detector.edirom.de', requestOptions)
         .then(response => response.text())
         .then(result => console.log('this is the fetch result ', result))
         .catch(error => console.log('error', error))

@@ -69,11 +69,6 @@ export default {
     this.unwatch = this.$store.watch(
       (state, getters) => getters.imageArray,
       (newArr, oldArr) => {
-        console.log('We had following images:', oldArr)
-        console.log('We now have these images:', newArr)
-
-        console.log(this.viewer)
-
         this.viewer.open(newArr)
       }
     )
