@@ -60,12 +60,6 @@ export default new Vuex.Store({
         reader.readAsDataURL(blob)
       })
       console.log(typeof dataUrl)
-      var myHeaders = new Headers()
-      myHeaders.append('method', 'post')
-      myHeaders.append('path', '/upload')
-      myHeaders.append('Access-Control-Allow-Origin', '*')
-      myHeaders.append('Accept', 'application/json, text/plain, */*')
-      myHeaders.append('Content-Disposition', 'form-data; name="image"; filename="testjpeg.jpeg"')
 
       var formdata = new FormData()
       formdata.append('Content-Type', 'image/jpg')
@@ -74,11 +68,9 @@ export default new Vuex.Store({
 
       var requestOptions = {
         method: 'POST',
-        headers: myHeaders,
-        body: formdata,
-        redirect: 'follow'
+        body: formdata
       }
-      fetch('https://measure-detector.edirom.de', requestOptions)
+      fetch('https://measure-detector.edirom.de/upload', requestOptions)
         .then(response => response.text())
         .then(result => console.log('this is the fetch result ', result))
         .catch(error => console.log('error', error))
