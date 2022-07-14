@@ -1,5 +1,5 @@
 <template>
-  <div id="osd" class="osdContainer"></div>
+  <div id="osdContainer"></div>
 </template>
 
 <script>
@@ -22,61 +22,97 @@ export default {
   },
   mounted: function () {
     this.viewer = OpenSeadragon({
-      id: 'osd',
-      preserveViewport: true,
-      visibilityRatio: 1,
-      minZoomLevel: 1,
-      defaultZoomLevel: 1,
-      sequenceMode: true/*,
-      tileSources: [
-        'https://libimages1.princeton.edu/loris/pudl0001%2F4609321%2Fs42%2F00000001.jp2/info.json',
-        'https://libimages1.princeton.edu/loris/pudl0001%2F4609321%2Fs42%2F00000002.jp2/info.json',
-        'https://libimages1.princeton.edu/loris/pudl0001%2F4609321%2Fs42%2F00000003.jp2/info.json',
-        'https://libimages1.princeton.edu/loris/pudl0001%2F4609321%2Fs42%2F00000004.jp2/info.json',
-        'https://libimages1.princeton.edu/loris/pudl0001%2F4609321%2Fs42%2F00000005.jp2/info.json',
-        'https://libimages1.princeton.edu/loris/pudl0001%2F4609321%2Fs42%2F00000006.jp2/info.json',
-        'https://libimages1.princeton.edu/loris/pudl0001%2F4609321%2Fs42%2F00000007.jp2/info.json'
-      ] */
+      id: 'osdContainer',
+      preserveViewport: false,
+      visibilityRatio: 0.8,
+      sequenceMode: true,
+      showNavigator: false,
+      showZoomControl: false,
+      showHomeControl: false,
+      showFullPageControl: false,
+      showSequenceControl: false
+      // navigatorId: 'someId',
+      //
+      /* homeButton: 'zoomHome',
+      zoomInButton: 'zoomIn',
+      zoomOutButton: 'zoomOut',
+      previousButton: 'pageLeft',
+      nextButton: 'pageRight' */
     })
 
-    console.log('hello', this.viewer)
-
-    const annotoriousConfig = {}
+    const annotoriousConfig = {
+      disableEditor: true
+    }
 
     // Initialize the Annotorious plugin
-    const anno = Annotorious(this.viewer, annotoriousConfig)
+    this.anno = Annotorious(this.viewer, annotoriousConfig)
 
     // Load annotations in W3C WebAnnotation format
     // anno.loadAnnotations('annotations.w3c.json');
 
-    // Attach handlers to listen to events
-    anno.on('createAnnotation', (a) => {
-      console.log('created annot:', a)
+    this.anno.on('createSelection', async (selection) => {
+      // The user has created a new shape...
+
+      // it is necessary to have some type of body, or it will not save
+      selection.body = [{
+        type: 'TextualBody',
+        purpose: 'tagging',
+        value: 'measure'
+      }]
+
+      // console.log('selection:')
+      // console.log(selection)
+
+      await this.anno.updateSelected(selection)
+      this.anno.saveSelected()
     })
-    /* const anno = Annotorious({
-      image: this.$refs.tag_img
-    }, {})
-    anno.setDrawingTool('polygon') */
 
-    this.unwatch = this.$store.watch(
-      (state, getters) => getters.imageArray,
+    this.anno.on('selectAnnotation', async (annotation) => {
+      // The users has selected an existing annotation
+      // console.log('selected annotation')
+      // console.log(annotation)
+    })
+
+    this.anno.on('createAnnotation', (annotation) => {
+      // The users has selected an existing annotation
+      this.$store.dispatch('createZone', annotation)
+    })
+
+    this.anno.on('updateAnnotation', (annotation) => {
+      // The users has selected an existing annotation
+      console.log('updated annotation')
+      console.log(annotation)
+    })
+
+    this.viewer.addHandler('page', (data) => {
+      this.anno.clearAnnotations()
+
+      const annots = this.$store.getters.zonesOnCurrentPage
+      this.anno.setAnnotations(annots)
+    })
+
+    this.unwatchPages = this.$store.watch((state, getters) => getters.pages,
       (newArr, oldArr) => {
-        console.log('We had following images:', oldArr)
-        console.log('We now have these images:', newArr)
-
-        console.log(this.viewer)
-
         this.viewer.open(newArr)
-      }
-    )
+        this.$store.dispatch('setCurrentPage', 0)
+      })
+
+    this.unwatchCurrentPage = this.$store.watch((state, getters) => getters.currentPageIndexZeroBased,
+      (newPage, oldPage) => {
+        this.viewer.goToPage(newPage)
+      })
+  },
+  beforeUnmount () {
+    this.unwatchPages()
   }
 }
 </script>
 
 <style lang="scss" scoped>
-.osdContainer {
-  margin: 0 auto;
-  width: 1200px;
-  height: 800px;
+@import '@/css/_variables.scss';
+
+#osdContainer {
+  height: calc(100vh - $appHeaderHeight - $appFooterHeight);
+  width: 100%;
 }
 </style>

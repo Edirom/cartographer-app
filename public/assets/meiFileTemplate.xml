@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mei xmlns="http://www.music-encoding.org/ns/mei"
+     xmlns:xlink="http://www.w3.org/1999/xlink"
+     xmlns:svg="http://www.w3.org/2000/svg"
+     meiversion="5.0.0-dev">
+    <meiHead>
+      <fileDesc>
+        <titleStmt>
+           <title></title>
+        </titleStmt>
+        <pubStmt/>
+        <sourceDesc>
+           <source xml:id="…" target="…" xlink:role="http://iiif.io/api/presentation/2#Manifest"/>
+        </sourceDesc>
+     </fileDesc>
+     <encodingDesc>
+       <appInfo>
+         <application xml:id="mercatorApp">
+           <name>Mercator-App</name>
+           <ptr target="https://github.com/Edirom/mercator-app"/>
+         </application>
+       </appInfo>
+     </encodingDesc>
+     <revisionDesc>
+        <change n="1">
+           <respStmt>
+             <persName authURI="https://github.com/Hizkie">Hizkiel Alemayehu</persName>
+             <persName authURI="https://github.com/kepper">Johannes Kepper</persName>
+           </respStmt>
+           <changeDesc>
+             <p>
+               File initially generated from IIIF Manifest available at <ptr/>,
+               using <ptr target="#mercatorApp"/>. This is a generic converter,
+               so the resulting file may require considerable adjustments to
+               match local practice.
+             </p>
+           </changeDesc>
+           <date isodate="…"/>
+        </change>
+     </revisionDesc>
+    </meiHead>
+    <music meiversion="5.0.0-dev">
+        <facsimile>
+
+        </facsimile>
+        <body>
+            <mdiv>
+              <score>
+                <section></section>
+              </score>
+            </mdiv>
+        </body>
+    </music>
+</mei>

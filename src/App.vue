@@ -1,43 +1,40 @@
 <template>
   <div id="app">
-    <h1>Hello Mercator!</h1>
     <AppHeader/>
     <ImageSelectionModal/>
     <OsdComponent/>
-    <!-- todo: the following two lines can safely go away, just kept for reference -->
-    <img alt="Vue logo" src="./assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
+    <AppFooter/>
   </div>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
 import AppHeader from './components/AppHeader.vue'
+import AppFooter from './components/AppFooter.vue'
 import OsdComponent from './components/OsdComponent.vue'
 import ImageSelectionModal from './components/ImageSelectionModal.vue'
 
 export default {
   name: 'App',
   components: {
-    HelloWorld,
     AppHeader,
+    AppFooter,
     OsdComponent,
     ImageSelectionModal
   }
 }
 </script>
 
-<style lang="scss" scoped>
+<style lang="scss">
+@import '@/css/_variables.scss';
+
 #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
-
-  h1 {
-    color: red;
-  }
+  color: $fontColorDark;
+  height: 100vh;
+  width: 100%;
+  position: relative;
 }
 </style>
