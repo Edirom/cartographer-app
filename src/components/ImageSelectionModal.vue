@@ -2,9 +2,10 @@
 <template>
   <modal v-model="visible">
     <h5 slot="header">Default modal</h5>
-    <p slot="body">Lorem ipsum dolor sit amet, consectetur adipiscing elit...</p>
-    <input value="message"  v-model="messaged">
-    <btn slot="footer" type="primary" @click="hideOverlay">Ok</btn>
+    <p slot="body">Please insert manifest url here</p>
+    <input slot="footer" v-model="url" >
+    <btn  type="primary" @click="openManifest">Ok</btn>
+
   </modal>
 </template>
 
@@ -15,24 +16,33 @@ export default {
   components: {
 
   },
+
   computed: {
 
-    visible: function () {
-      console.log(this.$store.getters.message)
-      return this.$store.getters.imageSelectionModalVisible
+    visible: {
+      get () {
+        return this.$store.getters.imageSelectionModalVisible
+      }
     },
-    messaged: {
+    url: {
+
       get () {
         return this.$store.getters.message
       },
       set (val) {
         this.$store.dispatch('changeMessage', val)
       }
+
     }
   },
   methods: {
-    hideOverlay: function () {
+    openManifest: function () {
+      // close modal
       this.$store.dispatch('hideImageSelectionModal')
+      this.$store.dispatch('getManifest', this.$store.getters.message)
+      this.$store.dispatch('getManifestWithoutParameter')
+
+      // load specified uri
     }
 
   }

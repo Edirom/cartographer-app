@@ -18,7 +18,7 @@
 
 <script>
 // 'https://digital.blb-karlsruhe.de/i3f/v20/6146583/manifest'
-const manifestUri = 'https://api.beethovens-werkstatt.de/iiif/document/r24d1c005-acee-43a0-acfa-5dae796b7ec4/manifest.json'
+var manifestUri = ''
 
 export default {
   name: 'AppHeader',
@@ -37,7 +37,11 @@ export default {
     showImageSelectionOverlay: function () {
       this.$store.dispatch('showImageSelectionModal')
     },
+    getManifestUri: function () {
+      console.log(this.$store.getters.getUri)
+    },
     getManifest: function () {
+      manifestUri = this.$store.getters.uri
       this.$store.dispatch('getManifest', manifestUri)
     }
   }

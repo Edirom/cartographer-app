@@ -3,6 +3,7 @@
     <h1>Hello Mercator!</h1>
     <AppHeader/>
     <ImageSelectionModal/>
+    <WrongInputModal/>
     <OsdComponent/>
     <!-- todo: the following two lines can safely go away, just kept for reference -->
     <img alt="Vue logo" src="./assets/logo.png">
@@ -15,6 +16,7 @@ import HelloWorld from './components/HelloWorld.vue'
 import AppHeader from './components/AppHeader.vue'
 import OsdComponent from './components/OsdComponent.vue'
 import ImageSelectionModal from './components/ImageSelectionModal.vue'
+import WrongInputModal from './components/wrongInput.vue'
 
 export default {
   name: 'App',
@@ -22,7 +24,8 @@ export default {
     HelloWorld,
     AppHeader,
     OsdComponent,
-    ImageSelectionModal
+    ImageSelectionModal,
+    WrongInputModal
   }
 }
 </script>

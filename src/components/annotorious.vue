@@ -1,14 +1,10 @@
 <template>
-  <div id="wrapper">
-      <div id="toolbar"></div>
-      <div id="osd" class="osdContainer"></div>
-  </div>
+  <div id="annot" class="annotContainer"></div>
 </template>
 
 <script>
 import OpenSeadragon from 'openseadragon'
 import * as Annotorious from '@recogito/annotorious-openseadragon'
-import * as Toolbar from '@recogito/annotorious-toolbar'
 import '@recogito/annotorious-openseadragon/dist/annotorious.min.css'
 
 export default {
@@ -27,7 +23,7 @@ export default {
   mounted: function () {
     this.viewer = OpenSeadragon({
       id: 'osd',
-      preserveViewport: false,
+      preserveViewport: true,
       visibilityRatio: 1,
       minZoomLevel: 1,
       defaultZoomLevel: 1,
@@ -45,14 +41,10 @@ export default {
 
     console.log('hello', this.viewer)
 
-    const annotoriousConfig = {
-      allowEmpty: true,
-      disableEditor: true
-    }
+    const annotoriousConfig = {}
 
     // Initialize the Annotorious plugin
     const anno = Annotorious(this.viewer, annotoriousConfig)
-    Toolbar(anno, document.getElementById('toolbar'))
 
     // Load annotations in W3C WebAnnotation format
     // anno.loadAnnotations('annotations.w3c.json');
