@@ -1,22 +1,22 @@
 <template>
   <div class="appHeader">
-    <container gapless oneline>
-      <columns>
-        <column col=2>
+    <div class="container gapless oneline">
+      <div class="columns">
+        <div class="column col-2">
           MercatorApp
-        </column>
-        <column col=2>
-        </column>
-        <column col=8>
-          <btn type="link" :class="{multiZone}" @click="toggleMultiZone">Combine</btn>
-          <btn type="link" @click="importXML">Import XML Example</btn>
-          <btn type="link" @click="importManifest">Import IIIF Example</btn>
+        </div>
+        <div class="column col-2">
+        </div>
+        <div class="column col-8">
+          <button class="btn btn-link" :class="{multiZone}" @click="toggleMultiZone">Combine</button>
+          <button class="btn btn-link" @click="importXML">Import XML Example</button>
+          <button class="btn btn-link" @click="importManifest">Import IIIF Example</button>
           <a :href="xmlDataUrl()" target="_blank" :disabled="!downloadAvailable" :download="xmlFilename">
             <i class="icon icon-download"></i>
           </a>
-        </column>
-      </columns>
-    </container>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 

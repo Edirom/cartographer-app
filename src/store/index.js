@@ -1,15 +1,11 @@
-import Vue from 'vue'
-import Vuex from 'vuex'
-
+import { createStore } from 'vuex'
 import { iiifManifest2mei, checkIiifManifest, getPageArray } from '@/tools/iiif.js'
 import { meiZone2annotorious, annotorious2meiZone, measureDetector2meiZone, generateMeasure, insertMeasure, addZoneToLastMeasure } from '@/tools/meiMappings.js'
-
-Vue.use(Vuex)
 
 const parser = new DOMParser()
 const serializer = new XMLSerializer()
 
-export default new Vuex.Store({
+export default createStore({
   modules: {
   },
   state: {
@@ -29,11 +25,11 @@ export default new Vuex.Store({
       state.modal = modalName
     },
     SET_XML_DOC (state, xmlDoc) {
-      Vue.set(state, 'xmlDoc', xmlDoc)
+      state.xmlDoc = xmlDoc
       state.currentPage = 0
     },
     SET_PAGES (state, pageArray) {
-      Vue.set(state, 'pages', pageArray)
+      state.pages = pageArray
     },
     SET_CURRENT_PAGE (state, i) {
       if (i > -1 && i < state.pages.length) {
@@ -69,7 +65,7 @@ export default new Vuex.Store({
         addZoneToLastMeasure(xmlDoc, zone.getAttribute('xml:id'))
       }
 
-      Vue.set(state, 'xmlDoc', xmlDoc)
+      state.xmlDoc = xmlDoc
     },
     CREATE_ZONES_FROM_MEASURE_DETECTOR_ON_CURRENT_PAGE (state, rects) {
       const xmlDoc = state.xmlDoc.cloneNode(true)
@@ -85,7 +81,7 @@ export default new Vuex.Store({
         insertMeasure(xmlDoc, measure, state)
       })
 
-      Vue.set(state, 'xmlDoc', xmlDoc)
+      state.xmlDoc = xmlDoc
     },
     UPDATE_ZONE_FROM_ANNOTORIOUS (state, annot) {
       const xmlDoc = state.xmlDoc.cloneNode(true)
@@ -125,7 +121,7 @@ export default new Vuex.Store({
       existingZone.setAttribute('lrx', newZone.getAttribute('lrx'))
       existingZone.setAttribute('lry', newZone.getAttribute('lry'))
 
-      Vue.set(state, 'xmlDoc', xmlDoc)
+      state.xmlDoc = xmlDoc
     },
     TOGGLE_MULTIZONE_MODE (state) {
       state.multiZoneMode = !state.multiZoneMode

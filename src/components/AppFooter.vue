@@ -1,20 +1,22 @@
 <template>
   <div class="appFooter">
-    <container gapless oneline>
-      <columns>
-        <column col=4>
-          <btn action icon="left" type="link" @click="showPrevPage" :disabled="!prevAvailable"/>
+
+    <div class="container gapless oneline">
+      <div class="columns">
+        <div class="column col-4">
+          <button class="btn btn-link btn-action" @click="showPrevPage" :disabled="!prevAvailable">L</button>
           {{ currentPage }} / {{ maxPage }}
-          <btn action icon="right" type="link" @click="showNextPage" :disabled="!nextAvailable"/>
-        </column>
-        <column col=4>
+          <button class="btn btn-link btn-action" @click="showNextPage" :disabled="!nextAvailable">R</button>
+        </div>
+        <div class="column col-4">
           zones: {{ zonesCount }}
-        </column>
-        <column col=4>
-          <div v-loading v-if="isLoading"></div>
-        </column>
-      </columns>
-    </container>
+        </div>
+        <div class="column col-4">
+          <div class="loading" v-if="isLoading"></div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 
