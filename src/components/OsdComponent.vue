@@ -17,8 +17,48 @@ export default {
       return this.$store.getters.imageArray
     }
   },
-  beforeDestroy () {
-    this.unwatch()
+  methods: {
+    renderZones: function () {
+      this.viewer.clearOverlays()
+      const annots = this.$store.getters.zonesOnCurrentPage
+      annots.forEach(annot => {
+        const rawDimensions = annot.target.selector.value.substr(11).split(',')
+        const xywh = {
+          x: Math.round(rawDimensions[0]),
+          y: Math.round(rawDimensions[1]),
+          w: Math.round(rawDimensions[2]),
+          h: Math.round(rawDimensions[3])
+        }
+        const zoneId = annot.id.replace(/#/, '')
+        const measureCssLink = annot.body.find(body => body.type === 'Dataset' && body.selector.value.startsWith('measure'))?.selector.value
+        const mdivCssLink = annot.body.find(body => body.type === 'Dataset' && body.selector.value.startsWith('mdiv'))?.selector.value
+
+        const overlay = document.createElement('div')
+        overlay.id = zoneId
+        overlay.classList.add('zone')
+        overlay.setAttribute('data-measure', measureCssLink)
+        overlay.setAttribute('data-mdiv', mdivCssLink)
+
+        const labelContent = annot.body.find(body => body.type === 'TextualBody')?.value
+
+        const label = document.createElement('div')
+        label.classList.add('zoneLabel')
+        label.textContent = labelContent
+
+        overlay.appendChild(label)
+        overlay.addEventListener('dblclick', (e) => {
+          this.$store.dispatch('selectZone', zoneId)
+          e.preventDefault()
+          e.stopPropagation()
+        })
+
+        this.viewer.addOverlay({
+          element: overlay,
+          location: new OpenSeadragon.Rect(xywh.x, xywh.y, xywh.w, xywh.h)
+        })
+      })
+      // this.anno.setAnnotations(annots)
+    }
   },
   mounted: function () {
     this.viewer = OpenSeadragon({
@@ -30,7 +70,10 @@ export default {
       showZoomControl: false,
       showHomeControl: false,
       showFullPageControl: false,
-      showSequenceControl: false
+      showSequenceControl: false,
+      gestureSettingsMouse: {
+        clickToZoom: false
+      }
       // navigatorId: 'someId',
       //
       /* homeButton: 'zoomHome',
@@ -76,19 +119,27 @@ export default {
     this.anno.on('createAnnotation', (annotation) => {
       // The users has selected an existing annotation
       this.$store.dispatch('createZone', annotation)
+      this.$store.dispatch('selectZone', null)
+      this.anno.clearAnnotations()
+      this.renderZones()
     })
 
     this.anno.on('updateAnnotation', (annotation) => {
       // The users has selected an existing annotation
-      console.log('updated annotation')
-      console.log(annotation)
+      this.$store.dispatch('updateZone', annotation)
+      this.$store.dispatch('selectZone', null)
+      this.anno.clearAnnotations()
+      this.renderZones()
+    })
+
+    this.viewer.addHandler('open', (data) => {
+      this.anno.clearAnnotations()
+      this.renderZones()
     })
 
     this.viewer.addHandler('page', (data) => {
       this.anno.clearAnnotations()
-
-      const annots = this.$store.getters.zonesOnCurrentPage
-      this.anno.setAnnotations(annots)
+      this.renderZones()
     })
 
     this.unwatchPages = this.$store.watch((state, getters) => getters.pages,
@@ -101,18 +152,53 @@ export default {
       (newPage, oldPage) => {
         this.viewer.goToPage(newPage)
       })
+
+    this.unwatchZonesOnCurrentPage = this.$store.watch((state, getters) => getters.zonesOnCurrentPage,
+      (newArr, oldArr) => {
+        this.renderZones()
+      })
+
+    this.unwatchSelectedZone = this.$store.watch((state, getters) => getters.selectedZone,
+      (newZone, oldZone) => {
+        if (newZone !== null) {
+          this.anno.setAnnotations([newZone])
+          this.anno.selectAnnotation(newZone)
+        }
+      })
   },
   beforeUnmount () {
     this.unwatchPages()
+    this.unwatchCurrentPage()
+    this.unwatchZonesOnCurrentPage()
+    this.unwatchSelectedZone()
   }
 }
 </script>
 
-<style lang="scss" scoped>
+<style lang="scss">
 @import '@/css/_variables.scss';
 
 #osdContainer {
   height: calc(100vh - $appHeaderHeight - $appFooterHeight);
   width: 100%;
+
+  .zone {
+    background-color: rgba(255,255,255,.1);
+    z-index: 10;
+
+    &:hover {
+      background-color: rgba(255,255,255,.2);
+    }
+    .zoneLabel {
+      text-align: center;
+      position: absolute;
+      top: calc(50% - 0.4rem);
+      left: 0;
+      right: 0;
+      color: #000000;
+      font-weight: 900;
+      font-size: 0.8rem;
+    }
+  }
 }
 </style>

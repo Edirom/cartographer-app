@@ -1,7 +1,7 @@
 import { uuidv4 } from '@/tools/iiif.js'
 
 export function meiZone2annotorious (mei, zoneInput, pageUri) {
-  const zone = (typeof zoneInput === 'string') ? mei.querySelector('#' + zoneInput) : zoneInput
+  const zone = (typeof zoneInput === 'string') ? mei.querySelector('[*|id=' + zoneInput + ']') : zoneInput
   const zoneId = zone.getAttribute('xml:id')
   const measures = []
   mei.querySelectorAll('measure[facs~="#' + zoneId + '"]').forEach(measure => {
@@ -21,6 +21,50 @@ export function meiZone2annotorious (mei, zoneInput, pageUri) {
     })
   }
 
+  const measureNums = []
+  const measureLinks = []
+  const mdivLinks = []
+
+  measures.forEach(measure => {
+    measureNums.push(parseInt(measure.getAttribute('n'), 10))
+    measureLinks.push('measure#' + measure.getAttribute('xml:id'))
+    const mdivId = 'mdiv#' + measure.closest('mdiv').getAttribute('xml:id')
+    if (mdivLinks.indexOf(mdivId) === -1) {
+      mdivLinks.push(mdivId)
+    }
+  })
+
+  const additionalBodies = []
+  const measureCssLink = measureLinks.join(', ')
+  const mdivCssLink = mdivLinks.join(', ')
+  additionalBodies.push({
+    type: 'Dataset',
+    selector: {
+      type: 'CssSelector',
+      value: measureCssLink
+    }
+  })
+  additionalBodies.push({
+    type: 'Dataset',
+    selector: {
+      type: 'CssSelector',
+      value: mdivCssLink
+    }
+  })
+
+  let label
+  if (measureNums.length === 1) {
+    label = measures[0].getAttribute('label')
+  } else if (measureNums.length === 0) {
+    label = '–'
+  } else {
+    const minIndex = Math.min(...measureNums)
+    const maxIndex = Math.max(...measureNums)
+    const minLabel = measures.find(measure => parseInt(measure.getAttribute('n'), 10) === minIndex).getAttribute('label')
+    const maxLabel = measures.find(measure => parseInt(measure.getAttribute('n'), 10) === maxIndex).getAttribute('label')
+    label = minLabel + '–' + maxLabel
+  }
+
   const ulx = parseInt(zone.getAttribute('ulx'))
   const uly = parseInt(zone.getAttribute('uly'))
   const lrx = parseInt(zone.getAttribute('lrx'))
@@ -32,8 +76,8 @@ export function meiZone2annotorious (mei, zoneInput, pageUri) {
     body: [{
       type: 'TextualBody',
       purpose: 'tagging',
-      value: 'measure'
-    }],
+      value: label
+    }, ...additionalBodies],
     target: {
       source: pageUri,
       selector: {
@@ -57,9 +101,9 @@ export function annotorious2meiZone (annot) {
     w: Math.round(rawDimensions[2]),
     h: Math.round(rawDimensions[3])
   }
-  const id = annot.id.substring(1)
+  const id = 'testId' // 'z' + (annot.id.startsWith('#z') ? annot.id.substring(2) : annot.id.substring(1))
 
-  const zone = document.createElementNS('zone')
+  const zone = document.createElementNS('http://www.music-encoding.org/ns/mei', 'zone')
   zone.setAttribute('xml:id', id)
   zone.setAttribute('type', 'measure')
   zone.setAttribute('ulx', xywh.x)
@@ -71,47 +115,60 @@ export function annotorious2meiZone (annot) {
 }
 
 export function generateMeasure () {
-  const measure = document.createElement('measure')
+  const measure = document.createElementNS('http://www.music-encoding.org/ns/mei', 'measure')
   measure.setAttribute('xml:id', 'm' + uuidv4())
 
   return measure
 }
 
-export function insertMeasure (xmlDoc, measure, mdivId) {
-  const mdivArray = xmlDoc.querySelectorAll('mdiv')
+export function insertMeasure (xmlDoc, measure, state) {
+  const mdivArray = [...xmlDoc.querySelectorAll('mdiv')]
+
   if (mdivArray.length === 0) {
-    createNewMdiv(xmlDoc)
+    const mdivId = createNewMdiv(xmlDoc)
+    state.currentMdivId = mdivId
   }
+  const mdiv = [...xmlDoc.querySelectorAll('mdiv')].find(mdiv => mdiv.getAttribute('xml:id') === state.currentMdivId)
 
-  if (mdivId === null || mdivId === undefined) {
-    // get last section in last mdiv, append measure
-    const mdiv = [...xmlDoc.querySelectorAll('mdiv')].slice(-1)[0]
-    const section = [...mdiv.querySelectorAll('section')].slice(-1)[0]
-    section.appendChild(measure)
-  } else {
-    const mdiv = mdivArray.find(mdiv => mdiv.getAttribute('xml:id') === mdivId)
+  // TODO: what if mdivId does not match the ID of an mdiv?
+  const section = [...mdiv.querySelectorAll('section')].slice(-1)[0]
 
-    // todo: what if mdivId does not match the ID of an mdiv?
-    const section = mdiv.querySelectorAll('section').slice(-1)[0]
-    section.appendChild(measure)
-  }
+  // TODO: prepare for parts, right now it supports score only
+  const measures = [...mdiv.querySelectorAll('measure')]
+  const num = measures.length === 0 ? 1 : (parseInt(measures.slice(-1)[0].getAttribute('label'), 10) + 1)
+  measure.setAttribute('label', num)
+  measure.setAttribute('n', measures.length + 1)
+  section.appendChild(measure)
+}
+
+export function addZoneToLastMeasure (xmlDoc, zoneId) {
+  const measure = getLastMeasure(xmlDoc)
+  const oldFacs = measure.hasAttribute('facs') ? measure.getAttribute('facs') + ' ' : ''
+  measure.setAttribute('facs', oldFacs + '#' + zoneId)
+}
+
+function getLastMeasure (xmlDoc) {
+  const measure = [...xmlDoc.querySelectorAll('measure')].slice(-1)[0]
+  return measure
 }
 
 function createNewMdiv (xmlDoc) {
   const body = xmlDoc.querySelector('body')
   const mdivArray = xmlDoc.querySelectorAll('mdiv')
 
-  const mdiv = document.createElement('mdiv')
-  mdiv.setAttribute('xml:id', 'm' + uuidv4())
+  const mdiv = document.createElementNS('http://www.music-encoding.org/ns/mei', 'mdiv')
+  const mdivId = 'm' + uuidv4()
+  mdiv.setAttribute('xml:id', mdivId)
   mdiv.setAttribute('label', 'Movement ' + (mdivArray.length + 1))
 
-  const score = document.createElement('score')
-  const section = document.createElement('section')
+  const score = document.createElementNS('http://www.music-encoding.org/ns/mei', 'score')
+  const section = document.createElementNS('http://www.music-encoding.org/ns/mei', 'section')
 
   score.appendChild(section)
   mdiv.appendChild(score)
 
   body.appendChild(mdiv)
+  return mdivId
 }
 
 /*

@@ -2,12 +2,13 @@
   <div class="appHeader">
     <container gapless oneline>
       <columns>
-        <column col=4>
+        <column col=2>
           MercatorApp
         </column>
-        <column col=4>
+        <column col=2>
         </column>
-        <column col=4>
+        <column col=8>
+          <btn type="link" :class="{multiZone}" @click="toggleMultiZone">Combine</btn>
           <btn type="link" @click="importXML">Import XML Example</btn>
           <btn type="link" @click="importManifest">Import IIIF Example</btn>
           <a :href="xmlDataUrl()" target="_blank" :disabled="!downloadAvailable" :download="xmlFilename">
@@ -38,9 +39,15 @@ export default {
     },
     downloadAvailable: function () {
       return this.$store.getters.meiFileForDownload !== null
+    },
+    multiZone: function () {
+      return this.$store.getters.multiZoneActive
     }
   },
   methods: {
+    toggleMultiZone: function () {
+      this.$store.dispatch('toggleMultiZone')
+    },
     importXML: function () {
       this.$store.dispatch('importXMLtest')
     },
@@ -64,5 +71,9 @@ export default {
 .appHeader {
   height: $appHeaderHeight;
   background-color: $appColor;
+
+  .multiZone {
+    font-weight: 900;
+  }
 }
 </style>
