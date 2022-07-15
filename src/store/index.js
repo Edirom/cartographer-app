@@ -161,6 +161,35 @@ export default new Vuex.Store({
           dispatch('setData', mei)
         })
     },
+    async autoDetectZonesOnCurrentPage ({ commit, state }) {
+      const imageUri = state.pages[state.currentPage].uri + '/full/full/0/default.jpg'
+      const blob = await fetch(imageUri).then(r => r.blob())
+
+      const successFunc = (json) => {
+        commit('SET_LOADING', false)
+        console.log('success')
+        console.log(json)
+      }
+
+      const errorFunc = (err) => {
+        commit('SET_LOADING', false)
+        console.log('error retrieving autodetected measure positions for ' + imageUri + ': ' + err)
+      }
+      const formdata = new FormData()
+      formdata.append('Content-Type', 'image/jpg')
+      formdata.append('filename', 'image.jpg')
+      formdata.append('image', blob, 'image.jpg')
+
+      const requestOptions = {
+        method: 'POST',
+        body: formdata
+      }
+      commit('SET_LOADING', true)
+      fetch('https://measure-detector.edirom.de/upload', requestOptions)
+        .then(response => response.json())
+        .then(json => successFunc(json))
+        .catch(error => errorFunc(error))
+    },
     setData ({ commit }, mei) {
       const pageArray = getPageArray(mei)
       commit('SET_PAGES', pageArray)
@@ -187,6 +216,9 @@ export default new Vuex.Store({
   getters: {
     isReady: state => {
       return state.xmlDoc !== null
+    },
+    isLoading: state => {
+      return state.loading
     },
     meiFileForDownload: state => {
       if (state.xmlDoc === null) {

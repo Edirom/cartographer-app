@@ -11,7 +11,7 @@
           zones: {{ zonesCount }}
         </column>
         <column col=4>
-
+          <div v-loading v-if="isLoading"></div>
         </column>
       </columns>
     </container>
@@ -34,6 +34,9 @@ export default {
     },
     isReady: function () {
       return this.$store.getters.isReady
+    },
+    isLoading: function () {
+      return this.$store.getters.isLoading
     },
     prevAvailable: function () {
       return this.$store.getters.currentPageIndexZeroBased > 0

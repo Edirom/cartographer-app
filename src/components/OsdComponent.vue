@@ -74,7 +74,8 @@ export default {
       showSequenceControl: false,
       gestureSettingsMouse: {
         clickToZoom: false
-      }
+      },
+      silenceMultiImageWarnings: true
       // navigatorId: 'someId',
       //
       /* homeButton: 'zoomHome',

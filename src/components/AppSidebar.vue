@@ -1,6 +1,6 @@
 <template>
   <div class="appSidebar">
-    Hallo
+    <button class="btn btn-action" @click="autoDetect">MD</button>
   </div>
 </template>
 
@@ -35,15 +35,9 @@ export default {
     } */
   },
   methods: {
-    showPrevPage: function () {
-      this.$store.dispatch('setCurrentPage', this.$store.getters.currentPageIndexZeroBased - 1)
-    },
-    showNextPage: function () {
-      this.$store.dispatch('setCurrentPage', this.$store.getters.currentPageIndexZeroBased + 1)
+    autoDetect: function () {
+      this.$store.dispatch('autoDetectZonesOnCurrentPage')
     }
-    /* showImageSelectionOverlay: function () {
-      this.$store.dispatch('showImageSelectionModal')
-    } */
   }
 }
 </script>
