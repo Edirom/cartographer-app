@@ -2,7 +2,7 @@ import Vue from 'vue'
 import Vuex from 'vuex'
 
 import { iiifManifest2mei, checkIiifManifest, getPageArray } from '@/tools/iiif.js'
-import { meiZone2annotorious, annotorious2meiZone, generateMeasure, insertMeasure, addZoneToLastMeasure } from '@/tools/meiMappings.js'
+import { meiZone2annotorious, annotorious2meiZone, measureDetector2meiZone, generateMeasure, insertMeasure, addZoneToLastMeasure } from '@/tools/meiMappings.js'
 
 Vue.use(Vuex)
 
@@ -68,6 +68,20 @@ export default new Vuex.Store({
       } else if (state.multiZoneMode && state.selectedZoneId === null) {
         addZoneToLastMeasure(xmlDoc, zone.getAttribute('xml:id'))
       }
+
+      Vue.set(state, 'xmlDoc', xmlDoc)
+    },
+    CREATE_ZONE_FROM_MEASURE_DETECTOR (state, rect) {
+      const xmlDoc = state.xmlDoc.cloneNode(true)
+      const index = state.currentPage + 1
+      const surface = xmlDoc.querySelector('surface:nth-child(' + index + ')')
+
+      const zone = measureDetector2meiZone(rect)
+      surface.appendChild(zone)
+
+      const measure = generateMeasure()
+      measure.setAttribute('facs', '#' + zone.getAttribute('xml:id'))
+      insertMeasure(xmlDoc, measure, state)
 
       Vue.set(state, 'xmlDoc', xmlDoc)
     },
@@ -169,6 +183,12 @@ export default new Vuex.Store({
         commit('SET_LOADING', false)
         console.log('success')
         console.log(json)
+
+        // do some sorting here, if necessary
+        // then call measure generation
+        json.measures.forEach(rect => {
+          commit('CREATE_ZONE_FROM_MEASURE_DETECTOR', rect)
+        })
       }
 
       const errorFunc = (err) => {

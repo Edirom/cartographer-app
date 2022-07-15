@@ -114,6 +114,19 @@ export function annotorious2meiZone (annot) {
   return zone
 }
 
+export function measureDetector2meiZone (rect) {
+  const id = 'd' + uuid()
+  const zone = document.createElementNS('http://www.music-encoding.org/ns/mei', 'zone')
+  zone.setAttribute('xml:id', id)
+  zone.setAttribute('type', 'measure')
+  zone.setAttribute('ulx', Math.round(rect.ulx))
+  zone.setAttribute('uly', Math.round(rect.uly))
+  zone.setAttribute('lrx', Math.round(rect.lrx))
+  zone.setAttribute('lry', Math.round(rect.lry))
+
+  return zone
+}
+
 export function generateMeasure () {
   const measure = document.createElementNS('http://www.music-encoding.org/ns/mei', 'measure')
   measure.setAttribute('xml:id', 'b' + uuid())
