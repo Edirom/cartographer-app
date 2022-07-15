@@ -73,7 +73,7 @@ export default new Vuex.Store({
     },
     UPDATE_ZONE_FROM_ANNOTORIOUS (state, annot) {
       const xmlDoc = state.xmlDoc.cloneNode(true)
-      console.log('update', annot)
+      // console.log('update', annot)
       // create new zone from the annot, then transfer its position to the old one
       const newZone = annotorious2meiZone(annot)
 
@@ -85,6 +85,25 @@ export default new Vuex.Store({
       const zones = surface.querySelectorAll('zone')
       const existingZone = [...zones].find(zone => zone.getAttribute('xml:id') === newZone.getAttribute('xml:id'))
 
+      // TODO: why is this?
+      /*
+      const query1 = '[*|id="' + newZone.getAttribute('xml:id') + '"]'
+      const query2 = '[*|id="mercatorApp"]'
+      const query3 = 'zone'
+
+      const temp1 = xmlDoc.querySelector(query1)
+      const temp2 = xmlDoc.querySelector(query2)
+      const temp3 = xmlDoc.querySelector(query3)
+
+      console.log('query1: ' + query1)
+      console.log(temp1)
+      console.log('query2: ' + query2)
+      console.log(temp2)
+      console.log('query3: ' + query3)
+      console.log(temp3)
+      console.log('complicated retrieval:')
+      console.log(existingZone)
+      */
       existingZone.setAttribute('ulx', newZone.getAttribute('ulx'))
       existingZone.setAttribute('uly', newZone.getAttribute('uly'))
       existingZone.setAttribute('lrx', newZone.getAttribute('lrx'))

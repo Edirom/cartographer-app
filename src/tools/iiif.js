@@ -1,10 +1,4 @@
-export function uuidv4 () {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-    const r = Math.random() * 16 | 0
-    const v = c === 'x' ? r : (r & 0x3 | 0x8)
-    return v.toString(16)
-  })
-}
+import { uuid } from '@/tools/uuid.js'
 
 function addPage (canvas, n, file, meiSurfaceTemplate) {
   const label = canvas.label
@@ -12,11 +6,11 @@ function addPage (canvas, n, file, meiSurfaceTemplate) {
   const width = canvas.width
   const uri = canvas?.images[0]?.resource?.service['@id']
 
-  const surfaceId = 's' + uuidv4()
-  const graphicId = 'g' + uuidv4()
+  const surfaceId = 's' + uuid()
+  const graphicId = 'g' + uuid()
 
-  // const mdivId = 'm' + uuidv4()
-  // const sectionId = 's' + uuidv4()
+  // const mdivId = 'm' + uuid()
+  // const sectionId = 's' + uuid()
 
   const surface = meiSurfaceTemplate.querySelector('surface').cloneNode(true)
   surface.setAttributeNS('http://www.w3.org/XML/1998/namespace', 'xml:id', surfaceId)
@@ -54,9 +48,9 @@ export async function iiifManifest2mei (json, url, parser) {
     .then(() => {
       const file = meiFileTemplate.querySelector('mei').cloneNode(true)
 
-      const sourceId = 's' + uuidv4()
+      const sourceId = 's' + uuid()
       // set file id
-      file.setAttributeNS('http://www.w3.org/XML/1998/namespace', 'xml:id', 'm' + uuidv4())
+      file.setAttributeNS('http://www.w3.org/XML/1998/namespace', 'xml:id', 'm' + uuid())
       // set file title
       file.querySelector('title').textContent = json.label
       // set reference to Manifest

@@ -1,4 +1,4 @@
-import { uuidv4 } from '@/tools/iiif.js'
+import { uuid } from '@/tools/uuid.js'
 
 export function meiZone2annotorious (mei, zoneInput, pageUri) {
   const zone = (typeof zoneInput === 'string') ? mei.querySelector('[*|id=' + zoneInput + ']') : zoneInput
@@ -87,7 +87,7 @@ export function meiZone2annotorious (mei, zoneInput, pageUri) {
       }
     },
     '@context': 'http://www.w3.org/ns/anno.jsonld',
-    id: '#' + zoneId
+    id: zoneId
   }
 
   return annot
@@ -101,7 +101,7 @@ export function annotorious2meiZone (annot) {
     w: Math.round(rawDimensions[2]),
     h: Math.round(rawDimensions[3])
   }
-  const id = 'z' + (annot.id.startsWith('#z') ? annot.id.substring(2) : annot.id.substring(1))
+  const id = annot.id
 
   const zone = document.createElementNS('http://www.music-encoding.org/ns/mei', 'zone')
   zone.setAttribute('xml:id', id)
@@ -116,7 +116,7 @@ export function annotorious2meiZone (annot) {
 
 export function generateMeasure () {
   const measure = document.createElementNS('http://www.music-encoding.org/ns/mei', 'measure')
-  measure.setAttribute('xml:id', 'm' + uuidv4())
+  measure.setAttribute('xml:id', 'b' + uuid())
 
   return measure
 }
@@ -157,7 +157,7 @@ function createNewMdiv (xmlDoc) {
   const mdivArray = xmlDoc.querySelectorAll('mdiv')
 
   const mdiv = document.createElementNS('http://www.music-encoding.org/ns/mei', 'mdiv')
-  const mdivId = 'm' + uuidv4()
+  const mdivId = 'm' + uuid()
   mdiv.setAttribute('xml:id', mdivId)
   mdiv.setAttribute('label', 'Movement ' + (mdivArray.length + 1))
 

@@ -6,6 +6,7 @@
 import OpenSeadragon from 'openseadragon'
 import * as Annotorious from '@recogito/annotorious-openseadragon'
 import '@recogito/annotorious-openseadragon/dist/annotorious.min.css'
+import { uuid } from '@/tools/uuid.js'
 
 export default {
   name: 'OsdComponent',
@@ -103,9 +104,6 @@ export default {
         value: 'measure'
       }]
 
-      // console.log('selection:')
-      // console.log(selection)
-
       await this.anno.updateSelected(selection)
       this.anno.saveSelected()
     })
@@ -117,7 +115,9 @@ export default {
     })
 
     this.anno.on('createAnnotation', (annotation) => {
-      // The users has selected an existing annotation
+      // The users has created a new annotation
+      const newId = 'z' + uuid()
+      annotation.id = newId
       this.$store.dispatch('createZone', annotation)
       this.$store.dispatch('selectZone', null)
       this.anno.clearAnnotations()
@@ -198,6 +198,7 @@ export default {
       color: #000000;
       font-weight: 900;
       font-size: 0.8rem;
+      line-height: 0.8rem;
     }
   }
 }
