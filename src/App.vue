@@ -1,46 +1,43 @@
 <template>
   <div id="app">
-    <h1>Hello Mercator!</h1>
-    <AppHeader/>
     <ImageSelectionModal/>
-    <WrongInputModal/>
+    <AppHeader/>
     <OsdComponent/>
-    <!-- todo: the following two lines can safely go away, just kept for reference -->
-    <img alt="Vue logo" src="./assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
+    <AppSidebar/>
+    <AppFooter/>
   </div>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
 import AppHeader from './components/AppHeader.vue'
+import AppSidebar from './components/AppSidebar.vue'
+import AppFooter from './components/AppFooter.vue'
 import OsdComponent from './components/OsdComponent.vue'
 import ImageSelectionModal from './components/ImageSelectionModal.vue'
-import WrongInputModal from './components/wrongInput.vue'
 
 export default {
   name: 'App',
   components: {
-    HelloWorld,
     AppHeader,
+    AppSidebar,
+    AppFooter,
     OsdComponent,
-    ImageSelectionModal,
-    WrongInputModal
+    ImageSelectionModal
   }
 }
 </script>
 
-<style lang="scss" scoped>
+<style lang="scss">
+@import '@/css/_variables.scss';
+
 #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
-
-  h1 {
-    color: red;
-  }
+  color: $fontColorDark;
+  height: 100vh;
+  width: 100%;
+  position: relative;
 }
 </style>

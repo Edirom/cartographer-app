@@ -1,12 +1,14 @@
 
 <template>
+  <div v-if="visible">Hello</div>
+  <!--
   <modal v-model="visible">
     <h5 slot="header">Default modal</h5>
     <p slot="body">Please insert manifest url here</p>
     <input slot="footer" v-model="url" >
     <btn  type="primary" @click="openManifest">Ok</btn>
 
-  </modal>
+  </modal>-->
 </template>
 
 <script>
