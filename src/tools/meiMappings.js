@@ -101,7 +101,7 @@ export function annotorious2meiZone (annot) {
     w: Math.round(rawDimensions[2]),
     h: Math.round(rawDimensions[3])
   }
-  const id = 'testId' // 'z' + (annot.id.startsWith('#z') ? annot.id.substring(2) : annot.id.substring(1))
+  const id = 'z' + (annot.id.startsWith('#z') ? annot.id.substring(2) : annot.id.substring(1))
 
   const zone = document.createElementNS('http://www.music-encoding.org/ns/mei', 'zone')
   zone.setAttribute('xml:id', id)
