@@ -1,6 +1,60 @@
 <template>
   <div class="appSidebar">
-    <button class="btn btn-action" @click="autoDetect">MD</button>
+    <button class="btn btn-action" title="select measure" :disabled="!isReady">
+      <font-awesome-icon icon="fa-solid fa-arrow-pointer"/>
+    </button>
+    <button class="btn btn-action" title="draw free-form measures" disabled="disabled">
+      <font-awesome-icon icon="fa-solid fa-pen"/>
+    </button>
+    <button class="btn btn-action" title="draw rectangle" :disabled="!isReady">
+      <font-awesome-icon icon="fa-solid fa-crop-simple"/>
+    </button>
+    <button class="btn btn-action" title="split measure horizontally" :disabled="!isReady">
+      <font-awesome-icon icon="fa-solid fa-scissors"/>
+    </button>
+    <button class="btn btn-action" title="split measure vertically" :disabled="!isReady">
+      <font-awesome-icon icon="fa-solid fa-scissors" rotation="270"/>
+    </button>
+    <button class="btn btn-action" title="add zone to last measure" :disabled="!isReady" @click="toggleMultiZone">
+      <template v-if="multiZone">
+        <font-awesome-icon icon="fa-solid fa-square-plus"/>
+      </template>
+      <template v-else>
+        <font-awesome-icon icon="fa-regular fa-square-plus"/>
+      </template>
+    </button>
+    <button class="btn btn-action" title="delete measure" :disabled="!isReady">
+      <font-awesome-icon icon="fa-solid fa-eraser"/>
+    </button>
+    <button class="btn btn-action" title="Autodetect measures on current page" @click="autoDetect" :disabled="!isReady">
+      <font-awesome-layers>
+        <font-awesome-icon icon="fa-solid fa-wand-sparkles" transform="flip-h down-5 right-5 shrink-3"/>
+        <font-awesome-icon icon="fa-regular fa-clone" transform="up-5 left-5"/>
+      </font-awesome-layers>
+    </button>
+    <!-- this could be used for score setup
+    <button class="btn btn-action">
+      <font-awesome-layers>
+        <font-awesome-icon icon="fa-solid fa-guitar" transform="up-8 shrink-5"/>
+        <font-awesome-icon icon="fa-solid fa-guitar" transform="shrink-5"/>
+        <font-awesome-icon icon="fa-solid fa-guitar" transform="down-8 shrink-5"/>
+      </font-awesome-layers>
+    </button>-->
+    <!-- these could be used for score vs. parts
+    <button class="btn btn-action">
+      <font-awesome-icon icon="fa-solid fa-stop"/>
+    </button>
+    <button class="btn btn-action">
+      <font-awesome-icon icon="fa-solid fa-layer-group"/>
+    </button>
+    -->
+    <!--<button class="btn btn-action">
+      <font-awesome-layers>
+        <font-awesome-icon icon="fa-solid fa-wand-sparkles" transform="flip-h down-5 right-5 shrink-3"/>
+        <font-awesome-icon icon="fa-regular fa-clone" transform="up-5 left-5"/>
+        <font-awesome-icon icon="fa-regular fa-square" transform="up-7.5 right-6.5 shrink-3"/>
+      </font-awesome-layers>
+    </button>-->
   </div>
 </template>
 
@@ -12,29 +66,20 @@ export default {
 
   },
   computed: {
-    currentPage: function () {
-      return this.$store.getters.currentPageIndexOneBased
-    },
-    maxPage: function () {
-      return this.$store.getters.maxPageNumber
-    },
     isReady: function () {
       return this.$store.getters.isReady
     },
-    prevAvailable: function () {
-      return this.$store.getters.currentPageIndexZeroBased > 0
-    },
-    nextAvailable: function () {
-      return this.$store.getters.currentPageIndexOneBased < this.$store.getters.maxPageNumber
-    },
-    zonesCount: function () {
-      return this.$store.getters.zonesOnCurrentPage.length
+    multiZone: function () {
+      return this.$store.getters.multiZoneActive
     }
     /* visible: function() {
       return this.$store.getters.imageSelectionModalVisible
     } */
   },
   methods: {
+    toggleMultiZone: function () {
+      this.$store.dispatch('toggleMultiZone')
+    },
     autoDetect: function () {
       this.$store.dispatch('autoDetectZonesOnCurrentPage')
     }
@@ -50,5 +95,20 @@ export default {
   width: $appSidebarWidth;
   background-color: $appColor;
   float: right;
+  padding-top: .4rem;
+
+  button {
+    color: $fontColorDark;
+    border-color: $fontColorDark;
+  }
+
+  .btn-action {
+    margin: 0 0 .2rem 0;
+
+    &.activeMode {
+      background-color: #e5e5e5;
+      box-shadow: 0 .1rem .3rem #0006 inset;
+    }
+  }
 }
 </style>

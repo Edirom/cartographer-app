@@ -4,15 +4,19 @@
     <div class="container gapless oneline">
       <div class="columns">
         <div class="column col-4">
-          <button class="btn btn-link btn-action" @click="showPrevPage" :disabled="!prevAvailable">L</button>
+          <span @click="showPrevPage" :disabled="!prevAvailable">
+            <font-awesome-icon icon="fa-solid fa-angle-left" />
+          </span>
           {{ currentPage }} / {{ maxPage }}
-          <button class="btn btn-link btn-action" @click="showNextPage" :disabled="!nextAvailable">R</button>
+          <span @click="showNextPage" :disabled="!nextAvailable">
+            <font-awesome-icon icon="fa-solid fa-angle-right" />
+          </span>
         </div>
-        <div class="column col-4">
+        <div class="column col-7">
           zones: {{ zonesCount }}
         </div>
-        <div class="column col-4">
-          <div class="loading" v-if="isLoading"></div>
+        <div class="column col-1">
+          <progress v-if="isLoading" class="progress" max="100"></progress>
         </div>
       </div>
     </div>
@@ -76,5 +80,16 @@ export default {
   height: $appFooterHeight;
   width: 100vw;
   background-color: $appColor;
+  border-top: $thickBorder;
+  box-sizing: border-box;
+
+  progress {
+    color: $fontColorDark;
+    height: .3rem;
+    position: relative;
+    top: -3px;
+    border: $thinBorder;
+    background: #eef0f3 linear-gradient(to right, #999999 30%, #eef0f3 30%) top left/150% 150% no-repeat;
+  }
 }
 </style>

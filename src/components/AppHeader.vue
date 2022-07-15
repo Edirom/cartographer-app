@@ -1,23 +1,24 @@
 <template>
-  <div class="appHeader">
-    <div class="container gapless oneline">
-      <div class="columns">
-        <div class="column col-2">
-          MercatorApp
-        </div>
-        <div class="column col-2">
-        </div>
-        <div class="column col-8">
-          <button class="btn btn-link" :class="{multiZone}" @click="toggleMultiZone">Combine</button>
-          <button class="btn btn-link" @click="importXML">Import XML Example</button>
-          <button class="btn btn-link" @click="importManifest">Import IIIF Example</button>
-          <a :href="xmlDataUrl()" target="_blank" :disabled="!downloadAvailable" :download="xmlFilename">
-            <i class="icon icon-download"></i>
+  <header class="navbar appHeader">
+    <section class="navbar-section">
+      <span class="navbar-brand mr-2">MercatorApp</span>
+    </section>
+    <section class="navbar-section">
+      <div class="input-group input-inline">
+        <div class="button-group">
+          <button class="btn btn-action btn-sm" @click="importXML" title="load MEI file">
+            <font-awesome-icon icon="fa-solid fa-file-import"/>
+          </button>
+          <button class="btn btn-action btn-sm" @click="importManifest" title="import IIIF Manifest">
+            <font-awesome-icon icon="fa-solid fa-cloud-arrow-down"/>
+          </button>
+          <a class="btn btn-action btn-sm" :href="xmlDataUrl()" target="_blank" title="download MEI file" :disabled="!downloadAvailable" :download="xmlFilename">
+            <font-awesome-icon icon="fa-solid fa-download"/>
           </a>
         </div>
       </div>
-    </div>
-  </div>
+    </section>
+  </header>
 </template>
 
 <script>
@@ -39,15 +40,9 @@ export default {
     },
     downloadAvailable: function () {
       return this.$store.getters.meiFileForDownload !== null
-    },
-    multiZone: function () {
-      return this.$store.getters.multiZoneActive
     }
   },
   methods: {
-    toggleMultiZone: function () {
-      this.$store.dispatch('toggleMultiZone')
-    },
     importXML: function () {
       this.$store.dispatch('importXMLtest')
     },
@@ -71,9 +66,21 @@ export default {
 .appHeader {
   height: $appHeaderHeight;
   background-color: $appColor;
+  border-bottom: $thickBorder;
+  box-sizing: border-box;
 
-  .multiZone {
-    font-weight: 900;
+  .navbar-brand {
+    padding-left: 1rem;
+  }
+
+  .button-group {
+    padding-right: 0.4rem;
+
+    a, button {
+      color: $fontColorDark;
+      border-color: $fontColorDark;
+      margin-left: .3rem;
+    }
   }
 }
 </style>

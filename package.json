@@ -10,6 +10,10 @@
     "test:lint": "npx standard --fix | npx snazzy"
   },
   "dependencies": {
+    "@fortawesome/fontawesome-svg-core": "^6.1.1",
+    "@fortawesome/free-regular-svg-icons": "^6.1.1",
+    "@fortawesome/free-solid-svg-icons": "^6.1.1",
+    "@fortawesome/vue-fontawesome": "^3.0.1",
     "@recogito/annotorious-openseadragon": "^2.7.6",
     "core-js": "^3.6.5",
     "openseadragon": "^3.0.0",

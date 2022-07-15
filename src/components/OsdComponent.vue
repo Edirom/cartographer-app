@@ -179,10 +179,21 @@ export default {
 <style lang="scss">
 @import '@/css/_variables.scss';
 
+$thinLineColor: #e5e5e566;
+$thickLineColor: #cccccc66;
+
 #osdContainer {
   height: calc(100vh - $appHeaderHeight - $appFooterHeight);
   width: calc(100% - $appSidebarWidth);
   float: left;
+  box-shadow: 0 0 1rem #00000066 inset;
+
+  background-size: 100px 100px, 100px 100px, 20px 20px, 20px 20px;
+  background-position: -2px -2px, -2px -2px, -1px -1px, -1px -1px;
+  background-image: linear-gradient($thickLineColor 2px, transparent 2px),
+                    linear-gradient(90deg, $thickLineColor 2px, transparent 2px),
+                    linear-gradient($thinLineColor 1px, transparent 1px),
+                    linear-gradient(90deg, $thinLineColor 1px, transparent 1px);
 
   .zone {
     background-color: rgba(255,255,255,.1);
