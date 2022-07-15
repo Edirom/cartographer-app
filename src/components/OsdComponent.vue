@@ -180,7 +180,8 @@ export default {
 
 #osdContainer {
   height: calc(100vh - $appHeaderHeight - $appFooterHeight);
-  width: 100%;
+  width: calc(100% - $appSidebarWidth);
+  float: left;
 
   .zone {
     background-color: rgba(255,255,255,.1);

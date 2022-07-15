@@ -1,27 +1,13 @@
 <template>
-  <div class="appFooter">
-    <container gapless oneline>
-      <columns>
-        <column col=4>
-          <btn action icon="left" type="link" @click="showPrevPage" :disabled="!prevAvailable"/>
-          {{ currentPage }} / {{ maxPage }}
-          <btn action icon="right" type="link" @click="showNextPage" :disabled="!nextAvailable"/>
-        </column>
-        <column col=4>
-          zones: {{ zonesCount }}
-        </column>
-        <column col=4>
-
-        </column>
-      </columns>
-    </container>
+  <div class="appSidebar">
+    Hallo
   </div>
 </template>
 
 <script>
 
 export default {
-  name: 'AppFooter',
+  name: 'AppSidebar',
   components: {
 
   },
@@ -65,11 +51,10 @@ export default {
 <style lang="scss" scoped>
 @import '@/css/_variables.scss';
 
-.appFooter {
-  position: absolute;
-  bottom: 0;
-  height: $appFooterHeight;
-  width: 100vw;
+.appSidebar {
+  height: calc(100vh - $appHeaderHeight - $appFooterHeight);
+  width: $appSidebarWidth;
   background-color: $appColor;
+  float: right;
 }
 </style>

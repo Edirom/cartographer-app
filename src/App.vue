@@ -1,14 +1,16 @@
 <template>
   <div id="app">
-    <AppHeader/>
     <ImageSelectionModal/>
+    <AppHeader/>
     <OsdComponent/>
+    <AppSidebar/>
     <AppFooter/>
   </div>
 </template>
 
 <script>
 import AppHeader from './components/AppHeader.vue'
+import AppSidebar from './components/AppSidebar.vue'
 import AppFooter from './components/AppFooter.vue'
 import OsdComponent from './components/OsdComponent.vue'
 import ImageSelectionModal from './components/ImageSelectionModal.vue'
@@ -17,6 +19,7 @@ export default {
   name: 'App',
   components: {
     AppHeader,
+    AppSidebar,
     AppFooter,
     OsdComponent,
     ImageSelectionModal
