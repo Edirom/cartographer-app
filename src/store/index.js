@@ -71,17 +71,19 @@ export default new Vuex.Store({
 
       Vue.set(state, 'xmlDoc', xmlDoc)
     },
-    CREATE_ZONE_FROM_MEASURE_DETECTOR (state, rect) {
+    CREATE_ZONES_FROM_MEASURE_DETECTOR_ON_CURRENT_PAGE (state, rects) {
       const xmlDoc = state.xmlDoc.cloneNode(true)
       const index = state.currentPage + 1
       const surface = xmlDoc.querySelector('surface:nth-child(' + index + ')')
 
-      const zone = measureDetector2meiZone(rect)
-      surface.appendChild(zone)
+      rects.forEach(rect => {
+        const zone = measureDetector2meiZone(rect)
+        surface.appendChild(zone)
 
-      const measure = generateMeasure()
-      measure.setAttribute('facs', '#' + zone.getAttribute('xml:id'))
-      insertMeasure(xmlDoc, measure, state)
+        const measure = generateMeasure()
+        measure.setAttribute('facs', '#' + zone.getAttribute('xml:id'))
+        insertMeasure(xmlDoc, measure, state)
+      })
 
       Vue.set(state, 'xmlDoc', xmlDoc)
     },
@@ -186,9 +188,7 @@ export default new Vuex.Store({
 
         // do some sorting here, if necessary
         // then call measure generation
-        json.measures.forEach(rect => {
-          commit('CREATE_ZONE_FROM_MEASURE_DETECTOR', rect)
-        })
+        commit('CREATE_ZONES_FROM_MEASURE_DETECTOR_ON_CURRENT_PAGE', json.measures)
       }
 
       const errorFunc = (err) => {
