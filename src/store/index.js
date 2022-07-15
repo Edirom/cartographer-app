@@ -54,12 +54,6 @@ export default new Vuex.Store({
       // fetch(state.uri
 
       const blob = await fetch('https://digital.blb-karlsruhe.de/i3f/v21/6295250/full/304/0/default.jpg').then(r => r.blob())
-      const dataUrl = await new Promise(resolve => {
-        const reader = new FileReader()
-        reader.onload = () => resolve(reader.result)
-        reader.readAsDataURL(blob)
-      })
-      console.log(typeof dataUrl)
 
       var formdata = new FormData()
       formdata.append('Content-Type', 'image/jpg')
