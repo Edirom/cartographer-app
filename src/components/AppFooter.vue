@@ -51,6 +51,9 @@ export default {
       return this.$store.getters.currentPageIndexOneBased < this.$store.getters.maxPageNumber
     },
     zonesCount: function () {
+      console.log('this is zones in all page ' + this.$store.getters.totalZones)
+      console.log('this is zones in current page ' + this.$store.getters.zonesOnCurrentPage.length)
+
       return this.$store.getters.zonesOnCurrentPage.length
     }
     /* visible: function() {
@@ -60,6 +63,7 @@ export default {
   methods: {
     showPrevPage: function () {
       this.$store.dispatch('setCurrentPage', this.$store.getters.currentPageIndexZeroBased - 1)
+      this.$store.dispatch('setCurrentPageZone', this.$store.getters.zonesOnCurrentPage.length)
     },
     showNextPage: function () {
       this.$store.dispatch('setCurrentPage', this.$store.getters.currentPageIndexZeroBased + 1)

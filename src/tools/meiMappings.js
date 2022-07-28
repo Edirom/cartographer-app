@@ -157,6 +157,7 @@ export function insertMeasure (xmlDoc, measure, state) {
 export function addZoneToLastMeasure (xmlDoc, zoneId) {
   const measure = getLastMeasure(xmlDoc)
   const oldFacs = measure.hasAttribute('facs') ? measure.getAttribute('facs') + ' ' : ''
+  console.log(oldFacs)
   measure.setAttribute('facs', oldFacs + '#' + zoneId)
 }
 

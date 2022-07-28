@@ -17,7 +17,8 @@ export default createStore({
     processing: false,
     multiZoneMode: false,
     selectedZoneId: null,
-    currentMdivId: null //,
+    currentMdivId: null,
+    totalZones: 0//,
     // TODO isScore: true
   },
   mutations: {
@@ -35,6 +36,10 @@ export default createStore({
       if (i > -1 && i < state.pages.length) {
         state.currentPage = i
       }
+    },
+    SET_TOTAL_ZONES_COUNT (state, j) {
+      state.totalZones = state.totalZones + j
+      console.log('this is j ' + state.totalZones)
     },
     SET_LOADING (state, bool) {
       state.loading = bool
@@ -135,7 +140,10 @@ export default createStore({
       console.log('setting current page to ' + i)
       commit('SET_CURRENT_PAGE', i)
     },
-    importIIIF ({ commit, dispatch }, url) {
+    setCurrentPageZone ({ commit }, j) {
+      commit('SET_TOTAL_ZONES_COUNT', j)
+    },
+    imprtIIIF ({ commit, dispatch }, url) {
       commit('SET_LOADING', true)
       fetch(url)
         .then(res => {
@@ -184,6 +192,7 @@ export default createStore({
 
         // do some sorting here, if necessary
         // then call measure generation
+        console.log('this is from autodetect thing')
         commit('CREATE_ZONES_FROM_MEASURE_DETECTOR_ON_CURRENT_PAGE', json.measures)
       }
 
@@ -235,6 +244,9 @@ export default createStore({
     },
     isLoading: state => {
       return state.loading
+    },
+    totalZones: state => {
+      return state.totalZones
     },
     meiFileForDownload: state => {
       if (state.xmlDoc === null) {
