@@ -141,31 +141,25 @@ function generateSection (state) {
   const section = document.createElementNS('http://www.music-encoding.org/ns/mei', 'section')
   section.setAttribute('n', state.currentPage + 1)
   section.setAttribute('uuid', uuid())
-  console.log('section is generating ')
   return section
 }
 function checksmMinimumSection (sections, state) {
-  console.log(sections.length + ' this is sections')
-  if (sections.length > 0) {
-    for (let i = 0; i < sections.length; i++) {
-      const n = sections[i].getAttribute('n')
-      if (n > state.currentPage + 1) {
-        return true
-      }
-      if (i === sections.length - 1) {
-        return false
-      }
+  let firstPage = false
+  sections.forEach(section => {
+    const n = section.getAttribute('n')
+    if (n > state.currentPage + 1) {
+      firstPage = true
+    } else {
+      firstPage = false
     }
-  } else {
-    return false
-  }
+  })
+  return firstPage
 }
 function getMeasurePosition (sections, state) {
   if (sections.length > 0) {
     for (let i = 0; i < sections.length; i++) {
       const n = sections[i].getAttribute('n')
       if (n > state.currentPage + 1) {
-        console.log('thi is the size of sections ' + sections.length + ' the current section is ' + i)
         return i
       }
       if (i === sections.length - 1) {
@@ -179,36 +173,27 @@ function getMeasurePosition (sections, state) {
 function sortMeasure (measures, sections, position, state) {
   for (let i = parseInt(position); i < sections.length; i++) {
     for (let j = 0; j < sections[i].children.length; j++) {
-      console.log('which section is it ' + i)
       sections[i].children[j].setAttribute('label', state.startLabel + 1)
       state.startLabel = state.startLabel + 1
     }
   }
 }
 function checkFirstPage (sections, state) {
-  if (sections.length > 0) {
-    for (let i = 0; i < sections.length; i++) {
-      const n = sections[i].getAttribute('n')
-      if (state.currentPage < n) {
-        if (i === sections.length - 1) {
-          return true
-        }
-      } else {
-        return false
-      }
+  let firstPage = false
+  sections.forEach(section => {
+    const n = section.getAttribute('n')
+    if (state.currentPage + 1 < n) {
+      firstPage = true
+    } else {
+      firstPage = false
     }
-  }
+  })
+  return firstPage
 }
 function getPreviousLabel (sections, state) {
-  for (let i = 0; i < sections.length; i++) {
-    console.log('this section ' + sections[i].getAttribute('n') + ' current page ' + state.currentPage)
-    if (sections[i].getAttribute('n') < state.currentPage + 1) {
-      // for (let j = 0; j = sections[i].children.length; j++) {
-      //   state.startLabel = sections[i].children[j].getAttribute('label')
-      // }
-      state.startLabel = parseInt(sections[i].lastChild.getAttribute('label'))
-    }
-  }
+  sections.forEach(section => {
+    if (section.getAttribute('n') < state.currentPage + 1) { state.startLabel = parseInt(section.lastChild.getAttribute('label')) }
+  })
 }
 
 export function insertMeasure (xmlDoc, measure, state, rects, rect, startLabel) {
@@ -226,6 +211,7 @@ export function insertMeasure (xmlDoc, measure, state, rects, rect, startLabel) 
     if (rects[0] === rect) {
       if (checkFirstPage(sections, state)) {
         state.startLabel = 1
+        console.log('this is first page so staring number if ' + state.startLabel)
         generateMeasureMeasureDetector(state.startLabel, measures.length, measure)
         // measure.setAttribute('label', state.startLabel)
         // measure.setAttribute('n', measures.length + 1)
