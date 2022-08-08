@@ -1,5 +1,12 @@
 import { uuid } from '@/tools/uuid.js'
-
+/**
+ * Insert measure on current section
+ *
+ * @param {mei} xml file .
+ * @param {zoneInput} zone to convert to mei   .
+ * @param {pageUri} pageUri of the current page.
+ *
+ */
 export function meiZone2annotorious (mei, zoneInput, pageUri) {
   const zone = (typeof zoneInput === 'string') ? mei.querySelector('[*|id=' + zoneInput + ']') : zoneInput
   const zoneId = zone.getAttribute('xml:id')
@@ -92,7 +99,11 @@ export function meiZone2annotorious (mei, zoneInput, pageUri) {
 
   return annot
 }
-
+/**
+ * Convert annotorious value to mei
+ *
+ * @param {annot} annot value from annotorious.
+ */
 export function annotorious2meiZone (annot) {
   const rawDimensions = annot.target.selector.value.substr(11).split(',')
   const xywh = {
@@ -113,7 +124,12 @@ export function annotorious2meiZone (annot) {
 
   return zone
 }
-
+/**
+ * Convert the rectangular value of measure detector to mei
+ *
+ * @param {rect} rect from annotorious.
+ *
+ */
 export function measureDetector2meiZone (rect) {
   const id = 'd' + uuid()
   const zone = document.createElementNS('http://www.music-encoding.org/ns/mei', 'zone')
@@ -126,40 +142,78 @@ export function measureDetector2meiZone (rect) {
 
   return zone
 }
+/**
+ * Generate new measure
+ *
+ * @param {label} current label.
+ * @param {n} n is number atttribut of the measure.
+ * @return {measure} current measure
+ */
 function generateMeasureMeasureDetector (label, n, measure) {
   measure.setAttribute('label', label)
   measure.setAttribute('n', n + 1)
   return measure
 }
+
+/**
+ * Generate the very first measure
+ * @return {measure} current measure
+ */
 export function generateMeasure () {
   const measure = document.createElementNS('http://www.music-encoding.org/ns/mei', 'measure')
   measure.setAttribute('xml:id', 'b' + uuid())
 
   return measure
 }
+/**
+ * Generate sections for each page
+ *
+ * @param {sections} sections tag.
+ * @param {state} state .
+ * @return {boolean} true if the current page is skipped.
+ */
 function generateSection (state) {
   const section = document.createElementNS('http://www.music-encoding.org/ns/mei', 'section')
   section.setAttribute('n', state.currentPage + 1)
   section.setAttribute('uuid', uuid())
+  console.log('section is generating ')
   return section
 }
+/**
+ * Check if the current page is skiped.
+ *
+ * @param {sections} sections tag.
+ * @param {state} state .
+ * @return {boolean} true if the current page is skipped.
+ */
 function checksmMinimumSection (sections, state) {
-  let firstPage = false
-  sections.forEach(section => {
-    const n = section.getAttribute('n')
-    if (n > state.currentPage + 1) {
-      firstPage = true
-    } else {
-      firstPage = false
+  if (sections.length > 0) {
+    for (let i = 0; i < sections.length; i++) {
+      const n = sections[i].getAttribute('n')
+      if (n > state.currentPage + 1) {
+        return true
+      }
+      if (i === sections.length - 1) {
+        return false
+      }
     }
-  })
-  return firstPage
+  } else {
+    return false
+  }
 }
+/**
+ * Returns the position of the previous measure
+ *
+ * @param {sections} sections tag.
+ * @param {state} state .
+ *
+ */
 function getMeasurePosition (sections, state) {
   if (sections.length > 0) {
     for (let i = 0; i < sections.length; i++) {
       const n = sections[i].getAttribute('n')
       if (n > state.currentPage + 1) {
+        console.log('thi is the size of sections ' + sections.length + ' the current section is ' + i)
         return i
       }
       if (i === sections.length - 1) {
@@ -170,32 +224,75 @@ function getMeasurePosition (sections, state) {
     return 0
   }
 }
+/**
+ * Update the value staring label
+ *
+ * @param {measures} sections tag.
+ * @param {sections} state .
+ * @param {position} position of the measure to be appended.
+ * @param {state} state .
+ *
+ */
 function sortMeasure (measures, sections, position, state) {
   for (let i = parseInt(position); i < sections.length; i++) {
     for (let j = 0; j < sections[i].children.length; j++) {
+      console.log('which section is it ' + i)
       sections[i].children[j].setAttribute('label', state.startLabel + 1)
       state.startLabel = state.startLabel + 1
     }
   }
 }
+/**
+ * returns true if the current section is at the begining of the zone tag
+ *
+ * @param {sections} state .
+ * @param {state} state .
+ *
+ *
+ */
 function checkFirstPage (sections, state) {
-  let firstPage = false
-  sections.forEach(section => {
-    const n = section.getAttribute('n')
-    if (state.currentPage + 1 < n) {
-      firstPage = true
-    } else {
-      firstPage = false
+  if (sections.length > 0) {
+    for (let i = 0; i < sections.length; i++) {
+      const n = sections[i].getAttribute('n')
+      if (state.currentPage < n) {
+        if (i === sections.length - 1) {
+          return true
+        }
+      } else {
+        return false
+      }
     }
-  })
-  return firstPage
+  }
 }
+/**
+ * Update the starting label if the current page was skipped
+ *
+ * @param {sections} sections tag .
+ * @param {state} state current.
+ *
+ *
+ */
 function getPreviousLabel (sections, state) {
-  sections.forEach(section => {
-    if (section.getAttribute('n') < state.currentPage + 1) { state.startLabel = parseInt(section.lastChild.getAttribute('label')) }
-  })
+  for (let i = 0; i < sections.length; i++) {
+    console.log('this section ' + sections[i].getAttribute('n') + ' current page ' + state.currentPage)
+    if (sections[i].getAttribute('n') < state.currentPage + 1) {
+      // for (let j = 0; j = sections[i].children.length; j++) {
+      //   state.startLabel = sections[i].children[j].getAttribute('label')
+      // }
+      state.startLabel = parseInt(sections[i].lastChild.getAttribute('label'))
+    }
+  }
 }
-
+/**
+ * Insert measure on current section
+ *
+ * @param {xmlDoc} xmlDoc .
+ * @param {measure} measure to be inserted  .
+ * @param {state} state current.
+ * @param {rect} rect the rectangle from annotorious or meadure detecctor
+ * @param {statLabel} startLabel the last measure to start
+ *
+ */
 export function insertMeasure (xmlDoc, measure, state, rects, rect, startLabel) {
   const mdivArray = [...xmlDoc.querySelectorAll('mdiv')]
   if (mdivArray.length === 0) {
@@ -211,7 +308,6 @@ export function insertMeasure (xmlDoc, measure, state, rects, rect, startLabel) 
     if (rects[0] === rect) {
       if (checkFirstPage(sections, state)) {
         state.startLabel = 1
-        console.log('this is first page so staring number if ' + state.startLabel)
         generateMeasureMeasureDetector(state.startLabel, measures.length, measure)
         // measure.setAttribute('label', state.startLabel)
         // measure.setAttribute('n', measures.length + 1)
@@ -226,7 +322,6 @@ export function insertMeasure (xmlDoc, measure, state, rects, rect, startLabel) 
       // const num = startLabel + 1
       state.startLabel = startLabel + 1
       generateMeasureMeasureDetector(state.startLabel, measures.length, measure)
-
       // measure.setAttribute('label', state.startLabel)
       // measure.setAttribute('n', measures.length + 1)
     }
@@ -259,17 +354,33 @@ export function insertMeasure (xmlDoc, measure, state, rects, rect, startLabel) 
     }
   }
 }
-
+/**
+ * Add zone to the last measure
+ * @param {xmlDoc} xmlDoc .
+ * @param {measure} ZoneId of the measure .
+ *
+ */
 export function addZoneToLastMeasure (xmlDoc, zoneId) {
   const measure = getLastMeasure(xmlDoc)
   const oldFacs = measure.hasAttribute('facs') ? measure.getAttribute('facs') + ' ' : ''
   measure.setAttribute('facs', oldFacs + '#' + zoneId)
 }
-
+/**
+ * Get the last measure
+ *
+ * @param {xmlDoc} state .
+ *
+ */
 function getLastMeasure (xmlDoc) {
   const measure = [...xmlDoc.querySelectorAll('measure')].slice(-1)[0]
   return measure
 }
+/**
+ * Create a new movement
+ *
+ * @param {xmlDoc} state .
+ *
+ */
 
 function createNewMdiv (xmlDoc) {
   const body = xmlDoc.querySelector('body')
