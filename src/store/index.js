@@ -17,18 +17,28 @@ export default createStore({
     processing: false,
     multiZoneMode: false,
     selectedZoneId: null,
-    currentMdivId: null //,
+    currentMdivId: null, //,
+    zonesEachPage: [],
+    startLabel: 0,
+    previousStartLabel: 0
     // TODO isScore: true
   },
   mutations: {
     SET_MODAL (state, modalName) {
       state.modal = modalName
     },
+    SET_START_LABEL (state, startLabel) {
+      state.startLabel = startLabel
+    },
+    SET_ZONES_EACH_PAGE (state, zonesPageArray) {
+      state.zonesEachPage = zonesPageArray
+    },
     SET_XML_DOC (state, xmlDoc) {
       state.xmlDoc = xmlDoc
       state.currentPage = 0
     },
     SET_PAGES (state, pageArray) {
+      console.log('this is the page arra ' + console.log(JSON.stringify(pageArray)))
       state.pages = pageArray
     },
     SET_CURRENT_PAGE (state, i) {
@@ -53,7 +63,6 @@ export default createStore({
 
       const zone = annotorious2meiZone(annot)
       surface.appendChild(zone)
-
       // standard mode -> create new measure for zone
       if (!state.multiZoneMode) {
         const measure = generateMeasure()
@@ -71,15 +80,20 @@ export default createStore({
       const xmlDoc = state.xmlDoc.cloneNode(true)
       const index = state.currentPage + 1
       const surface = xmlDoc.querySelector('surface:nth-child(' + index + ')')
-
+      // IDEA:
       rects.forEach(rect => {
         const zone = measureDetector2meiZone(rect)
         surface.appendChild(zone)
 
+        //  console.log('this has to be the first rectangle ' + JSON.stringify(rects[0]) + ' or is it ' + JSON.stringify(rect))
+
         const measure = generateMeasure()
         measure.setAttribute('facs', '#' + zone.getAttribute('xml:id'))
-        insertMeasure(xmlDoc, measure, state)
+        insertMeasure(xmlDoc, measure, state, rects, rect, state.startLabel)
+        console.log(state.startLabel + ' this is the starting label')
+        // setZonesEachPage(index, zone)
       })
+      console.log(xmlDoc)
 
       state.xmlDoc = xmlDoc
     },
@@ -128,11 +142,13 @@ export default createStore({
     }
   },
   actions: {
+    setStartLabel ({ commit }, startLabel) {
+      commit('SET_START_LABEL', startLabel)
+    },
     setModal ({ commit }, modalName) {
       commit('SET_MODAL', modalName)
     },
     setCurrentPage ({ commit }, i) {
-      console.log('setting current page to ' + i)
       commit('SET_CURRENT_PAGE', i)
     },
     importIIIF ({ commit, dispatch }, url) {
@@ -184,6 +200,7 @@ export default createStore({
 
         // do some sorting here, if necessary
         // then call measure generation
+        commit('SET_ZONES_EACH_PAGE')
         commit('CREATE_ZONES_FROM_MEASURE_DETECTOR_ON_CURRENT_PAGE', json.measures)
       }
 

@@ -22,6 +22,7 @@ export default {
     renderZones: function () {
       this.viewer.clearOverlays()
       const annots = this.$store.getters.zonesOnCurrentPage
+
       annots.forEach(annot => {
         const rawDimensions = annot.target.selector.value.substr(11).split(',')
         const xywh = {

@@ -126,32 +126,152 @@ export function measureDetector2meiZone (rect) {
 
   return zone
 }
-
+function generateMeasureMeasureDetector (label, n, measure) {
+  measure.setAttribute('label', label)
+  measure.setAttribute('n', n + 1)
+  return measure
+}
 export function generateMeasure () {
   const measure = document.createElementNS('http://www.music-encoding.org/ns/mei', 'measure')
   measure.setAttribute('xml:id', 'b' + uuid())
 
   return measure
 }
+function generateSection (state) {
+  const section = document.createElementNS('http://www.music-encoding.org/ns/mei', 'section')
+  section.setAttribute('n', state.currentPage + 1)
+  section.setAttribute('uuid', uuid())
+  console.log('section is generating ')
+  return section
+}
+function checksmMinimumSection (sections, state) {
+  console.log(sections.length + ' this is sections')
+  if (sections.length > 0) {
+    for (let i = 0; i < sections.length; i++) {
+      const n = sections[i].getAttribute('n')
+      if (n > state.currentPage + 1) {
+        return true
+      }
+      if (i === sections.length - 1) {
+        return false
+      }
+    }
+  } else {
+    return false
+  }
+}
+function getMeasurePosition (sections, state) {
+  if (sections.length > 0) {
+    for (let i = 0; i < sections.length; i++) {
+      const n = sections[i].getAttribute('n')
+      if (n > state.currentPage + 1) {
+        console.log('thi is the size of sections ' + sections.length + ' the current section is ' + i)
+        return i
+      }
+      if (i === sections.length - 1) {
+        return 0
+      }
+    }
+  } else {
+    return 0
+  }
+}
+function sortMeasure (measures, sections, position, state) {
+  for (let i = parseInt(position); i < sections.length; i++) {
+    for (let j = 0; j < sections[i].children.length; j++) {
+      console.log('which section is it ' + i)
+      sections[i].children[j].setAttribute('label', state.startLabel + 1)
+      state.startLabel = state.startLabel + 1
+    }
+  }
+}
+function checkFirstPage (sections, state) {
+  if (sections.length > 0) {
+    for (let i = 0; i < sections.length; i++) {
+      const n = sections[i].getAttribute('n')
+      if (state.currentPage < n) {
+        if (i === sections.length - 1) {
+          return true
+        }
+      } else {
+        return false
+      }
+    }
+  }
+}
+function getPreviousLabel (sections, state) {
+  for (let i = 0; i < sections.length; i++) {
+    console.log('this section ' + sections[i].getAttribute('n') + ' current page ' + state.currentPage)
+    if (sections[i].getAttribute('n') < state.currentPage + 1) {
+      // for (let j = 0; j = sections[i].children.length; j++) {
+      //   state.startLabel = sections[i].children[j].getAttribute('label')
+      // }
+      state.startLabel = parseInt(sections[i].lastChild.getAttribute('label'))
+    }
+  }
+}
 
-export function insertMeasure (xmlDoc, measure, state) {
+export function insertMeasure (xmlDoc, measure, state, rects, rect, startLabel) {
   const mdivArray = [...xmlDoc.querySelectorAll('mdiv')]
-
   if (mdivArray.length === 0) {
     const mdivId = createNewMdiv(xmlDoc)
     state.currentMdivId = mdivId
   }
   const mdiv = [...xmlDoc.querySelectorAll('mdiv')].find(mdiv => mdiv.getAttribute('xml:id') === state.currentMdivId)
-
-  // TODO: what if mdivId does not match the ID of an mdiv?
-  const section = [...mdiv.querySelectorAll('section')].slice(-1)[0]
-
-  // TODO: prepare for parts, right now it supports score only
+  const score = [...mdiv.querySelectorAll('score')].slice(-1)[0]
   const measures = [...mdiv.querySelectorAll('measure')]
-  const num = measures.length === 0 ? 1 : (parseInt(measures.slice(-1)[0].getAttribute('label'), 10) + 1)
-  measure.setAttribute('label', num)
-  measure.setAttribute('n', measures.length + 1)
-  section.appendChild(measure)
+  const sections = xmlDoc.querySelectorAll('section')
+  const sect = checksmMinimumSection(sections, state)
+  if (sect) {
+    if (rects[0] === rect) {
+      if (checkFirstPage(sections, state)) {
+        state.startLabel = 1
+        generateMeasureMeasureDetector(state.startLabel, measures.length, measure)
+        // measure.setAttribute('label', state.startLabel)
+        // measure.setAttribute('n', measures.length + 1)
+      } else if (!checkFirstPage(sections, state)) {
+        getPreviousLabel(sections, state)
+        generateMeasureMeasureDetector(state.startLabel + 1, measures.length, measure)
+
+        // measure.setAttribute('label', state.startLabel + 1)
+        // measure.setAttribute('n', measures.length + 1)
+      }
+    } else {
+      // const num = startLabel + 1
+      state.startLabel = startLabel + 1
+      generateMeasureMeasureDetector(state.startLabel, measures.length, measure)
+
+      // measure.setAttribute('label', state.startLabel)
+      // measure.setAttribute('n', measures.length + 1)
+    }
+  } else {
+    state.startLabel = startLabel + 1
+    generateMeasureMeasureDetector(state.startLabel, measures.length, measure)
+    // measure.setAttribute('label', state.startLabel)
+    // measure.setAttribute('n', measures.length + 1)
+  }
+  if (rects[rects.length - 1] === rect && sect) {
+    sortMeasure(measures, sections, getMeasurePosition(sections, state), state)
+  }
+  if (rects[0] === rect) {
+    const section = generateSection(state)
+    section.appendChild(measure)
+    const sect = checksmMinimumSection(sections, state)
+    if (sect) {
+      score.insertBefore(section, sections[getMeasurePosition(sections, state)])
+    } else {
+      score.appendChild(section)
+    }
+  } else {
+    const section = [...mdiv.querySelectorAll('section')].slice(-1)[0]
+    const sections = xmlDoc.querySelectorAll('section')
+    const sect = checksmMinimumSection(sections, state)
+    if (sect) {
+      sections[getMeasurePosition(sections, state) - 1].appendChild(measure)
+    } else {
+      section.appendChild(measure)
+    }
+  }
 }
 
 export function addZoneToLastMeasure (xmlDoc, zoneId) {
@@ -175,9 +295,6 @@ function createNewMdiv (xmlDoc) {
   mdiv.setAttribute('label', 'Movement ' + (mdivArray.length + 1))
 
   const score = document.createElementNS('http://www.music-encoding.org/ns/mei', 'score')
-  const section = document.createElementNS('http://www.music-encoding.org/ns/mei', 'section')
-
-  score.appendChild(section)
   mdiv.appendChild(score)
 
   body.appendChild(mdiv)

@@ -108,8 +108,8 @@ export function getPageArray (mei) {
     obj.height = parseInt(graphic.getAttributeNS('', 'height').trim(), 10)
     obj.hasSvg = surface.querySelector('svg') !== null // exists(svg:svg) inside relevant /surface
     obj.hasZones = surface.querySelector('zone') !== null // exists(mei:zone) inside relevant /surface
-
     arr.push(obj)
+    console.log('Does the facsimile has zones ' + arr[0].hasZone)
   })
   return arr
 }

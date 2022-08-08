@@ -1,0 +1,34 @@
+
+# Please enter the commit message for your changes. Lines starting
+# with '#' will be ignored, and an empty message aborts the commit.
+#
+# On branch order_measures
+# Your branch is up to date with 'origin/order_measures'.
+#
+# Changes to be committed:
+#	new file:   Dockerfile
+#	new file:   README.md
+#	new file:   babel.config.js
+#	new file:   jest.config.js
+#	new file:   package-lock.json
+#	new file:   package.json
+#	new file:   public/assets/meiFileTemplate.xml
+#	new file:   public/assets/meiSurfaceTemplate.xml
+#	new file:   public/favicon.ico
+#	new file:   public/index.html
+#	new file:   public/testfile.xml
+#	new file:   src/App.vue
+#	new file:   src/assets/logo.png
+#	new file:   src/components/AppFooter.vue
+#	new file:   src/components/AppHeader.vue
+#	new file:   src/components/AppSidebar.vue
+#	new file:   src/components/ImageSelectionModal.vue
+#	new file:   src/components/OsdComponent.vue
+#	new file:   src/css/_variables.scss
+#	new file:   src/main.js
+#	new file:   src/store/index.js
+#	new file:   src/tools/iiif.js
+#	new file:   src/tools/meiMappings.js
+#	new file:   src/tools/uuid.js
+#	new file:   tests/unit/example.spec.js
+#
