@@ -15,16 +15,21 @@
     <button class="btn btn-action" title="split measure vertically" :disabled="!isReady">
       <font-awesome-icon icon="fa-solid fa-scissors" rotation="270"/>
     </button>
-    <button class="btn btn-action" title="add zone to last measure" :disabled="!isReady" @click="toggleMultiZone">
-      <template v-if="multiZone">
+    <button class="btn btn-action" title="add zone to last measure" :disabled="!isReady" @click="activateMultiZone">
+      <template v-if="mode === 'multiZone'">
         <font-awesome-icon icon="fa-solid fa-square-plus"/>
       </template>
       <template v-else>
         <font-awesome-icon icon="fa-regular fa-square-plus"/>
       </template>
     </button>
-    <button class="btn btn-action" title="delete measure" :disabled="!isReady">
-      <font-awesome-icon icon="fa-solid fa-eraser"/>
+    <button class="btn btn-action" title="delete measure" :disabled="!isReady" @click="activateDeleteZone">
+      <template v-if="mode === 'deleteZone'">
+        <font-awesome-icon icon="fa-solid fa-eraser"/>
+      </template>
+      <template v-else>
+        <font-awesome-icon icon="fa-regular fa-eraser"/>
+      </template>
     </button>
     <button class="btn btn-action" title="Autodetect measures on current page" @click="autoDetect" :disabled="!isReady">
       <font-awesome-layers>
@@ -69,16 +74,19 @@ export default {
     isReady: function () {
       return this.$store.getters.isReady
     },
-    multiZone: function () {
-      return this.$store.getters.multiZoneActive
+    mode: function () {
+      return this.$store.getters.mode
     }
     /* visible: function() {
       return this.$store.getters.imageSelectionModalVisible
     } */
   },
   methods: {
-    toggleMultiZone: function () {
-      this.$store.dispatch('toggleMultiZone')
+    activateMultiZone: function () {
+      this.$store.dispatch('setMode', 'multiZone')
+    },
+    activateDeleteZone: function () {
+      this.$store.dispatch('setMode', 'deleteZone')
     },
     autoDetect: function () {
       this.$store.dispatch('autoDetectZonesOnCurrentPage')

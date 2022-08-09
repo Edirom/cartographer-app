@@ -47,8 +47,24 @@ export default {
         label.textContent = labelContent
 
         overlay.appendChild(label)
+        overlay.addEventListener('click', (e) => {
+          this.$store.dispatch('clickZone', zoneId)
+          e.preventDefault()
+          e.stopPropagation()
+        })
+
         overlay.addEventListener('dblclick', (e) => {
           this.$store.dispatch('selectZone', zoneId)
+          e.preventDefault()
+          e.stopPropagation()
+        })
+        overlay.addEventListener('mouseenter', (e) => {
+          this.$store.dispatch('hoverZone', zoneId)
+          e.preventDefault()
+          e.stopPropagation()
+        })
+        overlay.addEventListener('mouseout', (e) => {
+          this.$store.dispatch('unhoverZone', zoneId)
           e.preventDefault()
           e.stopPropagation()
         })

@@ -146,6 +146,17 @@ export function insertMeasure (xmlDoc, measure, state) {
   // TODO: what if mdivId does not match the ID of an mdiv?
   const section = [...mdiv.querySelectorAll('section')].slice(-1)[0]
 
+  //
+  // const surfaces = xmlDoc.querySelectorAll('surface')
+  // console.log(xmlDoc)
+
+  // surfaces.forEach(surface => {
+  //   if (surface.children.length > 1 && !listSurface.includes(surface.getAttribute("n")) ) {
+  //     console.log('this is surface')
+  //     listSurface.append(surfa)
+  //   }
+  // })
+
   // TODO: prepare for parts, right now it supports score only
   const measures = [...mdiv.querySelectorAll('measure')]
   const num = measures.length === 0 ? 1 : (parseInt(measures.slice(-1)[0].getAttribute('label'), 10) + 1)
@@ -153,6 +164,10 @@ export function insertMeasure (xmlDoc, measure, state) {
   measure.setAttribute('n', measures.length + 1)
   section.appendChild(measure)
 }
+
+// function getSurface () {
+//   return state.currentPage
+// }
 
 export function addZoneToLastMeasure (xmlDoc, zoneId) {
   const measure = getLastMeasure(xmlDoc)

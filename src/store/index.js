@@ -15,8 +15,9 @@ export default createStore({
     modal: null,
     loading: false,
     processing: false,
-    multiZoneMode: false,
+    mode: 'manualRect',
     selectedZoneId: null,
+    hoveredZoneId: null,
     currentMdivId: null,
     totalZones: 0//,
     // TODO isScore: true
@@ -45,10 +46,13 @@ export default createStore({
       state.loading = bool
     },
     SET_PROCESSING (state, bool) {
-      state.process = bool
+      state.processing = bool
     },
     SELECT_ZONE (state, id) {
       state.selectedZoneId = id
+    },
+    HOVER_ZONE (state, id) {
+      state.hoveredZoneId = id
     },
     CREATE_ZONE_FROM_ANNOTORIOUS (state, annot) {
       const xmlDoc = state.xmlDoc.cloneNode(true)
@@ -60,13 +64,13 @@ export default createStore({
       surface.appendChild(zone)
 
       // standard mode -> create new measure for zone
-      if (!state.multiZoneMode) {
+      if (state.mode === 'manualRect') {
         const measure = generateMeasure()
         measure.setAttribute('facs', '#' + zone.getAttribute('xml:id'))
         insertMeasure(xmlDoc, measure, state)
 
       // add zone to last existing measure in file
-      } else if (state.multiZoneMode && state.selectedZoneId === null) {
+      } else if (state.mode === 'multiZone' && state.selectedZoneId === null) {
         addZoneToLastMeasure(xmlDoc, zone.getAttribute('xml:id'))
       }
 
@@ -128,8 +132,8 @@ export default createStore({
 
       state.xmlDoc = xmlDoc
     },
-    TOGGLE_MULTIZONE_MODE (state) {
-      state.multiZoneMode = !state.multiZoneMode
+    SET_MODE (state, mode) {
+      state.mode = mode
     }
   },
   actions: {
@@ -228,14 +232,30 @@ export default createStore({
     selectZone ({ commit }, id) {
       commit('SELECT_ZONE', id)
     },
+    clickZone ({ commit, state }, id) {
+      // commit('SELECT_ZONE', id)
+      if (state.mode === 'deleteZone') {
+        //
+      }
+    },
+    hoverZone ({ commit }, id) {
+      commit('HOVER_ZONE', id)
+    },
+    unhoverZone ({ commit, state }, id) {
+      // commit('SELECT_ZONE', id)
+      if (state.hoveredZoneId === id) {
+        commit('HOVER_ZONE', null)
+      }
+      console.log('unhovering ' + id)
+    },
     createZone ({ commit }, annot) {
       commit('CREATE_ZONE_FROM_ANNOTORIOUS', annot)
     },
     updateZone ({ commit }, annot) {
       commit('UPDATE_ZONE_FROM_ANNOTORIOUS', annot)
     },
-    toggleMultiZone ({ commit }) {
-      commit('TOGGLE_MULTIZONE_MODE')
+    setMode ({ commit }, mode) {
+      commit('SET_MODE', mode)
     }
   },
   getters: {
@@ -306,8 +326,8 @@ export default createStore({
 
       return measures
     },
-    multiZoneActive: state => {
-      return state.multiZoneMode
+    mode: state => {
+      return state.mode
     },
     selectedZone: state => {
       if (state.selectedZoneId === null || state.xmlDoc === null) {
