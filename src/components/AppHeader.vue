@@ -12,9 +12,16 @@
           <button class="btn btn-action btn-sm" @click="importManifest" title="import IIIF Manifest">
             <font-awesome-icon icon="fa-solid fa-cloud-arrow-down"/>
           </button>
-          <a class="btn btn-action btn-sm" :href="xmlDataUrl()" target="_blank" title="download MEI file" :disabled="!downloadAvailable" :download="xmlFilename">
-            <font-awesome-icon icon="fa-solid fa-download"/>
-          </a>
+          <template v-if="downloadAvailable">
+            <a class="btn btn-action btn-sm" :href="xmlDataUrl()" target="_blank" title="download MEI file" :download="xmlFilename">
+              <font-awesome-icon icon="fa-solid fa-download"/>
+            </a>
+          </template>
+          <template v-else>
+            <a class="btn btn-action btn-sm" :href="xmlDataUrl()" target="_blank" title="download MEI file" disabled :download="xmlFilename">
+              <font-awesome-icon icon="fa-solid fa-download"/>
+            </a>
+          </template>
         </div>
       </div>
     </section>
