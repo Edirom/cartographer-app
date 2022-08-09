@@ -143,7 +143,7 @@ export default createStore({
     setCurrentPageZone ({ commit }, j) {
       commit('SET_TOTAL_ZONES_COUNT', j)
     },
-    impotIIIF ({ commit, dispatch }, url) {
+    importIIIF ({ commit, dispatch }, url) {
       commit('SET_LOADING', true)
       fetch(url)
         .then(res => {
