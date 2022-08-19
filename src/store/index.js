@@ -88,7 +88,7 @@ export default createStore({
         surface.appendChild(zone)
         const measure = generateMeasure()
         measure.setAttribute('facs', '#' + zone.getAttribute('xml:id'))
-        insertMeasure(xmlDoc, measure, state)
+        insertMeasure(xmlDoc, measure, state, zone)
       })
 
       state.xmlDoc = xmlDoc

@@ -53,7 +53,11 @@ export function meiZone2annotorious (mei, zoneInput, pageUri) {
 
   let label
   if (measureNums.length === 1) {
-    label = measures[0].getAttribute('label')
+    if (measures[0].hasAttribute('label') && measures[0].getAttribute('label').length > 0) {
+      label = measures[0].getAttribute('label')
+    } else {
+      label = measures[0].getAttribute('n')
+    }
   } else if (measureNums.length === 0) {
     label = '–'
   } else {
@@ -132,51 +136,13 @@ export function generateMeasure () {
 
   return measure
 }
-function getZoneOnTheTop (allZones) {
-  console.log('all zones ' + allZones.length)
-  let topZone = 10000000
-  allZones.forEach(zone => {
-    topZone = Math.min(topZone, parseInt(zone.uly))
-  })
-  return topZone
-}
-function calculateFactor (topZone) {
-  return topZone * 2
-}
-function getSystems (allZones, factor, currentSystem, top, allSystem) {
-  console.log('factor is ' + factor)
-  if (allZones.length > 0) {
-    if (allZones[0].uly < factor) {
-      console.log(currentSystem.length + ' before adding')
-      if (!currentSystem.includes(allZones[0])) {
-        currentSystem.push(allZones[0])
-      }
-      console.log(currentSystem.length + ' after adding')
-      console.log('elements in the same system ' + allZones[0].uly + ' factor ' + factor)
-      allZones.splice(0, 1)
-      getSystems(allZones, factor, currentSystem, top, allSystem)
-    } else {
-      console.log(currentSystem.length + ' this always has to be 0')
 
-      if (!currentSystem.includes(allZones[0])) {
-        currentSystem.push(allZones[0])
-      }
-
-      allSystem.push(currentSystem)
-      allZones.splice(0, 1)
-      top = getZoneOnTheTop(allZones)
-      factor = calculateFactor(top)
-      currentSystem.length = 0
-      getSystems(allZones, factor, currentSystem, top, allSystem)
-    }
-  }
-
-  return currentSystem
+// TODO: this needs to be more clever
+function incrementMeasureNum (num) {
+  return parseInt(num) + 1
 }
+
 export function insertMeasure (xmlDoc, measure, state, currentZone) {
-  const currentSystem = []
-  const allSystem = []
-
   // 1. lets have current page refernce
   // 2. Retrieve all the existing zones from that pages
   // 3. Compare the comparision based on the zonesOnCurrentPage
@@ -186,9 +152,7 @@ export function insertMeasure (xmlDoc, measure, state, currentZone) {
 
   const currentPage = state.currentPage
   console.log('current zone is ' + currentZone)
-  // const label = []
-  // const surfaces = xmlDoc.querySelectorAll('surface')
-  // const surface = [...xmlDoc.querySelectorAll('surface')].find(surface => surface.getAttribute('n') === curres
+
   const surface = xmlDoc.querySelectorAll('surface')[currentPage]
   const zones = [...surface.querySelectorAll('zone')]
 
@@ -208,176 +172,194 @@ export function insertMeasure (xmlDoc, measure, state, currentZone) {
   }
   const mdiv = [...xmlDoc.querySelectorAll('mdiv')].find(mdiv => mdiv.getAttribute('xml:id') === state.currentMdivId)
 
-  // TODO: what if mdivId does not match the ID of an mdiv?
-  const section = [...mdiv.querySelectorAll('section')].slice(-1)[0]
+  // Determine position of new zone on page
+  const pageHeight = parseInt(surface.querySelector('graphic').getAttribute('height'))
+  // let heightSum = 0
+  let topZone = pageHeight
+  let minHeight = pageHeight
+  // let maxHeight = 0
 
-  //
-  // const surfaces = xmlDoc.querySelectorAll('surface')
-  // console.log(xmlDoc)
-
-  // surfaces.forEach(surface => {
-  //   if (surface.children.length > 1 && !listSurface.includes(surface.getAttribute("n")) ) {
-  //     console.log('currentZone is surface')
-  //     listSurface.append(surfa)
-  //   }
-  // })
-
-  // TODO: prepare for parts, right now it supports score only
-  const measures = [...mdiv.querySelectorAll('measure')]
-  // compareTo(measures, measure)
-
-  const num = measures.length === 0 ? 1 : (parseInt(measures.slice(-1)[0].getAttribute('label'), 10) + 1)
-  measure.setAttribute('label', num)
-  measure.setAttribute('n', measures.length + 1)
-  // const arr = []
-  // let yheight = {}
-  // const maxh = 0
   const allZones = []
-  zones.forEach(zone => {
-    allZones.push({
-      uly: parseInt(zone.getAttribute('uly')),
-      lry: parseInt(zone.getAttribute('lry')),
-      id: zone.getAttribute('xml:id')
-    })
-    // const mid = parseInt(zone.getAttribute('lry')) - parseInt(zone.getAttribute('uly'))
-    // const midy = mid / 2
-    // console.log('this are systems ' + check(midy, zones).length)
 
-    // const height = parseInt(zone.getAttribute('lry')) - parseInt(zone.getAttribute('uly'))
-    // const y = parseInt(zone.getAttribute('uly'))
-    // yheight = {
-    //   y: y,
-    //   height: height,
-    //   id: zone.getAttribute('xml:id')
-    // }
-    // arr.push(yheight)
-    // getPosition(zone, currentZone, state.sys, label)
+  // ID of new zone
+  const newZoneId = currentZone.getAttribute('xml:id')
+
+  zones.forEach(zone => {
+    const top = parseInt(zone.getAttribute('uly'))
+    const bottom = parseInt(zone.getAttribute('lry'))
+    const left = parseInt(zone.getAttribute('ulx'))
+    const height = bottom - top
+
+    // heightSum += height
+    topZone = Math.min(topZone, top)
+    minHeight = Math.min(minHeight, height)
+    // maxHeight = Math.max(maxHeight, height)
+
+    allZones.push({
+      top: top,
+      height: height,
+      left: left,
+      id: zone.getAttribute('xml:id'),
+      new: zone.getAttribute('xml:id') === newZoneId,
+      elem: zone
+    })
+  })
+  // const avgHeight = heightSum / existingZones.length
+  allZones.sort((a, b) => {
+    return a.uly - b.uly
   })
 
-  //  console.log(sys.length)
-  // console.log(' this is system ' + getPosition(arr, surface, xmlDoc, state).length)
+  const thresholdDistance = minHeight * 0.8
 
-  while (allZones.length > 0) {
-    const top = getZoneOnTheTop(allZones)
-    const factor = calculateFactor(top)
-    console.log('this is new top ' + top + ' this is new factor' + factor)
-    const currentSystems = getSystems(allZones, factor, currentSystem, top, allSystem)
-    console.log('current systems are ' + currentSystems.length)
+  // function to compare newZone against existingZones
+  const insertIntoRightSystem = (xmlDoc, surface, targetMdiv, newZone, newMeasure, zones, pageHeight, thresholdDistance, zonesToIncrement, lastGroup) => {
+    const currentTop = zones[0].top
+    const currentThreshold = currentTop + thresholdDistance
+    console.log('looking for measures above ' + currentThreshold)
 
-    console.log('all zones ' + allZones.length)
+    const above = []
+    const below = []
 
-    // state.sys.push(label)
-    section.appendChild(measure)
+    zones.forEach(zone => {
+      if (zone.top < currentThreshold) {
+        above.push(zone)
+      } else {
+        below.push(zone)
+      }
+    })
+
+    console.log('above', above)
+    console.log('below', below)
+
+    const newIsAbove = above.findIndex(zone => zone.new) !== -1
+
+    if (newIsAbove) {
+      // new zone is in current system
+
+      // sort system from left to right
+      above.sort((a, b) => {
+        return a.left - b.left
+      })
+
+      // get position of new zone within system
+      const newIndex = above.findIndex(zone => zone.new)
+
+      if (newIndex === 0) {
+        // new zone is first within current system
+        if (lastGroup.length === 0) {
+          // must be the first measure on new page, so introduce new <pb/>
+
+          // get preceding page that has zones
+          let precedingZone = null
+          let previousPage = surface.previousElementSibling
+
+          while (previousPage !== null && precedingZone === null) {
+            const zones = [...previousPage.querySelectorAll('zone')]
+            if (zones.length > 0) {
+              precedingZone = zones.at(-1)
+              previousPage = null
+            } else {
+              previousPage = previousPage.previousElementSibling
+            }
+          }
+
+          if (precedingZone !== null) {
+            // there are zones that can be continued
+            console.log('adding first measure to new page')
+
+            precedingZone.after(newZone)
+
+            const precedingZoneId = precedingZone.getAttribute('xml:id')
+            const precedingMeasure = targetMdiv.querySelector('measure[facs~="#' + precedingZoneId + '"]')
+
+            newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n')))
+            precedingMeasure.after(newMeasure)
+
+            // create pb, insert after preceding measure
+            const pb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'pb')
+            pb.setAttribute('facs', '#' + surface.getAttribute('xml:id'))
+            precedingMeasure.after(pb)
+          } else {
+            // this is the first zone for the whole document
+            console.log('adding first measure to document')
+
+            const section = targetMdiv.querySelector('section')
+
+            surface.append(newZone)
+            newMeasure.setAttribute('n', 1)
+            const pb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'pb')
+            pb.setAttribute('facs', '#' + surface.getAttribute('xml:id'))
+            section.append(pb)
+            section.append(newMeasure)
+          }
+        } else {
+          // must be the first measure in new system, so introduce new <sb/> and get last measure from previous system
+          console.log('adding measure to new system')
+
+          // order by highest left value
+          lastGroup.sort((a, b) => {
+            return b.left - a.left
+          })
+
+          const precedingZone = lastGroup[0].elem
+          precedingZone.after(newZone)
+
+          const precedingZoneId = lastGroup[0].id
+          const precedingMeasure = targetMdiv.querySelector('measure[facs~="#' + precedingZoneId + '"]')
+
+          newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n')))
+          precedingMeasure.after(newMeasure)
+
+          // create sb, insert after preceding measure
+          const sb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'sb')
+          precedingMeasure.after(sb)
+        }
+      } else {
+        // measure goes somewhere in current system
+        console.log('new measure has ' + newIndex + ' preceding measures in current system')
+
+        const precedingZone = above[newIndex - 1].elem
+        precedingZone.after(newZone)
+
+        const precedingZoneId = above[newIndex - 1].id
+        const precedingMeasure = targetMdiv.querySelector('measure[facs~="#' + precedingZoneId + '"]')
+
+        newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n')))
+        precedingMeasure.after(newMeasure)
+      }
+
+      // make sure to increment all following measures on current system
+      for (let i = newIndex + 1; i < above.length; i++) {
+        zonesToIncrement.push(above[i].id)
+      }
+
+      // make sure to increment all measures on lower systems
+      below.forEach(zone => {
+        zonesToIncrement.push(zone.id)
+      })
+
+      return zonesToIncrement
+    } else {
+      return insertIntoRightSystem(xmlDoc, surface, targetMdiv, newZone, newMeasure, below, pageHeight, thresholdDistance, zonesToIncrement, above)
+    }
   }
+
+  const zonesToIncrement = insertIntoRightSystem(xmlDoc, surface, mdiv, currentZone, measure, allZones, pageHeight, thresholdDistance, [], [])
+  console.log('zonesToIncrement:')
+  console.log(zonesToIncrement)
+  // keep track of all measures that have been incremented already, i.e. avoid to increment measures with multiple zones more than once
+  const measuresAlreadyIncremented = []
+  zonesToIncrement.forEach(zoneId => {
+    mdiv.querySelectorAll('measure[facs~="#' + zoneId + '"]').forEach(measure => {
+      const measureId = measure.getAttribute('xml:id')
+      if (measuresAlreadyIncremented.indexOf(measureId) === -1) {
+        measure.setAttribute('n', incrementMeasureNum(measure.getAttribute('n')))
+        measuresAlreadyIncremented.push(measureId)
+      }
+    })
+  })
+  // TODO: get all measures on following pages that need to be dealt with
 }
-// function check (midy, zones) {
-//   const test = []
-//   zones.forEach(zone => {
-//     const uly2 = parseInt(zone.getAttribute('uly'))
-//     console.log('uly2 ' + uly2 + ' midy ' + midy)
-//     if (uly2 > midy && !test.includes(zone.getAttribute('xml:id'))) {
-//       test.push(zone.getAttribute('xml:id'))
-//     }
-//   })
-//   return test
-// }
-// function getPosition (arr, surface, xmlDoc, state) {
-//   const pageHeight = surface.querySelector('graphic').getAttribute('height')
-//
-//   let heightSum = 0
-//   let topZone = pageHeight
-//   let minHeight = pageHeight
-//   let maxHeight = 0
-//
-//   arr.forEach(zone => {
-//     heightSum += zone.height
-//     topZone = Math.min(topZone, zone.y)
-//     minHeight = Math.min(minHeight, zone.height)
-//     maxHeight = Math.max(maxHeight, zone.height)
-//   })
-//   const averageHeight = heightSum / arr.length
-//
-//   console.log('--------------')
-//   console.log('averageHeight:', averageHeight)
-//   console.log('topZone: ', topZone)
-//   console.log('minHeight: ', minHeight)
-//   console.log('maxHeight: ', maxHeight)
-//   console.log('pageHeight: ', pageHeight)
-//
-//   const factor = 2 / 3
-//   const thresholdDistance = minHeight * factor
-//
-//   const systems = compare(arr, thresholdDistance, state)
-//   return systems
-//
-// // how much of the smallest measure is used
-//   // todo: order array
-// }
-// function compare (arr, thresholdDistance, state) {
-//   const firstSystem = []
-//   let followUpSystems = []
-//
-//   const threshold = arr[0].y + thresholdDistance
-//   console.log('result array ' + state.resultingArray)
-//   arr.forEach(zone => {
-//     if (zone.y < threshold) {
-//       firstSystem.push(zone)
-//     } else {
-//       followUpSystems.push(zone)
-//     }
-//   })
-//   if (followUpSystems.length > 0) {
-//     followUpSystems = compare(followUpSystems, thresholdDistance, state)
-//   }
-//
-//   return firstSystem
-//
-//   // return resultingArray
-//   // get all measures above this line into one array, recursively call same function on all measures below this line
-// }
-// function getSurface (zones) {
-//   return state.currentPage
-// }
-//
-// function compareTo(measures, measure) {
-//         const result = 0;
-//         // The same zones
-//         if (currentZone.ulx == zone.ulx && currentZone.uly == zone.uly &&
-//                 currentZone.lry == zone.lry && currentZone.lrx == zone.lrx) {
-//             return 0;
-//         }
-//         // If to be added zone has lower uly and lower ulx than the compared zone
-//         if (currentZone.uly < zone.uly && currentZone.ulx < zone.ulx) {
-//             return -1;
-//         }
-//         // If to be added zone has greater uly and greater ulx than the compared zone
-//         if (currentZone.uly > zone.uly && currentZone.ulx > zone.ulx) {
-//             return 1;
-//         }
-//
-//         // Substracting the value of lrx from
-//         if(Math.min(currentZone.lrx - currentZone.uly, zone.lrx - zone.uly) == 0) {
-//             result = (const) (zone.ulx - currentZone.ulx);
-//             if(result == 0) {
-//                 result = (const) (zone.uly - currentZone.uly);
-//             }
-//             return result;
-//         }
-//         double yIsectFactor = (Math.min(currentZone.lrx, zone.lrx) - Math.max(currentZone.uly, zone.uly)) /
-//                 Math.min(currentZone.lrx - currentZone.uly, zone.lrx - zone.uly);
-//         if (yIsectFactor < 0.5) {
-//             result = (const) (zone.ulx - currentZone.ulx);
-//             if(result == 0) {
-//                 result = (const) (currentZone.uly - zone.uly);
-//             }
-//             return result;
-//         }
-//         result = (const) (currentZone.ulx - zone.ulx);
-//         if(result == 0) {
-//             result = (const) (currentZone.uly - zone.uly);
-//         }
-//         return result;
-//     }
 
 export function addZoneToLastMeasure (xmlDoc, zoneId) {
   const measure = getLastMeasure(xmlDoc)
