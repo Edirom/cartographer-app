@@ -358,7 +358,19 @@ export function insertMeasure (xmlDoc, measure, state, currentZone) {
       }
     })
   })
-  // TODO: get all measures on following pages that need to be dealt with
+
+  //  Increament the next measures by one
+  const surfaces = [...xmlDoc.querySelectorAll('surface')]
+  const page = parseInt(currentPage) + 1
+  surfaces.forEach(sur => {
+    if (sur.getAttribute('n') > page && sur.children.length > 1) {
+      for (let i = 1; i < sur.children.length; i++) {
+        const zoneId = sur.children[i].getAttribute('xml:id')
+        const meas = [...xmlDoc.querySelectorAll('measure')].find(meas => meas.getAttribute('facs') === '#' + zoneId)
+        meas.setAttribute('n', parseInt(meas.getAttribute('n')) + 1)
+      }
+    }
+  })
 }
 
 export function addZoneToLastMeasure (xmlDoc, zoneId) {
