@@ -19,7 +19,8 @@ export default createStore({
     selectedZoneId: null,
     hoveredZoneId: null,
     currentMdivId: null,
-    totalZones: 0//,
+    totalZones: 0,
+    resultingArray: []
     // TODO isScore: true
   },
   mutations: {
@@ -67,7 +68,7 @@ export default createStore({
       if (state.mode === 'manualRect') {
         const measure = generateMeasure()
         measure.setAttribute('facs', '#' + zone.getAttribute('xml:id'))
-        insertMeasure(xmlDoc, measure, state)
+        insertMeasure(xmlDoc, measure, state, zone)
 
       // add zone to last existing measure in file
       } else if (state.mode === 'multiZone' && state.selectedZoneId === null) {
@@ -75,6 +76,7 @@ export default createStore({
       }
 
       state.xmlDoc = xmlDoc
+      console.log(state.xmlDoc)
     },
     CREATE_ZONES_FROM_MEASURE_DETECTOR_ON_CURRENT_PAGE (state, rects) {
       const xmlDoc = state.xmlDoc.cloneNode(true)
@@ -84,7 +86,6 @@ export default createStore({
       rects.forEach(rect => {
         const zone = measureDetector2meiZone(rect)
         surface.appendChild(zone)
-
         const measure = generateMeasure()
         measure.setAttribute('facs', '#' + zone.getAttribute('xml:id'))
         insertMeasure(xmlDoc, measure, state)
