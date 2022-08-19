@@ -267,7 +267,7 @@ export function insertMeasure (xmlDoc, measure, state, currentZone) {
             // there are zones that can be continued
             console.log('adding first measure to new page')
 
-            precedingZone.after(newZone)
+            surface.append(newZone)
 
             const precedingZoneId = precedingZone.getAttribute('xml:id')
             const precedingMeasure = targetMdiv.querySelector('measure[facs~="#' + precedingZoneId + '"]')
