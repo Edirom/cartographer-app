@@ -143,6 +143,7 @@ function incrementMeasureNum (num) {
 }
 
 export function insertMeasure (xmlDoc, measure, state, currentZone) {
+  console.log('current zone is ' + currentZone)
   // 1. lets have current page refernce
   // 2. Retrieve all the existing zones from that pages
   // 3. Compare the comparision based on the zonesOnCurrentPage
@@ -402,6 +403,14 @@ function createNewMdiv (xmlDoc) {
 
   body.appendChild(mdiv)
   return mdivId
+}
+
+export function deleteZone (xmlDoc, id, state) {
+  const currentPage = state.currentPage
+  console.log('this is deleted zone id  ' + id)
+  const surface = xmlDoc.querySelectorAll('surface')[currentPage]
+  const zone = [...surface.querySelectorAll('zone')].find(zone => zone.getAttribute('xml:id') === id)
+  zone.remove()
 }
 
 /*

@@ -1,6 +1,6 @@
 import { createStore } from 'vuex'
 import { iiifManifest2mei, checkIiifManifest, getPageArray } from '@/tools/iiif.js'
-import { meiZone2annotorious, annotorious2meiZone, measureDetector2meiZone, generateMeasure, insertMeasure, addZoneToLastMeasure } from '@/tools/meiMappings.js'
+import { meiZone2annotorious, annotorious2meiZone, measureDetector2meiZone, generateMeasure, insertMeasure, addZoneToLastMeasure, deleteZone } from '@/tools/meiMappings.js'
 
 const parser = new DOMParser()
 const serializer = new XMLSerializer()
@@ -20,7 +20,8 @@ export default createStore({
     hoveredZoneId: null,
     currentMdivId: null,
     totalZones: 0,
-    resultingArray: []
+    resultingArray: [],
+    deleteZoneId: null
     // TODO isScore: true
   },
   mutations: {
@@ -234,9 +235,11 @@ export default createStore({
       commit('SELECT_ZONE', id)
     },
     clickZone ({ commit, state }, id) {
-      // commit('SELECT_ZONE', id)
       if (state.mode === 'deleteZone') {
-        //
+        state.deleteZoneId = id
+        const xmlDoc = state.xmlDoc.cloneNode(true)
+        deleteZone(xmlDoc, id, state)
+        state.xmlDoc = xmlDoc
       }
     },
     hoverZone ({ commit }, id) {
@@ -251,6 +254,9 @@ export default createStore({
     },
     createZone ({ commit }, annot) {
       commit('CREATE_ZONE_FROM_ANNOTORIOUS', annot)
+    },
+    deleteZone ({ commit }, id) {
+      commit('DELETE_ZONE', id)
     },
     updateZone ({ commit }, annot) {
       commit('UPDATE_ZONE_FROM_ANNOTORIOUS', annot)
