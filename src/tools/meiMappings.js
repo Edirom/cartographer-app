@@ -361,19 +361,36 @@ export function insertMeasure (xmlDoc, measure, state, currentZone) {
   })
 
   //  Increament the next measures by one
-  const surfaces = [...xmlDoc.querySelectorAll('surface')]
-  const page = parseInt(currentPage) + 1
-  surfaces.forEach(sur => {
-    if (sur.getAttribute('n') > page && sur.children.length > 1) {
-      for (let i = 1; i < sur.children.length; i++) {
-        const zoneId = sur.children[i].getAttribute('xml:id')
-        const meas = [...xmlDoc.querySelectorAll('measure')].find(meas => meas.getAttribute('facs') === '#' + zoneId)
-        meas.setAttribute('n', parseInt(meas.getAttribute('n')) + 1)
-      }
-    }
-  })
+  const type = 'increment'
+  updateNextMeasures(currentPage, type, xmlDoc)
 }
-
+function updateNextMeasures (currentPage, type, xmlDoc) {
+  const surfaces = [...xmlDoc.querySelectorAll('surface')]
+  if (type === 'decreament') {
+    surfaces.forEach(sur => {
+      if (sur.children.length > 1) {
+        for (let i = 1; i < sur.children.length; i++) {
+          const zoneId = sur.children[i].getAttribute('xml:id')
+          const meas = [...xmlDoc.querySelectorAll('measure')].find(meas => meas.getAttribute('facs') === '#' + zoneId)
+          meas.setAttribute('n', parseInt(meas.getAttribute('n')) - 1)
+        }
+      }
+    })
+  } else {
+    const page = parseInt(currentPage) + 1
+    surfaces.forEach(sur => {
+      if (sur.getAttribute('n') > page && sur.children.length > 1) {
+        for (let i = 1; i < sur.children.length; i++) {
+          const zoneId = sur.children[i].getAttribute('xml:id')
+          const meas = [...xmlDoc.querySelectorAll('measure')].find(meas => meas.getAttribute('facs') === '#' + zoneId)
+          if (type === 'increment') {
+            meas.setAttribute('n', parseInt(meas.getAttribute('n')) + 1)
+          }
+        }
+      }
+    })
+  }
+}
 export function addZoneToLastMeasure (xmlDoc, zoneId) {
   const measure = getLastMeasure(xmlDoc)
   const oldFacs = measure.hasAttribute('facs') ? measure.getAttribute('facs') + ' ' : ''
@@ -410,7 +427,13 @@ export function deleteZone (xmlDoc, id, state) {
   console.log('this is deleted zone id  ' + id)
   const surface = xmlDoc.querySelectorAll('surface')[currentPage]
   const zone = [...surface.querySelectorAll('zone')].find(zone => zone.getAttribute('xml:id') === id)
+  const zoneId = zone.getAttribute('xml:id')
+  const meas = [...xmlDoc.querySelectorAll('measure')].find(meas => meas.getAttribute('facs') === '#' + zoneId)
+  // updateNextMeasures(currentPage, type, xmlDoc, zone)
   zone.remove()
+  meas.previousSibling.remove()
+  meas.remove()
+  // const type = 'decreament'
 }
 
 /*

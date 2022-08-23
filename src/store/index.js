@@ -21,12 +21,16 @@ export default createStore({
     currentMdivId: null,
     totalZones: 0,
     resultingArray: [],
-    deleteZoneId: null
+    deleteZoneId: null,
+    anno: null
     // TODO isScore: true
   },
   mutations: {
     SET_MODAL (state, modalName) {
       state.modal = modalName
+    },
+    SET_ANNO (state, anno) {
+      state.anno = anno
     },
     SET_XML_DOC (state, xmlDoc) {
       state.xmlDoc = xmlDoc
@@ -253,6 +257,7 @@ export default createStore({
       console.log('unhovering ' + id)
     },
     createZone ({ commit }, annot) {
+      commit('SET_ANNO', annot)
       commit('CREATE_ZONE_FROM_ANNOTORIOUS', annot)
     },
     deleteZone ({ commit }, id) {

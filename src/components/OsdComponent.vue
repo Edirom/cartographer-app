@@ -16,6 +16,9 @@ export default {
   computed: {
     imageArray: function () {
       return this.$store.getters.imageArray
+    },
+    mode: function () {
+      return this.$store.getters.mode
     }
   },
   methods: {
@@ -75,6 +78,9 @@ export default {
         })
       })
       // this.anno.setAnnotations(annots)
+    },
+    toggleSelection: function (mode) {
+      this.anno.readOnly = mode !== 'manualRect'
     }
   },
   mounted: function () {
@@ -102,7 +108,8 @@ export default {
     })
 
     const annotoriousConfig = {
-      disableEditor: true
+      disableEditor: true,
+      readOnly: this.mode !== 'manualRect'
     }
 
     // Initialize the Annotorious plugin
@@ -175,6 +182,11 @@ export default {
         this.renderZones()
       })
 
+    this.unwatchMode = this.$store.watch((state, getters) => getters.mode,
+      (newMode, oldMode) => {
+        this.toggleSelection(newMode)
+      })
+
     this.unwatchSelectedZone = this.$store.watch((state, getters) => getters.selectedZone,
       (newZone, oldZone) => {
         if (newZone !== null) {
@@ -188,6 +200,7 @@ export default {
     this.unwatchCurrentPage()
     this.unwatchZonesOnCurrentPage()
     this.unwatchSelectedZone()
+    this.unwatchMode()
   }
 }
 </script>

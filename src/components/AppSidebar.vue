@@ -3,8 +3,13 @@
     <button class="btn btn-action" title="select measure" :disabled="!isReady">
       <font-awesome-icon icon="fa-solid fa-arrow-pointer"/>
     </button>
-    <button class="btn btn-action" title="draw free-form measures" disabled="disabled">
-      <font-awesome-icon icon="fa-solid fa-pen"/>
+    <button class="btn btn-action" title="draw free-form measures" :disabled="!isReady" @click="activateManualZone">
+      <template v-if="mode === 'manualRect'">
+        <font-awesome-icon icon="fa-solid fa-pen"/>
+      </template>
+      <template v-else>
+        <font-awesome-icon icon="fa-regular fa-pen"/>
+      </template>
     </button>
     <button class="btn btn-action" title="draw rectangle" :disabled="!isReady">
       <font-awesome-icon icon="fa-solid fa-crop-simple"/>
@@ -87,6 +92,9 @@ export default {
     },
     activateDeleteZone: function () {
       this.$store.dispatch('setMode', 'deleteZone')
+    },
+    activateManualZone: function () {
+      this.$store.dispatch('setMode', 'manualRect')
     },
     autoDetect: function () {
       this.$store.dispatch('autoDetectZonesOnCurrentPage')
