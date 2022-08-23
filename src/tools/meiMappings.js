@@ -372,28 +372,30 @@ function updateNextMeasures (currentPage, type, xmlDoc, zone, measure) {
         for (let i = 1; i < sur.children.length; i++) {
           const zoneId = sur.children[i].getAttribute('xml:id')
           const meas = [...xmlDoc.querySelectorAll('measure')].find(meas => meas.getAttribute('facs') === '#' + zoneId)
-          if (meas.getAttribute('n') > measure.getAttribute('n')) {
+          if (parseInt(meas.getAttribute('n')) > parseInt(measure.getAttribute('n'))) {
+            console.log('this will be deleted zone ' + measure.getAttribute('n') + ' ' + meas.getAttribute('n'))
             meas.setAttribute('n', parseInt(meas.getAttribute('n')) - 1)
           } else {
-            meas.setAttribute('n', parseInt(meas.getAttribute('n')))
-          }
-        }
-      }
-    })
-  } else {
-    const page = parseInt(currentPage) + 1
-    surfaces.forEach(sur => {
-      if (sur.getAttribute('n') > page && sur.children.length > 1) {
-        for (let i = 1; i < sur.children.length; i++) {
-          const zoneId = sur.children[i].getAttribute('xml:id')
-          const meas = [...xmlDoc.querySelectorAll('measure')].find(meas => meas.getAttribute('facs') === '#' + zoneId)
-          if (type === 'increment') {
-            meas.setAttribute('n', parseInt(meas.getAttribute('n')) + 1)
+            // meas.setAttribute('n', parseInt(meas.getAttribute('n')))
           }
         }
       }
     })
   }
+  // else if (type === 'increament') {
+  //   const page = parseInt(currentPage) + 1
+  //   surfaces.forEach(sur => {
+  //     if (sur.getAttribute('n') > page && sur.children.length > 1) {
+  //       for (let i = 1; i < sur.children.length; i++) {
+  //         const zoneId = sur.children[i].getAttribute('xml:id')
+  //         const meas = [...xmlDoc.querySelectorAll('measure')].find(meas => meas.getAttribute('facs') === '#' + zoneId)
+  //         if (type === 'increment') {
+  //           meas.setAttribute('n', parseInt(meas.getAttribute('n')) + 1)
+  //         }
+  //       }
+  //     }
+  //   })
+  // }
 }
 export function addZoneToLastMeasure (xmlDoc, zoneId) {
   const measure = getLastMeasure(xmlDoc)
