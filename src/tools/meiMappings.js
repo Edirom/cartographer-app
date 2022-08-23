@@ -436,10 +436,15 @@ export function deleteZone (xmlDoc, id, state) {
   const meas = [...xmlDoc.querySelectorAll('measure')].find(meas => meas.getAttribute('facs') === '#' + zoneId)
   updateNextMeasures(currentPage, type, xmlDoc, zone, meas)
   zone.remove()
-  if (meas.previousSibling.tagName === 'pb') {
-    meas.previousSibling.remove()
+  if (meas.nextSibling != null) {
+    if (meas.previousSibling.tagName === 'pb' && meas.nextSibling.tagName === 'sb') {
+      meas.nextSibling.remove()
+      meas.remove()
+    } else if (meas.previousSibling.tagName === 'sb' && meas.nextSibling.tagName === 'sb') {
+      meas.nextSibling.remove()
+      meas.remove()
+    }
   }
-  meas.remove()
   // const type = 'decreament'
 }
 
