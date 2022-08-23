@@ -364,7 +364,7 @@ export function insertMeasure (xmlDoc, measure, state, currentZone) {
   const type = 'increment'
   updateNextMeasures(currentPage, type, xmlDoc)
 }
-function updateNextMeasures (currentPage, type, xmlDoc) {
+function updateNextMeasures (currentPage, type, xmlDoc, zone, measure) {
   const surfaces = [...xmlDoc.querySelectorAll('surface')]
   if (type === 'decreament') {
     surfaces.forEach(sur => {
@@ -372,7 +372,11 @@ function updateNextMeasures (currentPage, type, xmlDoc) {
         for (let i = 1; i < sur.children.length; i++) {
           const zoneId = sur.children[i].getAttribute('xml:id')
           const meas = [...xmlDoc.querySelectorAll('measure')].find(meas => meas.getAttribute('facs') === '#' + zoneId)
-          meas.setAttribute('n', parseInt(meas.getAttribute('n')) - 1)
+          if (meas.getAttribute('n') > measure.getAttribute('n')) {
+            meas.setAttribute('n', parseInt(meas.getAttribute('n')) - 1)
+          } else {
+            meas.setAttribute('n', parseInt(meas.getAttribute('n')))
+          }
         }
       }
     })
@@ -424,14 +428,17 @@ function createNewMdiv (xmlDoc) {
 
 export function deleteZone (xmlDoc, id, state) {
   const currentPage = state.currentPage
+  const type = 'decreament'
   console.log('this is deleted zone id  ' + id)
   const surface = xmlDoc.querySelectorAll('surface')[currentPage]
   const zone = [...surface.querySelectorAll('zone')].find(zone => zone.getAttribute('xml:id') === id)
   const zoneId = zone.getAttribute('xml:id')
   const meas = [...xmlDoc.querySelectorAll('measure')].find(meas => meas.getAttribute('facs') === '#' + zoneId)
-  // updateNextMeasures(currentPage, type, xmlDoc, zone)
+  updateNextMeasures(currentPage, type, xmlDoc, zone, meas)
   zone.remove()
-  meas.previousSibling.remove()
+  if (meas.previousSibling.tagName === 'pb') {
+    meas.previousSibling.remove()
+  }
   meas.remove()
   // const type = 'decreament'
 }
