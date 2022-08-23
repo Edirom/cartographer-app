@@ -24,7 +24,9 @@ export default createStore({
     totalZones: 0,
     resultingArray: [],
     deleteZoneId: null,
-    anno: null
+    anno: null,
+    currentMeasureId: null // used for the MeasureModal
+
     // TODO isScore: true
   },
   mutations: {
@@ -144,6 +146,10 @@ export default createStore({
       if (mode in allowedModes) {
         state.mode = mode
       }
+    },
+    SET_CURRENT_MEASURE_ID (state, zoneId) {
+      const measure = state.xmlDoc.querySelector('measure[facs~="#' + zoneId + '"]')
+      state.currentMeasureId = measure.getAttribute('xml:id')
     }
   },
   actions: {
@@ -250,11 +256,13 @@ export default createStore({
         state.xmlDoc = xmlDoc
       }
     },
-    clickMeasureLabel ({ commit }, id) {
+    clickMeasureLabel ({ commit }, zoneId) {
       console.log('clicked measure label')
-      commit('SET_MODAL', 'measureNumberModal')
+      commit('SET_CURRENT_MEASURE_ID', zoneId)
+      commit('SET_MODAL', 'measureModal')
     },
     closeMeasureNumberModal ({ commit }) {
+      commit('SET_CURRENT_MEASURE_ID', null)
       commit('SET_MODAL', null)
     },
     hoverZone ({ commit }, id) {
@@ -348,6 +356,65 @@ export default createStore({
       const measures = [...state.xmlDoc.querySelectorAll('measure')]
 
       return measures
+    },
+    mdivs: state => {
+      if (state.xmlDoc === null) {
+        return []
+      }
+      const arr = []
+      state.xmlDoc.querySelectorAll('mdiv').forEach((mdiv, index) => {
+        arr.push({
+          id: mdiv.getAttribute('xml:id'),
+          label: mdiv.getAttribute('label'),
+          index
+        })
+      })
+      return arr
+    },
+    currentMdiv: state => {
+      if (state.currentMdivId === null || state.xmlDoc === null) {
+        return null
+      }
+
+      const mdivs = [...state.xmlDoc.querySelectorAll('mdiv')]
+      const index = mdivs.findIndex(mdiv => mdiv.getAttribute('xml:id') === state.currentMdivId)
+
+      if (index === -1) {
+        return null
+      }
+
+      const mdiv = mdivs[index]
+
+      return {
+        id: mdiv.getAttribute('xml:id'),
+        label: mdiv.getAttribute('label'),
+        index: index
+      }
+    },
+    currentMeasure: state => {
+      if (state.currentMeasureId === null || state.xmlDoc === null) {
+        return null
+      }
+
+      const mdivs = [...state.xmlDoc.querySelectorAll('mdiv')]
+      const mdiv = mdivs.find(mdiv => mdiv.getAttribute('xml:id') === state.currentMdivId)
+      const measures = [...mdiv.querySelectorAll('measure')]
+      const measure = measures.find(measure => measure.getAttribute('xml:id') === state.currentMeasureId)
+
+      const multiRestElem = measure.querySelector('multiRest')
+      const multiRest = (multiRestElem !== null) ? multiRestElem.getAttribute('num') : null
+
+      const label = measure.hasAttribute('label') ? measure.getAttribute('label') : null
+
+      const n = measure.getAttribute('n')
+      const id = measure.getAttribute('xml:id')
+
+      return {
+        id,
+        n,
+        label,
+        multiRest
+      }
     },
     mode: state => {
       return state.mode
