@@ -37,7 +37,7 @@
     <button class="btn btn-action"  :class="{'activeMode': mode === 'additionalZone'}"
       title="add zone to last measure" :disabled="!isReady"
       @click="activateMode('additionalZone')">
-      <template v-if="mode === 'multiZone'">
+      <template v-if="mode === 'additionalZone'">
         <font-awesome-icon icon="fa-solid fa-square-plus"/>
       </template>
       <template v-else>
@@ -52,15 +52,35 @@
       <font-awesome-icon icon="fa-solid fa-eraser"/>
     </button>
 
-    <!-- AUTODETECT ON CURRENT PAGE -->
-    <button class="btn btn-action" title="Autodetect measures on current page"
-      :disabled="!isReady"
-      @click="autoDetect">
-      <font-awesome-layers>
-        <font-awesome-icon icon="fa-solid fa-wand-sparkles" transform="flip-h down-5 right-5 shrink-3"/>
-        <font-awesome-icon icon="fa-regular fa-clone" transform="up-5 left-5"/>
-      </font-awesome-layers>
+    <!-- MDIV -->
+    <button class="btn btn-action"  :class="{'activeMode': mode === 'mdiv'}"
+      title="select movement" :disabled="!isReady"
+      @click="activateMode('mdiv')">
+      <font-awesome-icon icon="fa-solid fa-sitemap"/>
     </button>
+
+    <div class="automaticTools">
+      <!-- AUTODETECT ON CURRENT PAGE -->
+      <button class="btn btn-action" title="Autodetect measures on current page"
+        :disabled="!isReady"
+        @click="autoDetect">
+        <font-awesome-layers>
+          <font-awesome-icon icon="fa-solid fa-wand-sparkles" transform="flip-h down-5 right-5 shrink-3"/>
+          <font-awesome-icon icon="fa-regular fa-clone" transform="up-5 left-5"/>
+        </font-awesome-layers>
+      </button>
+
+      <!-- AUTODETECT ALL PAGES -->
+      <button class="btn btn-action" title="Autodetect measures throughout document"
+      :disabled="!isReady"
+      @click="autoDetectAll">
+        <font-awesome-layers>
+          <font-awesome-icon icon="fa-solid fa-wand-sparkles" transform="flip-h down-5 right-5 shrink-3"/>
+          <font-awesome-icon icon="fa-regular fa-clone" transform="up-5 left-5"/>
+          <font-awesome-icon icon="fa-regular fa-square" transform="up-7.5 right-6.5 shrink-3"/>
+        </font-awesome-layers>
+      </button>
+    </div>
 
     <div class="pageNav">
       <label>Page</label>
@@ -143,9 +163,17 @@ export default {
     autoDetect: function () {
       this.$store.dispatch('autoDetectZonesOnCurrentPage')
     },
+    autoDetectAll: function () {
+      console.log('this needs to be implemented')
+      // this.$store.dispatch('autoDetectZonesOnCurrentPage')
+    },
     activateMode: function (mode) {
       if (mode in allowedModes) {
-        this.$store.dispatch('setMode', mode)
+        if (mode === allowedModes.additionalZone && mode === this.mode) {
+          this.$store.dispatch('setMode', allowedModes.manualRect)
+        } else {
+          this.$store.dispatch('setMode', mode)
+        }
       } else {
         console.error('mode ' + mode + ' is not known. Please check AppSidebar.vue and @/store/index.js.')
       }
@@ -173,16 +201,20 @@ export default {
     margin: 0 0 .2rem 0;
 
     &.activeMode {
-      background-color: #fda980;
-      box-shadow: 0 .1rem .3rem #0006 inset;
+      background-color: #a6e9fd;
+      box-shadow: 0 0.01rem 0.2rem rgba(0, 0, 0, 0.3) inset;
     }
+  }
+
+  .automaticTools {
+    margin: .5rem 0;
   }
 
   .pageNav {
     background-color: #ffffff;
-    border: $thinBorder;
+    border: 0.05rem solid #000000;
     border-radius: 2px;
-    margin: 0 .4rem .2rem .4rem;
+    margin: 0 .35rem .2rem .35rem;
     // display: none;
     label {
       display: block;

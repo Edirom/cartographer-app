@@ -72,13 +72,13 @@ export default createStore({
       surface.appendChild(zone)
 
       // standard mode -> create new measure for zone
-      if (state.mode === 'manualRect') {
+      if (state.mode === allowedModes.manualRect) {
         const measure = generateMeasure()
         measure.setAttribute('facs', '#' + zone.getAttribute('xml:id'))
         insertMeasure(xmlDoc, measure, state, zone)
 
       // add zone to last existing measure in file
-      } else if (state.mode === 'multiZone' && state.selectedZoneId === null) {
+      } else if (state.mode === allowedModes.additionalZone && state.selectedZoneId === null) {
         addZoneToLastMeasure(xmlDoc, zone.getAttribute('xml:id'))
       }
 
@@ -250,6 +250,13 @@ export default createStore({
         state.xmlDoc = xmlDoc
       }
     },
+    clickMeasureLabel ({ commit }, id) {
+      console.log('clicked measure label')
+      commit('SET_MODAL', 'measureNumberModal')
+    },
+    closeMeasureNumberModal ({ commit }) {
+      commit('SET_MODAL', null)
+    },
     hoverZone ({ commit }, id) {
       commit('HOVER_ZONE', id)
     },
@@ -356,6 +363,9 @@ export default createStore({
       const zone = [...zones].find(zone => zone.getAttribute('xml:id') === state.selectedZoneId)
       const pageUri = state.pages[state.currentPage].uri
       return meiZone2annotorious(state.xmlDoc, zone, pageUri)
+    },
+    modalName: state => {
+      return state.modal
     }
   }
 })

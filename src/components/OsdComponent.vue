@@ -8,6 +8,8 @@ import * as Annotorious from '@recogito/annotorious-openseadragon'
 import '@recogito/annotorious-openseadragon/dist/annotorious.min.css'
 import { uuid } from '@/tools/uuid.js'
 
+import { mode as allowedModes } from '@/store/constants.js'
+
 export default {
   name: 'OsdComponent',
   components: {
@@ -49,13 +51,18 @@ export default {
         label.classList.add('zoneLabel')
         label.textContent = labelContent
 
+        label.addEventListener('dblclick', (e) => {
+          this.$store.dispatch('clickMeasureLabel', zoneId)
+          e.preventDefault()
+          e.stopPropagation()
+        })
+
         overlay.appendChild(label)
         overlay.addEventListener('click', (e) => {
           this.$store.dispatch('clickZone', zoneId)
           e.preventDefault()
           e.stopPropagation()
         })
-
         overlay.addEventListener('dblclick', (e) => {
           this.$store.dispatch('selectZone', zoneId)
           e.preventDefault()
@@ -80,7 +87,8 @@ export default {
       // this.anno.setAnnotations(annots)
     },
     toggleSelection: function (mode) {
-      this.anno.readOnly = mode !== 'manualRect'
+      const activeModes = [allowedModes.manualRect, allowedModes.additionalZone]
+      this.anno.readOnly = activeModes.indexOf(mode) === -1
     }
   },
   mounted: function () {
@@ -117,6 +125,20 @@ export default {
 
     // Load annotations in W3C WebAnnotation format
     // anno.loadAnnotations('annotations.w3c.json');
+
+    const annoLayer = document.querySelector('.a9s-annotationlayer.a9s-osd-annotationlayer')
+    const shiftKeyDown = (e) => {
+      if (e.keyCode === 16) {
+        annoLayer.classList.add('activeSelection')
+      }
+    }
+    const shiftKeyUp = (e) => {
+      if (e.keyCode === 16) {
+        annoLayer.classList.remove('activeSelection')
+      }
+    }
+    document.addEventListener('keydown', shiftKeyDown)
+    document.addEventListener('keyup', shiftKeyUp)
 
     this.anno.on('createSelection', async (selection) => {
       // The user has created a new shape...
@@ -224,6 +246,10 @@ $thickLineColor: #cccccc66; // #ffffff99;
                     linear-gradient(90deg, $thickLineColor 2px, transparent 2px),
                     linear-gradient($thinLineColor 1px, transparent 1px),
                     linear-gradient(90deg, $thinLineColor 1px, transparent 1px);
+
+  .a9s-annotationlayer.a9s-osd-annotationlayer.activeSelection {
+    z-index: 12;
+  }
 
   .zone {
     background-color: rgba(255,255,255,.1);
