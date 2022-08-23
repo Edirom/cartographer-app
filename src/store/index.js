@@ -2,6 +2,8 @@ import { createStore } from 'vuex'
 import { iiifManifest2mei, checkIiifManifest, getPageArray } from '@/tools/iiif.js'
 import { meiZone2annotorious, annotorious2meiZone, measureDetector2meiZone, generateMeasure, insertMeasure, addZoneToLastMeasure, deleteZone } from '@/tools/meiMappings.js'
 
+import { mode as allowedModes } from '@/store/constants.js'
+
 const parser = new DOMParser()
 const serializer = new XMLSerializer()
 
@@ -15,7 +17,7 @@ export default createStore({
     modal: null,
     loading: false,
     processing: false,
-    mode: 'manualRect',
+    mode: allowedModes.selection,
     selectedZoneId: null,
     hoveredZoneId: null,
     currentMdivId: null,
@@ -139,7 +141,9 @@ export default createStore({
       state.xmlDoc = xmlDoc
     },
     SET_MODE (state, mode) {
-      state.mode = mode
+      if (mode in allowedModes) {
+        state.mode = mode
+      }
     }
   },
   actions: {
@@ -239,7 +243,7 @@ export default createStore({
       commit('SELECT_ZONE', id)
     },
     clickZone ({ commit, state }, id) {
-      if (state.mode === 'deleteZone') {
+      if (state.mode === allowedModes.deletion) {
         state.deleteZoneId = id
         const xmlDoc = state.xmlDoc.cloneNode(true)
         deleteZone(xmlDoc, id, state)
