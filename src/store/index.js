@@ -181,11 +181,8 @@ export default createStore({
     },
     CREATE_NEW_MDIV (state) {
       const xmlDoc = state.xmlDoc.cloneNode(true)
-      console.log(1)
       state.currentMdivId = createNewMdiv(xmlDoc, state.currentMdivId)
-      console.log(2)
       moveContentToCurrentMdiv(xmlDoc, state.currentMeasureId, state.currentMdivId)
-      console.log(3)
       state.xmlDoc = xmlDoc
     }
   },
@@ -448,9 +445,9 @@ export default createStore({
         return null
       }
 
-      const mdivs = [...state.xmlDoc.querySelectorAll('mdiv')]
-      const mdiv = mdivs.find(mdiv => mdiv.getAttribute('xml:id') === state.currentMdivId)
-      const measures = [...mdiv.querySelectorAll('measure')]
+      // const mdivs = [...state.xmlDoc.querySelectorAll('mdiv')]
+      // const mdiv = mdivs.find(mdiv => mdiv.getAttribute('xml:id') === state.currentMdivId)
+      const measures = [...state.xmlDoc.querySelectorAll('measure')]
       const measure = measures.find(measure => measure.getAttribute('xml:id') === state.currentMeasureId)
 
       const multiRestElem = measure.querySelector('multiRest')

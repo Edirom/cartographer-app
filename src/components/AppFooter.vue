@@ -4,7 +4,7 @@
     <div class="container gapless oneline">
       <div class="columns">
         <div class="column col-4 text-left">
-          <span @click="showMdivModal">
+          <span @click="showMdivModal" v-if="mdivLabel !== ''">
             <font-awesome-icon icon="fa-solid fa-sitemap" /> {{ mdivLabel }}
           </span>
         </div>
@@ -60,6 +60,9 @@ export default {
     },
     mdivLabel: function () {
       const mdiv = this.$store.getters.currentMdiv
+      if (mdiv === null) {
+        return ''
+      }
       return (mdiv.index + 1) + ': ' + mdiv.label
     }
   },

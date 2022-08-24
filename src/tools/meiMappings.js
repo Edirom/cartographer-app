@@ -500,11 +500,6 @@ export function setMultiRest (measure, val) {
 }
 
 export function moveContentToCurrentMdiv (xmlDoc, firstMeasureId, targetMdivId) {
-  console.log('firstMeasureId: ' + firstMeasureId)
-  console.log('targetMdivId: ' + targetMdivId)
-
-  console.log([...xmlDoc.querySelectorAll('measure')])
-
   const firstMeasure = [...xmlDoc.querySelectorAll('measure')].find(measure => measure.getAttribute('xml:id') === firstMeasureId)
   const precedingSibling = firstMeasure.previousElementSibling
   let firstNode
@@ -527,19 +522,32 @@ export function moveContentToCurrentMdiv (xmlDoc, firstMeasureId, targetMdivId) 
     nextSibling = nextSibling.nextElementSibling
   }
 
-  console.log('need to push the following elements:')
-  console.log(elements)
-
   const mdiv = [...xmlDoc.querySelectorAll('mdiv')].find(mdiv => mdiv.getAttribute('xml:id') === targetMdivId)
 
-  console.log(mdiv)
+  const existingMeasures = [...mdiv.querySelectorAll('measure')]
 
-  // TODO: We need to identify if that position is correct
-  const section = [...mdiv.querySelectorAll('section')].at(-1)
+  if (existingMeasures.length === 0) {
+    // TODO: We need to identify if that position is correct
+    const section = [...mdiv.querySelectorAll('section')].at(-1)
 
-  elements.forEach(element => {
-    section.appendChild(element)
-  })
+    let i = 1
+    elements.forEach(elem => {
+      if (elem.localName === 'measure') {
+        if (elem.hasAttribute('label')) {
+          // we may want to mod labels as well, I think!
+        } else {
+          elem.setAttribute('n', i)
+          i++
+        }
+      }
+    })
+
+    elements.forEach(element => {
+      section.appendChild(element)
+    })
+  } else {
+    // TODO: We need to insert into arbitrary position
+  }
 }
 
 /*
