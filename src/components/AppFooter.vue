@@ -3,6 +3,11 @@
 
     <div class="container gapless oneline">
       <div class="columns">
+        <div class="column col-4 text-left">
+          <span @click="showMdivModal">
+            <font-awesome-icon icon="fa-solid fa-sitemap" /> {{ mdivLabel }}
+          </span>
+        </div>
         <div class="column col-4">
           <span @click="showPrevPage" :disabled="!prevAvailable">
             <font-awesome-icon icon="fa-solid fa-angle-left" />
@@ -12,7 +17,7 @@
             <font-awesome-icon icon="fa-solid fa-angle-right" />
           </span>
         </div>
-        <div class="column col-7">
+        <div class="column col-3">
           zones: {{ zonesCount }}
         </div>
         <div class="column col-1">
@@ -51,14 +56,12 @@ export default {
       return this.$store.getters.currentPageIndexOneBased < this.$store.getters.maxPageNumber
     },
     zonesCount: function () {
-      console.log('this is zones in all page ' + this.$store.getters.totalZones)
-      console.log('this is zones in current page ' + this.$store.getters.zonesOnCurrentPage.length)
-
       return this.$store.getters.zonesOnCurrentPage.length
+    },
+    mdivLabel: function () {
+      const mdiv = this.$store.getters.currentMdiv
+      return (mdiv.index + 1) + ': ' + mdiv.label
     }
-    /* visible: function() {
-      return this.$store.getters.imageSelectionModalVisible
-    } */
   },
   methods: {
     showPrevPage: function () {
@@ -67,6 +70,9 @@ export default {
     },
     showNextPage: function () {
       this.$store.dispatch('setCurrentPage', this.$store.getters.currentPageIndexZeroBased + 1)
+    },
+    showMdivModal: function () {
+      this.$store.dispatch('toggleMdivModal')
     }
     /* showImageSelectionOverlay: function () {
       this.$store.dispatch('showImageSelectionModal')
@@ -86,6 +92,9 @@ export default {
   background-color: $appColor;
   border-top: $thickBorder;
   box-sizing: border-box;
+
+  font-size: .7rem;
+  font-weight: 300;
 
   progress {
     color: $fontColorDark;

@@ -1,6 +1,6 @@
 import { createStore } from 'vuex'
 import { iiifManifest2mei, checkIiifManifest, getPageArray } from '@/tools/iiif.js'
-import { meiZone2annotorious, annotorious2meiZone, measureDetector2meiZone, generateMeasure, insertMeasure, addZoneToLastMeasure, deleteZone, setMultiRest } from '@/tools/meiMappings.js'
+import { meiZone2annotorious, annotorious2meiZone, measureDetector2meiZone, generateMeasure, insertMeasure, addZoneToLastMeasure, deleteZone, setMultiRest, createNewMdiv, moveContentToCurrentMdiv } from '@/tools/meiMappings.js'
 
 import { mode as allowedModes } from '@/store/constants.js'
 
@@ -14,7 +14,8 @@ export default createStore({
     xmlDoc: null,
     pages: [],
     currentPage: -1,
-    modal: null,
+    showMeasureModal: false,
+    showMdivModal: false,
     loading: false,
     processing: false,
     mode: allowedModes.selection,
@@ -30,8 +31,15 @@ export default createStore({
     // TODO isScore: true
   },
   mutations: {
-    SET_MODAL (state, modalName) {
-      state.modal = modalName
+    TOGGLE_MEASURE_MODAL (state) {
+      state.showMeasureModal = !state.showMeasureModal
+    },
+    TOGGLE_MDIV_MODAL (state) {
+      state.showMdivModal = !state.showMdivModal
+    },
+    HIDE_MODALS (state) {
+      state.showMeasureModal = false
+      state.showMdivModal = false
     },
     SET_ANNO (state, anno) {
       state.anno = anno
@@ -159,11 +167,34 @@ export default createStore({
 
         state.xmlDoc = xmlDoc
       }
+    },
+    SET_CURRENT_MDIV_LABEL (state, val) {
+      if (state.currentMdivId !== null && state.xmlDoc !== null) {
+        const xmlDoc = state.xmlDoc.cloneNode(true)
+        const mdivs = [...xmlDoc.querySelectorAll('mdiv')]
+        const mdiv = mdivs.find(mdiv => mdiv.getAttribute('xml:id') === state.currentMdivId)
+
+        mdiv.setAttribute('label', val)
+
+        state.xmlDoc = xmlDoc
+      }
+    },
+    CREATE_NEW_MDIV (state) {
+      const xmlDoc = state.xmlDoc.cloneNode(true)
+      console.log(1)
+      state.currentMdivId = createNewMdiv(xmlDoc, state.currentMdivId)
+      console.log(2)
+      moveContentToCurrentMdiv(xmlDoc, state.currentMeasureId, state.currentMdivId)
+      console.log(3)
+      state.xmlDoc = xmlDoc
     }
   },
   actions: {
-    setModal ({ commit }, modalName) {
-      commit('SET_MODAL', modalName)
+    toggleMeasureModal ({ commit }) {
+      commit('TOGGLE_MEASURE_MODAL')
+    },
+    toggleMdivModal ({ commit }) {
+      commit('TOGGLE_MDIV_MODAL')
     },
     setCurrentPage ({ commit }, i) {
       console.log('setting current page to ' + i)
@@ -252,7 +283,7 @@ export default createStore({
 
       commit('SET_CURRENT_PAGE', 0)
       commit('SET_PROCESSING', false)
-      commit('SET_MODAL', null)
+      commit('HIDE_MODALS')
     },
     selectZone ({ commit }, id) {
       commit('SELECT_ZONE', id)
@@ -268,11 +299,11 @@ export default createStore({
     clickMeasureLabel ({ commit }, zoneId) {
       console.log('clicked measure label')
       commit('SET_CURRENT_MEASURE_ID', zoneId)
-      commit('SET_MODAL', 'measureModal')
+      commit('TOGGLE_MEASURE_MODAL')
     },
     closeMeasureNumberModal ({ commit }) {
       commit('SET_CURRENT_MEASURE_ID', null)
-      commit('SET_MODAL', null)
+      commit('TOGGLE_MEASURE_MODAL')
     },
     hoverZone ({ commit }, id) {
       commit('HOVER_ZONE', id)
@@ -302,6 +333,12 @@ export default createStore({
     },
     setCurrentMeasureMultiRest ({ commit }, val) {
       commit('SET_CURRENT_MEASURE_MULTI_REST', val)
+    },
+    setCurrentMdivLabel ({ commit }, val) {
+      commit('SET_CURRENT_MDIV_LABEL', val)
+    },
+    createNewMdiv ({ commit }) {
+      commit('CREATE_NEW_MDIV')
     }
   },
   getters: {
@@ -446,8 +483,11 @@ export default createStore({
       const pageUri = state.pages[state.currentPage].uri
       return meiZone2annotorious(state.xmlDoc, zone, pageUri)
     },
-    modalName: state => {
-      return state.modal
+    showMeasureModal: state => {
+      return state.showMeasureModal
+    },
+    showMdivModal: state => {
+      return state.showMdivModal
     }
   }
 })

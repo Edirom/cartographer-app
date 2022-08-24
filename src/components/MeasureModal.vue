@@ -119,12 +119,15 @@ export default {
   methods: {
     selectMdiv: function (id) {
       console.log('selected ' + id)
+      this.$store.dispatch('toggleMdivModal')
     },
     createNewMdiv: function () {
       console.log('create new mdiv')
+      this.$store.dispatch('createNewMdiv')
+      this.$store.dispatch('toggleMdivModal')
     },
     closeModal: function () {
-      this.$store.dispatch('setModal', null)
+      this.$store.dispatch('toggleMeasureModal')
     }
   }
 }

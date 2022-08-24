@@ -1,7 +1,8 @@
 <template>
   <div id="app">
     <ImageSelectionModal/>
-    <MeasureModal v-if="modalName === 'measureModal'"/>
+    <MeasureModal v-if="showMeasureModal"/>
+    <MdivModal v-if="showMdivModal"/>
     <AppHeader/>
     <OsdComponent/>
     <AppSidebar/>
@@ -16,6 +17,7 @@ import AppFooter from '@/components/AppFooter.vue'
 import OsdComponent from '@/components/OsdComponent.vue'
 import ImageSelectionModal from '@/components/ImageSelectionModal.vue'
 import MeasureModal from '@/components/MeasureModal.vue'
+import MdivModal from '@/components/MdivModal.vue'
 
 export default {
   name: 'App',
@@ -25,11 +27,15 @@ export default {
     AppFooter,
     OsdComponent,
     ImageSelectionModal,
-    MeasureModal
+    MeasureModal,
+    MdivModal
   },
   computed: {
-    modalName: function () {
-      return this.$store.getters.modalName
+    showMeasureModal: function () {
+      return this.$store.getters.showMeasureModal
+    },
+    showMdivModal: function () {
+      return this.$store.getters.showMdivModal
     }
   }
 }

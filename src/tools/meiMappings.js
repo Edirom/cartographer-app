@@ -409,7 +409,7 @@ function getLastMeasure (xmlDoc) {
   return measure
 }
 
-function createNewMdiv (xmlDoc) {
+export function createNewMdiv (xmlDoc, afterMdivId) {
   const body = xmlDoc.querySelector('body')
   const mdivArray = xmlDoc.querySelectorAll('mdiv')
 
@@ -424,7 +424,15 @@ function createNewMdiv (xmlDoc) {
   score.appendChild(section)
   mdiv.appendChild(score)
 
-  body.appendChild(mdiv)
+  if (afterMdivId === undefined) {
+    body.appendChild(mdiv)
+  } else {
+    const precedingMdiv = [...mdivArray].find(mdiv => mdiv.getAttribute('xml:id') === afterMdivId)
+    if (precedingMdiv !== undefined) {
+      precedingMdiv.after(mdiv)
+    }
+  }
+
   return mdivId
 }
 
@@ -489,6 +497,49 @@ export function setMultiRest (measure, val) {
       // no existing multiRest, and no multiRest is wanted -> do nothing
     }
   }
+}
+
+export function moveContentToCurrentMdiv (xmlDoc, firstMeasureId, targetMdivId) {
+  console.log('firstMeasureId: ' + firstMeasureId)
+  console.log('targetMdivId: ' + targetMdivId)
+
+  console.log([...xmlDoc.querySelectorAll('measure')])
+
+  const firstMeasure = [...xmlDoc.querySelectorAll('measure')].find(measure => measure.getAttribute('xml:id') === firstMeasureId)
+  const precedingSibling = firstMeasure.previousElementSibling
+  let firstNode
+
+  if (precedingSibling === null) {
+    firstNode = firstMeasure
+  } else if (precedingSibling.localName === 'pb') {
+    firstNode = precedingSibling
+  } else if (precedingSibling.localName === 'sb') {
+    firstNode = precedingSibling
+  } else {
+    firstNode = firstMeasure
+  }
+
+  const elements = [firstNode]
+  let nextSibling = firstNode.nextElementSibling
+
+  while (nextSibling) {
+    elements.push(nextSibling)
+    nextSibling = nextSibling.nextElementSibling
+  }
+
+  console.log('need to push the following elements:')
+  console.log(elements)
+
+  const mdiv = [...xmlDoc.querySelectorAll('mdiv')].find(mdiv => mdiv.getAttribute('xml:id') === targetMdivId)
+
+  console.log(mdiv)
+
+  // TODO: We need to identify if that position is correct
+  const section = [...mdiv.querySelectorAll('section')].at(-1)
+
+  elements.forEach(element => {
+    section.appendChild(element)
+  })
 }
 
 /*
