@@ -1,6 +1,6 @@
 import { createStore } from 'vuex'
 import { iiifManifest2mei, checkIiifManifest, getPageArray } from '@/tools/iiif.js'
-import { meiZone2annotorious, annotorious2meiZone, measureDetector2meiZone, generateMeasure, insertMeasure, addZoneToLastMeasure, deleteZone } from '@/tools/meiMappings.js'
+import { meiZone2annotorious, annotorious2meiZone, measureDetector2meiZone, generateMeasure, insertMeasure, addZoneToLastMeasure, deleteZone, setMultiRest } from '@/tools/meiMappings.js'
 
 import { mode as allowedModes } from '@/store/constants.js'
 
@@ -104,37 +104,13 @@ export default createStore({
     },
     UPDATE_ZONE_FROM_ANNOTORIOUS (state, annot) {
       const xmlDoc = state.xmlDoc.cloneNode(true)
-      // console.log('update', annot)
-      // create new zone from the annot, then transfer its position to the old one
       const newZone = annotorious2meiZone(annot)
-
-      // const query = '[*|id=' + newZone.getAttribute('xml:id') + ']'
-      // const existingZone = xmlDoc.querySelector(query)
 
       const pageIndex = state.currentPage + 1
       const surface = xmlDoc.querySelector('surface:nth-child(' + pageIndex + ')')
       const zones = surface.querySelectorAll('zone')
       const existingZone = [...zones].find(zone => zone.getAttribute('xml:id') === newZone.getAttribute('xml:id'))
 
-      // TODO: why is this?
-      /*
-      const query1 = '[*|id="' + newZone.getAttribute('xml:id') + '"]'
-      const query2 = '[*|id="mercatorApp"]'
-      const query3 = 'zone'
-
-      const temp1 = xmlDoc.querySelector(query1)
-      const temp2 = xmlDoc.querySelector(query2)
-      const temp3 = xmlDoc.querySelector(query3)
-
-      console.log('query1: ' + query1)
-      console.log(temp1)
-      console.log('query2: ' + query2)
-      console.log(temp2)
-      console.log('query3: ' + query3)
-      console.log(temp3)
-      console.log('complicated retrieval:')
-      console.log(existingZone)
-      */
       existingZone.setAttribute('ulx', newZone.getAttribute('ulx'))
       existingZone.setAttribute('uly', newZone.getAttribute('uly'))
       existingZone.setAttribute('lrx', newZone.getAttribute('lrx'))
@@ -148,8 +124,41 @@ export default createStore({
       }
     },
     SET_CURRENT_MEASURE_ID (state, zoneId) {
-      const measure = state.xmlDoc.querySelector('measure[facs~="#' + zoneId + '"]')
-      state.currentMeasureId = measure.getAttribute('xml:id')
+      if (zoneId === null) {
+        state.currentMeasureId = null
+      } else {
+        const measure = state.xmlDoc.querySelector('measure[facs~="#' + zoneId + '"]')
+        state.currentMeasureId = measure.getAttribute('xml:id')
+      }
+    },
+    SET_CURRENT_MEASURE_LABEL (state, val) {
+      if (state.currentMeasureId !== null) {
+        const xmlDoc = state.xmlDoc.cloneNode(true)
+        const mdivs = [...xmlDoc.querySelectorAll('mdiv')]
+        const mdiv = mdivs.find(mdiv => mdiv.getAttribute('xml:id') === state.currentMdivId)
+        const measures = [...mdiv.querySelectorAll('measure')]
+        const measure = measures.find(measure => measure.getAttribute('xml:id') === state.currentMeasureId)
+
+        if (val === null) {
+          measure.removeAttribute('label')
+        } else {
+          measure.setAttribute('label', val)
+        }
+        state.xmlDoc = xmlDoc
+      }
+    },
+    SET_CURRENT_MEASURE_MULTI_REST (state, val) {
+      if (state.currentMeasureId !== null) {
+        const xmlDoc = state.xmlDoc.cloneNode(true)
+        const mdivs = [...xmlDoc.querySelectorAll('mdiv')]
+        const mdiv = mdivs.find(mdiv => mdiv.getAttribute('xml:id') === state.currentMdivId)
+        const measures = [...mdiv.querySelectorAll('measure')]
+        const measure = measures.find(measure => measure.getAttribute('xml:id') === state.currentMeasureId)
+
+        setMultiRest(measure, val)
+
+        state.xmlDoc = xmlDoc
+      }
     }
   },
   actions: {
@@ -287,6 +296,12 @@ export default createStore({
     },
     setMode ({ commit }, mode) {
       commit('SET_MODE', mode)
+    },
+    setCurrentMeasureLabel ({ commit }, val) {
+      commit('SET_CURRENT_MEASURE_LABEL', val)
+    },
+    setCurrentMeasureMultiRest ({ commit }, val) {
+      commit('SET_CURRENT_MEASURE_MULTI_REST', val)
     }
   },
   getters: {

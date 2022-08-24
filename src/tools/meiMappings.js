@@ -450,6 +450,47 @@ export function deleteZone (xmlDoc, id, state) {
   // const type = 'decreament'
 }
 
+export function setMultiRest (measure, val) {
+  const existingMultiRests = measure.querySelectorAll('multiRest')
+  // there are already multiRests
+  if (existingMultiRests.length > 0) {
+    // a new value for multiRest shall be written
+    if (val !== null) {
+      console.log('case 1')
+      existingMultiRests.forEach(mr => {
+        mr.setAttribute('num', val)
+      })
+    } else { // multiRest is supposed to be deleted
+      const layerContent = measure.querySelectorAll('layer *')
+      const otherContent = [...layerContent].find(elem => elem.localName !== 'multiRest')
+      if (otherContent !== undefined) { // remove multiRests only
+        console.log('case 2a')
+        existingMultiRests.forEach(mr => mr.remove())
+      } else { // remove whole tree
+        console.log('case 2b')
+        measure.querySelectorAll('staff').forEach(staff => staff.remove())
+      }
+    }
+  } else { // no prior multiRests available
+    if (val !== null) { // insert new multiRest to measure
+      console.log('case 3')
+      const staff = document.createElementNS('http://www.music-encoding.org/ns/mei', 'staff')
+      staff.setAttribute('n', 1)
+      const layer = document.createElementNS('http://www.music-encoding.org/ns/mei', 'layer')
+
+      const multiRest = document.createElementNS('http://www.music-encoding.org/ns/mei', 'multiRest')
+      multiRest.setAttribute('num', val)
+
+      staff.append(layer)
+      layer.append(multiRest)
+      measure.append(staff)
+    } else {
+      console.log('case 4')
+      // no existing multiRest, and no multiRest is wanted -> do nothing
+    }
+  }
+}
+
 /*
 {
   "type": "Annotation",

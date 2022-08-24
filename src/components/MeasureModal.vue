@@ -5,7 +5,7 @@
     <div class="modal-container">
       <div class="modal-header">
         <a href="#close" class="btn btn-clear float-right" aria-label="Close" @click="closeModal"></a>
-        <div class="modal-title h5" :title="measure.id">Measure {{ measure.n }}</div>
+        <div class="modal-title h5" :title="measure.id">Measure {{ (measure.label !== null) ? measure.label + ' (@n="' + measure.n + '")' : measure.n }}</div>
       </div>
       <div class="modal-body">
         <div class="content">
@@ -18,12 +18,11 @@
 
           <div class="form-group customFormGroup">
             <label class="form-switch">
-              <input type="checkbox" v-if="measure.label !== null" checked>
-              <input type="checkbox" v-else>
+              <input type="checkbox" v-model="measureLabelActivated">
               <i class="form-icon customIcon"></i> <span class="customLabel">Explicit @label:</span>
             </label>
             <label class="form-text modalInput">
-              <input type="text" v-if="measure.label !== null" :value="measure.label">
+              <input type="text" v-if="measure.label !== null" v-model="measureLabelValue">
               <input type="text" v-else :value="measure.n" disabled>
               <i class="form-icon"></i>
             </label>
@@ -31,12 +30,11 @@
 
           <div class="form-group customFormGroup">
             <label class="form-switch">
-              <input type="checkbox" v-if="measure.multiRest !== null" checked>
-              <input type="checkbox" v-else>
+              <input type="checkbox" v-model="multiRestActivated">
               <i class="form-icon customIcon"></i> <span class="customLabel">Multiple measure rest:</span>
             </label>
             <label class="form-number modalInput">
-              <input type="number" v-if="measure.multiRest !== null" :value="measure.multiRest" disabled="disabled">
+              <input type="number" v-if="measure.multiRest !== null"  v-model="multiRestValue">
               <input type="number" v-else placeholder="1" disabled="disabled">
               <i class="form-icon"></i>
             </label>
@@ -69,20 +67,53 @@ export default {
     measure: function () {
       return this.$store.getters.currentMeasure
     },
-    visible: {
+    /* visible: {
       get () {
         return this.$store.getters.imageSelectionModalVisible
       }
-    },
-    url: {
-
+    }, */
+    measureLabelActivated: {
       get () {
-        return this.$store.getters.message
+        return this.measure.label !== null
+      },
+      set (bool) {
+        if (bool) {
+          this.$store.dispatch('setCurrentMeasureLabel', this.measure.n)
+        } else {
+          this.$store.dispatch('setCurrentMeasureLabel', null)
+        }
+      }
+    },
+    measureLabelValue: {
+      get () {
+        return this.measure.label
       },
       set (val) {
-        this.$store.dispatch('changeMessage', val)
+        this.$store.dispatch('setCurrentMeasureLabel', val)
       }
-
+    },
+    multiRestActivated: {
+      get () {
+        return this.measure.multiRest !== null
+      },
+      set (bool) {
+        if (bool) {
+          console.log('setCurrentMeasureMultiRest', 1)
+          this.$store.dispatch('setCurrentMeasureMultiRest', 1)
+        } else {
+          console.log('setCurrentMeasureMultiRest', null)
+          this.$store.dispatch('setCurrentMeasureMultiRest', null)
+        }
+      }
+    },
+    multiRestValue: {
+      get () {
+        return this.measure.multiRest
+      },
+      set (val) {
+        console.log('setCurrentMeasureMultiRest', val)
+        this.$store.dispatch('setCurrentMeasureMultiRest', val)
+      }
     }
   },
   methods: {
