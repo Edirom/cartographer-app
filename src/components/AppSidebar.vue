@@ -20,18 +20,18 @@
     </button> -->
 
     <!-- SPLIT HORIZONTALLY -->
-    <button class="btn btn-action"  :class="{'activeMode': mode === 'splitHorizontal'}"
+    <!-- button class="btn btn-action"  :class="{'activeMode': mode === 'splitHorizontal'}"
       title="split measure horizontally" :disabled="!isReady"
       @click="activateMode('splitHorizontal')">
       <font-awesome-icon icon="fa-solid fa-scissors"/>
-    </button>
+    </button> -->
 
     <!-- SPLIT VERTICALLY -->
-    <button class="btn btn-action"  :class="{'activeMode': mode === 'splitVertical'}"
+    <!-- <button class="btn btn-action"  :class="{'activeMode': mode === 'splitVertical'}"
       title="split measure vertically" :disabled="!isReady"
       @click="activateMode('splitVertical')">
       <font-awesome-icon icon="fa-solid fa-scissors" rotation="270"/>
-    </button>
+    </button> -->
 
     <!-- ADDITIONAL ZONE PER MEASURE -->
     <button class="btn btn-action"  :class="{'activeMode': mode === 'additionalZone'}"
@@ -53,11 +53,11 @@
     </button>
 
     <!-- MDIV -->
-    <button class="btn btn-action"  :class="{'activeMode': mode === 'mdiv'}"
+    <!-- <button class="btn btn-action"  :class="{'activeMode': mode === 'mdiv'}"
       title="select movement" :disabled="!isReady"
       @click="activateMode('mdiv')">
       <font-awesome-icon icon="fa-solid fa-sitemap"/>
-    </button>
+    </button> -->
 
     <div class="automaticTools">
       <!-- AUTODETECT ON CURRENT PAGE -->
@@ -71,7 +71,7 @@
       </button>
 
       <!-- AUTODETECT ALL PAGES -->
-      <button class="btn btn-action" title="Autodetect measures throughout document"
+      <!-- <button class="btn btn-action" title="Autodetect measures throughout document"
       :disabled="!isReady"
       @click="autoDetectAll">
         <font-awesome-layers>
@@ -79,7 +79,8 @@
           <font-awesome-icon icon="fa-regular fa-clone" transform="up-5 left-5"/>
           <font-awesome-icon icon="fa-regular fa-square" transform="up-7.5 right-6.5 shrink-3"/>
         </font-awesome-layers>
-      </button>
+      </button> -->
+
     </div>
 
     <div class="pageNav">

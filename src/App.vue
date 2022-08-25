@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <ImageSelectionModal/>
+    <!--<ImageSelectionModal/>-->
     <MeasureModal v-if="showMeasureModal"/>
     <MdivModal v-if="showMdivModal"/>
     <AppHeader/>
@@ -15,7 +15,7 @@ import AppHeader from '@/components/AppHeader.vue'
 import AppSidebar from '@/components/AppSidebar.vue'
 import AppFooter from '@/components/AppFooter.vue'
 import OsdComponent from '@/components/OsdComponent.vue'
-import ImageSelectionModal from '@/components/ImageSelectionModal.vue'
+// import ImageSelectionModal from '@/components/ImageSelectionModal.vue'
 import MeasureModal from '@/components/MeasureModal.vue'
 import MdivModal from '@/components/MdivModal.vue'
 
@@ -26,7 +26,7 @@ export default {
     AppSidebar,
     AppFooter,
     OsdComponent,
-    ImageSelectionModal,
+    // ImageSelectionModal,
     MeasureModal,
     MdivModal
   },
