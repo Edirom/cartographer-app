@@ -85,7 +85,7 @@ export default createStore({
       if (state.mode === allowedModes.manualRect) {
         const measure = generateMeasure()
         measure.setAttribute('facs', '#' + zone.getAttribute('xml:id'))
-        insertMeasure(xmlDoc, measure, state, zone)
+        insertMeasure(xmlDoc, measure, state, zone, state.currentPage)
 
       // add zone to last existing measure in file
       } else if (state.mode === allowedModes.additionalZone && state.selectedZoneId === null) {
@@ -95,9 +95,9 @@ export default createStore({
       state.xmlDoc = xmlDoc
       console.log(state.xmlDoc)
     },
-    CREATE_ZONES_FROM_MEASURE_DETECTOR_ON_CURRENT_PAGE (state, rects) {
+    CREATE_ZONES_FROM_MEASURE_DETECTOR_ON_PAGE (state, { rects, pageIndex }) {
       const xmlDoc = state.xmlDoc.cloneNode(true)
-      const index = state.currentPage + 1
+      const index = pageIndex + 1 // pageIndex is expected to be zero-based
       const surface = xmlDoc.querySelector('surface:nth-child(' + index + ')')
 
       rects.forEach(rect => {
@@ -105,7 +105,7 @@ export default createStore({
         surface.appendChild(zone)
         const measure = generateMeasure()
         measure.setAttribute('facs', '#' + zone.getAttribute('xml:id'))
-        insertMeasure(xmlDoc, measure, state, zone)
+        insertMeasure(xmlDoc, measure, state, zone, pageIndex)
       })
 
       state.xmlDoc = xmlDoc
@@ -239,7 +239,8 @@ export default createStore({
         })
     },
     async autoDetectZonesOnCurrentPage ({ commit, state }) {
-      const imageUri = state.pages[state.currentPage].uri + '/full/full/0/default.jpg'
+      const pageIndex = state.currentPage
+      const imageUri = state.pages[pageIndex].uri + '/full/full/0/default.jpg'
       const blob = await fetch(imageUri).then(r => r.blob())
 
       const successFunc = (json) => {
@@ -250,7 +251,7 @@ export default createStore({
         // do some sorting here, if necessary
         // then call measure generation
         console.log('this is from autodetect thing')
-        commit('CREATE_ZONES_FROM_MEASURE_DETECTOR_ON_CURRENT_PAGE', json.measures)
+        commit('CREATE_ZONES_FROM_MEASURE_DETECTOR_ON_PAGE', { rects: json.measures, pageIndex })
       }
 
       const errorFunc = (err) => {

@@ -1,4 +1,5 @@
 import { uuid } from '@/tools/uuid.js'
+
 export function meiZone2annotorious (mei, zoneInput, pageUri) {
   const zone = (typeof zoneInput === 'string') ? mei.querySelector('[*|id=' + zoneInput + ']') : zoneInput
   const zoneId = zone.getAttribute('xml:id')
@@ -142,7 +143,7 @@ function incrementMeasureNum (num) {
   return parseInt(num) + 1
 }
 
-export function insertMeasure (xmlDoc, measure, state, currentZone) {
+export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex) {
   console.log('current zone is ' + currentZone)
   // 1. lets have current page refernce
   // 2. Retrieve all the existing zones from that pages
@@ -151,10 +152,10 @@ export function insertMeasure (xmlDoc, measure, state, currentZone) {
   // const currentPage = parseInt(state.currentPage) + 1
   // console.log(currentPage + ' is the current page')
 
-  const currentPage = state.currentPage
+  // const currentPage = state.currentPage
   console.log('current zone is ' + currentZone)
 
-  const surface = xmlDoc.querySelectorAll('surface')[currentPage]
+  const surface = xmlDoc.querySelectorAll('surface')[pageIndex]
   const zones = [...surface.querySelectorAll('zone')]
 
   // surfaces.forEach(surface => {
@@ -362,7 +363,7 @@ export function insertMeasure (xmlDoc, measure, state, currentZone) {
 
   //  Increament the next measures by one
   const type = 'increment'
-  updateNextMeasures(currentPage, type, xmlDoc)
+  updateNextMeasures(pageIndex, type, xmlDoc)
 }
 function updateNextMeasures (currentPage, type, xmlDoc, zone, measure) {
   const surfaces = [...xmlDoc.querySelectorAll('surface')]
@@ -397,6 +398,7 @@ function updateNextMeasures (currentPage, type, xmlDoc, zone, measure) {
   //   })
   // }
 }
+
 export function addZoneToLastMeasure (xmlDoc, zoneId) {
   const measure = getLastMeasure(xmlDoc)
   const oldFacs = measure.hasAttribute('facs') ? measure.getAttribute('facs') + ' ' : ''
