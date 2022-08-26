@@ -139,8 +139,8 @@ export function generateMeasure () {
 }
 
 // TODO: this needs to be more clever
-function incrementMeasureNum (num) {
-  return parseInt(num) + 1
+function incrementMeasureNum (num, diff) {
+  return parseInt(num) + diff
 }
 
 export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex) {
@@ -297,7 +297,7 @@ export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex) {
             surface.append(newZone)
             const precedingMeasure = getMeasuresFromZone(xmlDoc, precedingZone)[0]
 
-            newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n')))
+            newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), 1))
             precedingMeasure.after(newMeasure)
 
             // create pb, insert after preceding measure
@@ -308,10 +308,6 @@ export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex) {
           } else {
             // this is the first zone for the whole document
             console.log('adding first measure to document')
-
-            console.log('\n\n-----------')
-            console.log('relativeTo: ', relativeTo)
-            console.log('relativeWhere: ', relativeWhere)
 
             if (relativeWhere === 'before' && relativeTo !== null) {
               newMeasure.setAttribute('n', 1)
@@ -347,7 +343,7 @@ export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex) {
           const precedingZoneId = lastGroup[0].id
           const precedingMeasure = targetMdiv.querySelector('measure[facs~="#' + precedingZoneId + '"]')
 
-          newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n')))
+          newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), 1))
           precedingMeasure.after(newMeasure)
 
           // create sb, insert after preceding measure
@@ -364,7 +360,7 @@ export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex) {
         const precedingZoneId = above[newIndex - 1].id
         const precedingMeasure = targetMdiv.querySelector('measure[facs~="#' + precedingZoneId + '"]')
 
-        newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n')))
+        newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), 1))
         precedingMeasure.after(newMeasure)
       }
 
@@ -386,18 +382,18 @@ export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex) {
 
   insertIntoRightSystem(xmlDoc, surface, mdiv, currentZone, measure, allZones, pageHeight, thresholdDistance, [], [])
 
-  const followingMeasures = getFollowingMeasuresByMeasure(xmlDoc, measure)
+  const followingMeasures = getFollowingMeasuresByMeasure(measure)
   // keep track of all measures that have been incremented already, i.e. avoid to increment measures with multiple zones more than once
 
   followingMeasures.forEach(measure => {
-    measure.setAttribute('n', incrementMeasureNum(measure.getAttribute('n')))
+    measure.setAttribute('n', incrementMeasureNum(measure.getAttribute('n'), 1))
   })
   /* const measuresAlreadyIncremented = []
   zonesToIncrement.forEach(zoneId => {
     mdiv.querySelectorAll('measure[facs~="#' + zoneId + '"]').forEach(measure => {
       const measureId = measure.getAttribute('xml:id')
       if (measuresAlreadyIncremented.indexOf(measureId) === -1) {
-        measure.setAttribute('n', incrementMeasureNum(measure.getAttribute('n')))
+        measure.setAttribute('n', incrementMeasureNum(measure.getAttribute('n'), 1))
         measuresAlreadyIncremented.push(measureId)
       }
     })
@@ -409,7 +405,7 @@ export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex) {
   // updateNextMeasures(pageIndex, type, xmlDoc)
 }
 
-export function getFollowingMeasuresByMeasure (xmlDoc, measure) {
+export function getFollowingMeasuresByMeasure (measure) {
   const arr = []
 
   // recursively get next element of a given name
@@ -456,7 +452,7 @@ export function getFollowingMeasuresByMeasure (xmlDoc, measure) {
 
 function updateNextMeasures (currentPage, type, xmlDoc, zone, measure) {
   // try something:
-  const followingMeasures = getFollowingMeasuresByMeasure(xmlDoc, measure)
+  const followingMeasures = getFollowingMeasuresByMeasure(measure)
   console.log('followingMeasures:')
   console.log(followingMeasures)
 
@@ -579,8 +575,10 @@ export function deleteZone (xmlDoc, id, state) {
 
 export function setMultiRest (measure, val) {
   const existingMultiRests = measure.querySelectorAll('multiRest')
+  let oldVal = 1
   // there are already multiRests
   if (existingMultiRests.length > 0) {
+    oldVal = parseInt(existingMultiRests[0].getAttribute('num'))
     // a new value for multiRest shall be written
     if (val !== null) {
       console.log('case 1')
@@ -615,6 +613,14 @@ export function setMultiRest (measure, val) {
       console.log('case 4')
       // no existing multiRest, and no multiRest is wanted -> do nothing
     }
+  }
+  const diff = ((val !== null) ? val : 1) - oldVal
+  const followingMeasures = getFollowingMeasuresByMeasure(measure)
+
+  if (diff !== 0) {
+    followingMeasures.forEach(measure => {
+      measure.setAttribute('n', incrementMeasureNum(measure.getAttribute('n'), diff))
+    })
   }
 }
 
