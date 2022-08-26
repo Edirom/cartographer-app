@@ -144,16 +144,52 @@ function incrementMeasureNum (num) {
 }
 
 export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex) {
-  console.log('current zone is ' + currentZone)
-  // 1. lets have current page refernce
-  // 2. Retrieve all the existing zones from that pages
-  // 3. Compare the comparision based on the zonesOnCurrentPage
-  // 4. Get the position to insert the current zone
-  // const currentPage = parseInt(state.currentPage) + 1
-  // console.log(currentPage + ' is the current page')
+  const surfaceIDs = []
+  xmlDoc.querySelectorAll('surface').forEach(surface => {
+    surfaceIDs.push(surface.getAttribute('xml:id'))
+  })
 
-  // const currentPage = state.currentPage
-  console.log('current zone is ' + currentZone)
+  const pbs = []
+  pbs.length = surfaceIDs.length
+  xmlDoc.querySelectorAll('pb').forEach(pb => {
+    const surfaceID = pb.getAttribute('facs').substring(1)
+    const index = surfaceIDs.indexOf(surfaceID)
+    pbs[index] = pb
+  })
+  const pb = pbs[pageIndex]
+  let relativeTo
+  let relativeWhere
+
+  const pbAlreadyStarted = pb !== undefined
+  console.log('pb started: ' + pbAlreadyStarted)
+
+  if (pbAlreadyStarted) {
+    // insert relative to that page
+    relativeTo = pb
+    relativeWhere = 'within'
+  } else {
+    let nextPb
+    let nextIndex = pageIndex + 1
+
+    while (pbs[nextIndex] === undefined && nextIndex < pbs.length) {
+      nextIndex++
+    }
+    if (pbs[nextIndex] !== undefined) {
+      nextPb = pbs[nextIndex]
+    }
+
+    if (nextPb === undefined) {
+      // insert at the end of last mdiv
+      relativeTo = null
+      relativeWhere = 'end'
+    } else {
+      // insert prior to nextPb
+      relativeTo = nextPb
+      relativeWhere = 'before'
+    }
+  }
+
+  console.log('need to insert ' + relativeWhere, relativeTo)
 
   const surface = xmlDoc.querySelectorAll('surface')[pageIndex]
   const zones = [...surface.querySelectorAll('zone')]
@@ -172,6 +208,8 @@ export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex) {
     const mdivId = createNewMdiv(xmlDoc)
     state.currentMdivId = mdivId
   }
+
+  // TODO: better identification of mdiv allocation, probably try to get closest preceding mdiv
   const mdiv = [...xmlDoc.querySelectorAll('mdiv')].find(mdiv => mdiv.getAttribute('xml:id') === state.currentMdivId)
 
   // Determine position of new zone on page
@@ -217,7 +255,7 @@ export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex) {
   const insertIntoRightSystem = (xmlDoc, surface, targetMdiv, newZone, newMeasure, zones, pageHeight, thresholdDistance, zonesToIncrement, lastGroup) => {
     const currentTop = zones[0].top
     const currentThreshold = currentTop + thresholdDistance
-    console.log('looking for measures above ' + currentThreshold)
+    // console.log('looking for measures above ' + currentThreshold)
 
     const above = []
     const below = []
@@ -229,9 +267,6 @@ export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex) {
         below.push(zone)
       }
     })
-
-    console.log('above', above)
-    console.log('below', below)
 
     const newIsAbove = above.findIndex(zone => zone.new) !== -1
 
@@ -251,28 +286,16 @@ export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex) {
         if (lastGroup.length === 0) {
           // must be the first measure on new page, so introduce new <pb/>
 
-          // get preceding page that has zones
-          let precedingZone = null
-          let previousPage = surface.previousElementSibling
-
-          while (previousPage !== null && precedingZone === null) {
-            const zones = [...previousPage.querySelectorAll('zone')]
-            if (zones.length > 0) {
-              precedingZone = zones.at(-1)
-              previousPage = null
-            } else {
-              previousPage = previousPage.previousElementSibling
-            }
-          }
+          const precedingZone = getPrecedingZone(xmlDoc, surface)
+          console.log('precedingZone')
+          console.log(precedingZone)
 
           if (precedingZone !== null) {
             // there are zones that can be continued
             console.log('adding first measure to new page')
 
             surface.append(newZone)
-
-            const precedingZoneId = precedingZone.getAttribute('xml:id')
-            const precedingMeasure = targetMdiv.querySelector('measure[facs~="#' + precedingZoneId + '"]')
+            const precedingMeasure = getMeasuresFromZone(xmlDoc, precedingZone)[0]
 
             newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n')))
             precedingMeasure.after(newMeasure)
@@ -280,19 +303,34 @@ export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex) {
             // create pb, insert after preceding measure
             const pb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'pb')
             pb.setAttribute('facs', '#' + surface.getAttribute('xml:id'))
+            pb.setAttribute('n', surface.getAttribute('n'))
             precedingMeasure.after(pb)
           } else {
             // this is the first zone for the whole document
             console.log('adding first measure to document')
 
-            const section = targetMdiv.querySelector('section')
+            console.log('\n\n-----------')
+            console.log('relativeTo: ', relativeTo)
+            console.log('relativeWhere: ', relativeWhere)
 
-            surface.append(newZone)
-            newMeasure.setAttribute('n', 1)
-            const pb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'pb')
-            pb.setAttribute('facs', '#' + surface.getAttribute('xml:id'))
-            section.append(pb)
-            section.append(newMeasure)
+            if (relativeWhere === 'before' && relativeTo !== null) {
+              newMeasure.setAttribute('n', 1)
+              const pb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'pb')
+              pb.setAttribute('facs', '#' + surface.getAttribute('xml:id'))
+              pb.setAttribute('n', surface.getAttribute('n'))
+              relativeTo.before(pb)
+              relativeTo.before(newMeasure)
+            } else {
+              const section = targetMdiv.querySelector('section')
+
+              surface.append(newZone)
+              newMeasure.setAttribute('n', 1)
+              const pb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'pb')
+              pb.setAttribute('facs', '#' + surface.getAttribute('xml:id'))
+              pb.setAttribute('n', surface.getAttribute('n'))
+              section.append(pb)
+              section.append(newMeasure)
+            }
           }
         } else {
           // must be the first measure in new system, so introduce new <sb/> and get last measure from previous system
@@ -346,11 +384,15 @@ export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex) {
     }
   }
 
-  const zonesToIncrement = insertIntoRightSystem(xmlDoc, surface, mdiv, currentZone, measure, allZones, pageHeight, thresholdDistance, [], [])
-  console.log('zonesToIncrement:')
-  console.log(zonesToIncrement)
+  insertIntoRightSystem(xmlDoc, surface, mdiv, currentZone, measure, allZones, pageHeight, thresholdDistance, [], [])
+
+  const followingMeasures = getFollowingMeasuresByMeasure(xmlDoc, measure)
   // keep track of all measures that have been incremented already, i.e. avoid to increment measures with multiple zones more than once
-  const measuresAlreadyIncremented = []
+
+  followingMeasures.forEach(measure => {
+    measure.setAttribute('n', incrementMeasureNum(measure.getAttribute('n')))
+  })
+  /* const measuresAlreadyIncremented = []
   zonesToIncrement.forEach(zoneId => {
     mdiv.querySelectorAll('measure[facs~="#' + zoneId + '"]').forEach(measure => {
       const measureId = measure.getAttribute('xml:id')
@@ -360,12 +402,64 @@ export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex) {
       }
     })
   })
+  */
 
   //  Increament the next measures by one
-  const type = 'increment'
-  updateNextMeasures(pageIndex, type, xmlDoc)
+  // const type = 'increment'
+  // updateNextMeasures(pageIndex, type, xmlDoc)
 }
+
+export function getFollowingMeasuresByMeasure (xmlDoc, measure) {
+  const arr = []
+
+  // recursively get next element of a given name
+  const getFollowingByName = (elem, name) => {
+    const next = elem.nextElementSibling
+
+    if (next === null) {
+      if (name === 'measure') {
+        const nextSection = getNextSection(elem)
+        if (nextSection !== null) {
+          const firstMeasure = nextSection.querySelector(name)
+          if (firstMeasure !== null) {
+            arr.push(firstMeasure)
+            getFollowingByName(firstMeasure, name)
+          }
+        }
+      }
+    } else if (next.localName === name) {
+      arr.push(next)
+      getFollowingByName(next, name)
+    } else {
+      const nestedElems = next.querySelectorAll(name)
+      nestedElems.forEach(nestedElem => {
+        arr.push(nestedElem)
+      })
+      getFollowingByName(next, name)
+    }
+  }
+  const getNextSection = (measure) => {
+    const parentSection = measure.closest('section')
+    const arr = []
+    getFollowingByName(parentSection, 'section', arr)
+
+    if (arr.length > 0) {
+      return arr[0]
+    }
+
+    return null
+  }
+
+  getFollowingByName(measure, 'measure')
+  return arr
+}
+
 function updateNextMeasures (currentPage, type, xmlDoc, zone, measure) {
+  // try something:
+  const followingMeasures = getFollowingMeasuresByMeasure(xmlDoc, measure)
+  console.log('followingMeasures:')
+  console.log(followingMeasures)
+
   const surfaces = [...xmlDoc.querySelectorAll('surface')]
   if (type === 'decreament') {
     surfaces.forEach(sur => {
@@ -409,6 +503,29 @@ export function addZoneToLastMeasure (xmlDoc, zoneId) {
 function getLastMeasure (xmlDoc) {
   const measure = [...xmlDoc.querySelectorAll('measure')].slice(-1)[0]
   return measure
+}
+
+function getPrecedingZone (xmlDoc, surface) {
+  let precedingZone = null
+  let precedingPage = surface.previousElementSibling
+
+  while (precedingPage !== null && precedingZone === null) {
+    if (precedingPage.querySelector('zone') !== null) {
+      precedingZone = [...precedingPage.querySelectorAll('zone')].at(-1)
+    } else {
+      precedingPage = precedingPage.previousElementSibling
+    }
+  }
+  return precedingZone
+}
+
+function getMeasuresFromZone (xmlDoc, zone) {
+  const zoneId = zone.getAttribute('xml:id')
+  const measures = []
+  xmlDoc.querySelectorAll('measure[facs~="#' + zoneId + '"]').forEach(measure => {
+    measures.push(measure)
+  })
+  return measures
 }
 
 export function createNewMdiv (xmlDoc, afterMdivId) {
