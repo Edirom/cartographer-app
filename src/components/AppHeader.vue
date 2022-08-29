@@ -29,8 +29,9 @@
 </template>
 
 <script>
+// const xmlUri = 'testfile.xml'
 // 'https://digital.blb-karlsruhe.de/i3f/v20/6146583/manifest'
-const manifestUri = 'https://api.beethovens-werkstatt.de/iiif/document/r24d1c005-acee-43a0-acfa-5dae796b7ec4/manifest.json' // 'https://iiif.bodleian.ox.ac.uk/iiif/manifest/644ee314-14a2-4006-9fe6-80eea1258a17.json'
+// const manifestUri = 'https://api.beethovens-werkstatt.de/iiif/document/r24d1c005-acee-43a0-acfa-5dae796b7ec4/manifest.json' // 'https://iiif.bodleian.ox.ac.uk/iiif/manifest/644ee314-14a2-4006-9fe6-80eea1258a17.json'
 
 export default {
   name: 'AppHeader',
@@ -51,10 +52,10 @@ export default {
   },
   methods: {
     importXML: function () {
-      this.$store.dispatch('importXMLtest')
+      this.$store.dispatch('toggleLoadXMLModal')
     },
     importManifest: function () {
-      this.$store.dispatch('importIIIF', manifestUri)
+      this.$store.dispatch('toggleLoadIIIFModal')
     },
     xmlDataUrl () {
       const xml = this.$store.getters.meiFileForDownload
