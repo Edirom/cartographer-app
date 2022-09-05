@@ -69,6 +69,15 @@
           <font-awesome-icon icon="fa-regular fa-clone" transform="up-5 left-5"/>
         </font-awesome-layers>
       </button>
+        <!-- AUTODETECT ON ALL PAGE -->
+        <button class="btn btn-action" title="Autodetect measures on current page"
+          :disabled="!isReady"
+          @click="autoDetectAll">
+          <font-awesome-layers>
+            <font-awesome-icon icon="fa-solid fa-wand-sparkles" transform="flip-h down-5 right-5 shrink-3"/>
+            <font-awesome-icon icon="fa-regular fa-clone" transform="up-5 left-5"/>
+          </font-awesome-layers>
+      </button>
 
       <!-- AUTODETECT ALL PAGES -->
       <!-- <button class="btn btn-action" title="Autodetect measures throughout document"
@@ -165,8 +174,7 @@ export default {
       this.$store.dispatch('autoDetectZonesOnCurrentPage')
     },
     autoDetectAll: function () {
-      console.log('this needs to be implemented')
-      // this.$store.dispatch('autoDetectZonesOnCurrentPage')
+      this.$store.dispatch('autoDetectZonesOnAllPage')
     },
     activateMode: function (mode) {
       if (mode in allowedModes) {
