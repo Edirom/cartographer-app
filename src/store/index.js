@@ -14,6 +14,8 @@ export default createStore({
     xmlDoc: null,
     pages: [],
     currentPage: -1,
+    showLoadXMLModal: false,
+    showLoadIIIFModal: false,
     showMeasureModal: false,
     showMdivModal: false,
     loading: false,
@@ -31,6 +33,12 @@ export default createStore({
     // TODO isScore: true
   },
   mutations: {
+    TOGGLE_LOADXML_MODAL (state) {
+      state.showLoadXMLModal = !state.showLoadXMLModal
+    },
+    TOGGLE_LOADIIIF_MODAL (state) {
+      state.showLoadIIIFModal = !state.showLoadIIIFModal
+    },
     TOGGLE_MEASURE_MODAL (state) {
       state.showMeasureModal = !state.showMeasureModal
     },
@@ -187,6 +195,12 @@ export default createStore({
     }
   },
   actions: {
+    toggleLoadXMLModal ({ commit }) {
+      commit('TOGGLE_LOADXML_MODAL')
+    },
+    toggleLoadIIIFModal ({ commit }) {
+      commit('TOGGLE_LOADIIIF_MODAL')
+    },
     toggleMeasureModal ({ commit }) {
       commit('TOGGLE_MEASURE_MODAL')
     },
@@ -228,8 +242,8 @@ export default createStore({
           // add some error message
         })
     },
-    importXMLtest ({ commit, dispatch }, mei) {
-      fetch('testfile.xml')
+    importXML ({ commit, dispatch }, mei) {
+      fetch(mei)
         .then(res => {
           return res.text()
         })
@@ -518,11 +532,9 @@ export default createStore({
       const pageUri = state.pages[state.currentPage].uri
       return meiZone2annotorious(state.xmlDoc, zone, pageUri)
     },
-    showMeasureModal: state => {
-      return state.showMeasureModal
-    },
-    showMdivModal: state => {
-      return state.showMdivModal
-    }
+    showLoadIIIFModal: state => state.showLoadIIIFModal,
+    showLoadXMLModal: state => state.showLoadXMLModal,
+    showMeasureModal: state => state.showMeasureModal,
+    showMdivModal: state => state.showMdivModal
   }
 })
