@@ -449,7 +449,7 @@ export function getFollowingMeasuresByMeasure (measure) {
   getFollowingByName(measure, 'measure')
   return arr
 }
-
+/*
 function updateNextMeasures (currentPage, type, xmlDoc, zone, measure) {
   // try something:
   const followingMeasures = getFollowingMeasuresByMeasure(measure)
@@ -488,6 +488,7 @@ function updateNextMeasures (currentPage, type, xmlDoc, zone, measure) {
   //   })
   // }
 }
+*/
 
 export function addZoneToLastMeasure (xmlDoc, zoneId) {
   const measure = getLastMeasure(xmlDoc)
@@ -553,24 +554,42 @@ export function createNewMdiv (xmlDoc, afterMdivId) {
 
 export function deleteZone (xmlDoc, id, state) {
   const currentPage = state.currentPage
-  const type = 'decreament'
   console.log('this is deleted zone id  ' + id)
   const surface = xmlDoc.querySelectorAll('surface')[currentPage]
   const zone = [...surface.querySelectorAll('zone')].find(zone => zone.getAttribute('xml:id') === id)
-  const zoneId = zone.getAttribute('xml:id')
-  const meas = [...xmlDoc.querySelectorAll('measure')].find(meas => meas.getAttribute('facs') === '#' + zoneId)
-  updateNextMeasures(currentPage, type, xmlDoc, zone, meas)
-  zone.remove()
-  if (meas.nextSibling != null) {
-    if (meas.previousSibling.tagName === 'pb' && meas.nextSibling.tagName === 'sb') {
-      meas.nextSibling.remove()
-      meas.remove()
-    } else if (meas.previousSibling.tagName === 'sb' && meas.nextSibling.tagName === 'sb') {
-      meas.nextSibling.remove()
-      meas.remove()
+
+  const measures = getMeasuresFromZone(xmlDoc, zone)
+  measures.forEach(measure => {
+    let followingMeasures = []
+    const facsArr = measure.getAttribute('facs').trim().split(' ')
+    if (facsArr.length > 1) {
+      const index = facsArr.indexOf('#' + id)
+      facsArr.splice(index, 1)
+    } else {
+      let measureCount = 1
+      const multiRest = measure.querySelector('multiRest')
+      if (multiRest !== null) {
+        measureCount = parseInt(multiRest.getAttribute('num'))
+      }
+      const diff = measureCount * -1
+      followingMeasures = getFollowingMeasuresByMeasure(measure)
+      followingMeasures.forEach(measure => {
+        measure.setAttribute('n', incrementMeasureNum(measure.getAttribute('n'), diff))
+      })
+
+      if (measure.nextElementSibling !== null) {
+        if (measure.previousElementSibling.tagName === 'pb' && measure.nextElementSibling.tagName === 'sb') {
+          measure.nextElementSibling.remove()
+        } else if (measure.previousElementSibling.tagName === 'sb' && measure.nextElementSibling.tagName === 'sb') {
+          measure.nextElementSibling.remove()
+        } else if (followingMeasures.length === 0 && (measure.previousElementSibling.tagName === 'sb')) {
+          measure.nextElementSibling.remove()
+        }
+      }
+      measure.remove()
     }
-  }
-  // const type = 'decreament'
+  })
+  zone.remove()
 }
 
 export function setMultiRest (measure, val) {
