@@ -643,7 +643,7 @@ export function setMultiRest (measure, val) {
   }
 }
 
-export function moveContentToCurrentMdiv (xmlDoc, firstMeasureId, targetMdivId) {
+export function moveContentToMdiv (xmlDoc, firstMeasureId, targetMdivId) {
   const firstMeasure = [...xmlDoc.querySelectorAll('measure')].find(measure => measure.getAttribute('xml:id') === firstMeasureId)
   const precedingSibling = firstMeasure.previousElementSibling
   let firstNode

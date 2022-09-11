@@ -11,7 +11,7 @@
         <div class="content">
           <div class="form-group customFormGroup">
             <select class="form-select">
-              <option v-for="(mdiv, mdivIndex) in mdivs" @click="selectMdiv(mdiv.id)" :selected="mdivIndex === 0" :value="mdiv.id" v-bind:key="mdivIndex">{{ mdiv.label }}</option>
+              <option v-for="(mdiv, mdivIndex) in mdivs" @click="selectMdiv(mdiv.id)" :selected="mdiv.id === measure.mdiv" :value="mdiv.id" v-bind:key="mdivIndex">{{ mdiv.label }}</option>
               <option value="___newMdiv___" @click="createNewMdiv">[new mdiv]</option>
             </select>
           </div>
@@ -119,6 +119,7 @@ export default {
   methods: {
     selectMdiv: function (id) {
       console.log('selected ' + id)
+      this.$store.dispatch('selectMdiv', id)
       this.$store.dispatch('toggleMdivModal')
     },
     createNewMdiv: function () {

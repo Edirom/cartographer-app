@@ -76,6 +76,7 @@
           <font-awesome-layers>
             <font-awesome-icon icon="fa-solid fa-wand-sparkles" transform="flip-h down-5 right-5 shrink-3"/>
             <font-awesome-icon icon="fa-regular fa-clone" transform="up-5 left-5"/>
+            <font-awesome-icon icon="fa-regular fa-square" transform="up-7.5 right-6.5 shrink-3"/>
           </font-awesome-layers>
       </button>
 

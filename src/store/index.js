@@ -1,6 +1,6 @@
 import { createStore } from 'vuex'
 import { iiifManifest2mei, checkIiifManifest, getPageArray } from '@/tools/iiif.js'
-import { meiZone2annotorious, annotorious2meiZone, measureDetector2meiZone, generateMeasure, insertMeasure, addZoneToLastMeasure, deleteZone, setMultiRest, createNewMdiv, moveContentToCurrentMdiv } from '@/tools/meiMappings.js'
+import { meiZone2annotorious, annotorious2meiZone, measureDetector2meiZone, generateMeasure, insertMeasure, addZoneToLastMeasure, deleteZone, setMultiRest, createNewMdiv, moveContentToMdiv } from '@/tools/meiMappings.js'
 
 import { mode as allowedModes } from '@/store/constants.js'
 
@@ -190,8 +190,14 @@ export default createStore({
     CREATE_NEW_MDIV (state) {
       const xmlDoc = state.xmlDoc.cloneNode(true)
       state.currentMdivId = createNewMdiv(xmlDoc, state.currentMdivId)
-      moveContentToCurrentMdiv(xmlDoc, state.currentMeasureId, state.currentMdivId)
+      moveContentToMdiv(xmlDoc, state.currentMeasureId, state.currentMdivId)
       state.xmlDoc = xmlDoc
+    },
+    SELECT_MDIV (state, id) {
+      if (state.currentMeasureId !== null) {
+        const xmlDoc = state.xmlDoc.cloneNode(true)
+        moveContentToMdiv(xmlDoc, state.currentMeasureId, id)
+      }
     }
   },
   actions: {
@@ -388,6 +394,9 @@ export default createStore({
     },
     createNewMdiv ({ commit }) {
       commit('CREATE_NEW_MDIV')
+    },
+    selectMdiv ({ commit }, id) {
+      commit('SELECT_MDIV', id)
     }
   },
   getters: {
@@ -502,6 +511,8 @@ export default createStore({
       const measures = [...state.xmlDoc.querySelectorAll('measure')]
       const measure = measures.find(measure => measure.getAttribute('xml:id') === state.currentMeasureId)
 
+      const mdiv = measure.closest('mdiv').getAttribute('xml:id')
+
       const multiRestElem = measure.querySelector('multiRest')
       const multiRest = (multiRestElem !== null) ? multiRestElem.getAttribute('num') : null
 
@@ -514,7 +525,8 @@ export default createStore({
         id,
         n,
         label,
-        multiRest
+        multiRest,
+        mdiv
       }
     },
     mode: state => {
