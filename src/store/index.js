@@ -1,6 +1,6 @@
 import { createStore } from 'vuex'
 import { iiifManifest2mei, checkIiifManifest, getPageArray } from '@/tools/iiif.js'
-import { meiZone2annotorious, annotorious2meiZone, measureDetector2meiZone, generateMeasure, insertMeasure, addZoneToLastMeasure, deleteZone, setMultiRest, createNewMdiv, moveContentToMdiv } from '@/tools/meiMappings.js'
+import { meiZone2annotorious, annotorious2meiZone, measureDetector2meiZone, generateMeasure, insertMeasure, addZoneToLastMeasure, deleteZone, setMultiRest, createNewMdiv, moveContentToMdiv, toggleAdditionalZone } from '@/tools/meiMappings.js'
 
 import { mode as allowedModes } from '@/store/constants.js'
 
@@ -190,13 +190,14 @@ export default createStore({
     CREATE_NEW_MDIV (state) {
       const xmlDoc = state.xmlDoc.cloneNode(true)
       state.currentMdivId = createNewMdiv(xmlDoc, state.currentMdivId)
-      moveContentToMdiv(xmlDoc, state.currentMeasureId, state.currentMdivId)
+      moveContentToMdiv(xmlDoc, state.currentMeasureId, state.currentMdivId, state)
       state.xmlDoc = xmlDoc
     },
     SELECT_MDIV (state, id) {
       if (state.currentMeasureId !== null) {
         const xmlDoc = state.xmlDoc.cloneNode(true)
-        moveContentToMdiv(xmlDoc, state.currentMeasureId, id)
+        moveContentToMdiv(xmlDoc, state.currentMeasureId, id, state)
+        state.xmlDoc = xmlDoc
       }
     }
   },
@@ -348,6 +349,11 @@ export default createStore({
         state.deleteZoneId = id
         const xmlDoc = state.xmlDoc.cloneNode(true)
         deleteZone(xmlDoc, id, state)
+        state.xmlDoc = xmlDoc
+      } else if (state.mode === allowedModes.additionalZone) {
+        console.log('clicked on existing zone')
+        const xmlDoc = state.xmlDoc.cloneNode(true)
+        toggleAdditionalZone(xmlDoc, id, state)
         state.xmlDoc = xmlDoc
       }
     },
