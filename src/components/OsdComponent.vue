@@ -31,6 +31,8 @@ export default {
       this.viewer.clearOverlays()
       const annots = this.$store.getters.zonesOnCurrentPage
       annots.forEach(annot => {
+        // console.log('trying to render zone based on: ')
+        // console.log(annot)
         const rawDimensions = annot.target.selector.value.substr(11).split(',')
         const xywh = {
           x: Math.round(rawDimensions[0]),
@@ -46,7 +48,7 @@ export default {
         const overlay = document.createElement('div')
         overlay.id = zoneId
         overlay.classList.add('zone')
-        mdivIndizes.split(' ').forEach(mov => { overlay.classList.add(mov) })
+        try { mdivIndizes.split(' ').forEach(mov => { overlay.classList.add(mov) }) } catch (err) {}
         overlay.setAttribute('data-measure', measureCssLink)
         overlay.setAttribute('data-mdiv', mdivCssLink)
 
@@ -92,7 +94,7 @@ export default {
       // this.anno.setAnnotations(annots)
     },
     toggleSelection: function (mode) {
-      const activeModes = [allowedModes.manualRect, allowedModes.additionalZone, allowedModes.addZoneToMeasure]
+      const activeModes = [allowedModes.manualRect, allowedModes.additionalZone]
       this.anno.readOnly = activeModes.indexOf(mode) === -1
     }
   },

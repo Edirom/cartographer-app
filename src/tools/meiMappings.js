@@ -21,6 +21,12 @@ export function meiZone2annotorious (mei, zoneInput, pageUri) {
     })
   }
 
+  if (measures.length === 0) {
+    console.error('\nHouston!!!')
+    console.log(zoneInput)
+    console.log(zoneId)
+  }
+
   const mdivIds = []
   mei.querySelectorAll('mdiv').forEach(mdiv => { mdivIds.push(mdiv.getAttribute('xml:id')) })
 
@@ -640,32 +646,76 @@ export function toggleAdditionalZone (xmlDoc, id, state) {
   measures.forEach(measure => {
     const facsArr = measure.getAttribute('facs').trim().split(' ')
 
-    if (facsArr.indexOf('#' + precedingZoneId) !== -1) {
-      console.log('This zone is part of preceding measure and should get a new measure instead')
-      const index = facsArr.indexOf('#' + id)
-      facsArr.splice(index, 1)
-      measure.setAttribute('facs', facsArr.join(' '))
-      console.log('setting @facs to ' + facsArr.join(' '))
-      const followingMeasures = getFollowingMeasuresByMeasure(measure)
-      const newMeasure = generateMeasure()
-      newMeasure.setAttribute('facs', '#' + id)
-      newMeasure.setAttribute('n', incrementMeasureNum(measure.getAttribute('n'), 1))
-      measure.after(newMeasure)
-      followingMeasures.forEach(measure => {
-        measure.setAttribute('n', incrementMeasureNum(measure.getAttribute('n'), 1))
-      })
+    if (!state.existingMusicMode) {
+      if (facsArr.indexOf('#' + precedingZoneId) !== -1) {
+        // console.log('This zone is part of preceding measure and should get a new measure instead')
+        const index = facsArr.indexOf('#' + id)
+        facsArr.splice(index, 1)
+        measure.setAttribute('facs', facsArr.join(' '))
+        // console.log('setting @facs to ' + facsArr.join(' '))
+        const followingMeasures = getFollowingMeasuresByMeasure(measure)
+        const newMeasure = generateMeasure()
+        newMeasure.setAttribute('facs', '#' + id)
+        newMeasure.setAttribute('n', incrementMeasureNum(measure.getAttribute('n'), 1))
+        measure.after(newMeasure)
+        followingMeasures.forEach(measure => {
+          measure.setAttribute('n', incrementMeasureNum(measure.getAttribute('n'), 1))
+        })
+      } else {
+        // console.log('I need to add this zone to the measure of the preceding zone')
+        const precedingMeasures = getMeasuresFromZone(xmlDoc, precedingZone)
+        precedingMeasures.forEach(precedingMeasure => {
+          precedingMeasure.setAttribute('facs', precedingMeasure.getAttribute('facs') + ' #' + id)
+        })
+        const followingMeasures = getFollowingMeasuresByMeasure(measure)
+        followingMeasures.forEach(measure => {
+          measure.setAttribute('n', incrementMeasureNum(measure.getAttribute('n'), -1))
+        })
+        // TODO: If there is content, these two measures should be merged instead…
+        measure.remove()
+      }
+
+    // shifting zones in measures with existing content
     } else {
-      // console.log('I need to add this zone to the measure of the preceding zone')
-      const precedingMeasures = getMeasuresFromZone(xmlDoc, precedingZone)
-      precedingMeasures.forEach(precedingMeasure => {
-        precedingMeasure.setAttribute('facs', precedingMeasure.getAttribute('facs') + ' #' + id)
-      })
-      const followingMeasures = getFollowingMeasuresByMeasure(measure)
-      followingMeasures.forEach(measure => {
-        measure.setAttribute('n', incrementMeasureNum(measure.getAttribute('n'), -1))
-      })
-      // TODO: If there is content, these two measures should be merged instead…
-      measure.remove()
+      if (facsArr.indexOf('#' + precedingZoneId) !== -1) {
+        // console.log('This zone is part of preceding measure and should get a new measure instead')
+        const index = facsArr.indexOf('#' + id)
+        facsArr.splice(index, 1)
+        measure.setAttribute('facs', facsArr.join(' '))
+        const followingMeasures = getFollowingMeasuresByMeasure(measure)
+        let zones = '#' + id
+        followingMeasures.forEach(measure => {
+          if (measure.hasAttribute('facs')) {
+            const nextZones = measure.getAttribute('facs')
+            measure.setAttribute('facs', zones)
+            zones = nextZones
+          } else {
+            if (zones !== null) {
+              measure.setAttribute('facs', zones)
+            }
+            zones = null
+          }
+        })
+      } else {
+        // conflate -> move zones closer to begin of mdiv
+        // console.log('I need to add this zone to the measure of the preceding zone')
+        const precedingMeasures = getMeasuresFromZone(xmlDoc, precedingZone)
+        precedingMeasures.forEach(precedingMeasure => {
+          precedingMeasure.setAttribute('facs', precedingMeasure.getAttribute('facs') + ' #' + id)
+        })
+        const followingMeasures = getFollowingMeasuresByMeasure(measure)
+        followingMeasures.unshift(measure)
+
+        followingMeasures.forEach((measure, i) => {
+          const nextMeasure = followingMeasures[i + 1]
+          if (nextMeasure !== undefined && nextMeasure.hasAttribute('facs')) {
+            const nextZones = nextMeasure.getAttribute('facs')
+            measure.setAttribute('facs', nextZones)
+          } else {
+            measure.removeAttribute('facs')
+          }
+        })
+      }
     }
   })
 }
