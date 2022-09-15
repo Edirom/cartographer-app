@@ -21,22 +21,28 @@ export function meiZone2annotorious (mei, zoneInput, pageUri) {
     })
   }
 
+  const mdivIds = []
+  mei.querySelectorAll('mdiv').forEach(mdiv => { mdivIds.push(mdiv.getAttribute('xml:id')) })
+
   const measureNums = []
   const measureLinks = []
   const mdivLinks = []
+  const mdivIndizes = []
 
   measures.forEach(measure => {
     measureNums.push(parseInt(measure.getAttribute('n'), 10))
     measureLinks.push('measure#' + measure.getAttribute('xml:id'))
-    const mdivId = 'mdiv#' + measure.closest('mdiv').getAttribute('xml:id')
+    const mdivId = measure.closest('mdiv').getAttribute('xml:id')
+    mdivIndizes.push('mov_' + mdivIds.indexOf(mdivId))
     if (mdivLinks.indexOf(mdivId) === -1) {
-      mdivLinks.push(mdivId)
+      mdivLinks.push('mdiv#' + mdivId)
     }
   })
 
   const additionalBodies = []
   const measureCssLink = measureLinks.join(', ')
   const mdivCssLink = mdivLinks.join(', ')
+  const mdivIndexClasses = mdivIndizes.join(', ')
   additionalBodies.push({
     type: 'Dataset',
     selector: {
@@ -49,6 +55,13 @@ export function meiZone2annotorious (mei, zoneInput, pageUri) {
     selector: {
       type: 'CssSelector',
       value: mdivCssLink
+    }
+  })
+  additionalBodies.push({
+    type: 'Dataset',
+    selector: {
+      type: 'CssSelector',
+      value: mdivIndexClasses
     }
   })
 
@@ -771,6 +784,43 @@ export function moveContentToMdiv (xmlDoc, firstMeasureId, targetMdivId, state) 
 
       insertMeasure(xmlDoc, measure, state, zones[0], pageIndex, mdiv)
     })
+  }
+}
+
+/**
+ * This creates a new page through the image import modal
+ * @param {[type]} xmlDoc  [description]
+ * @param {[type]} index   [description]
+ * @param {[type]} url     [description]
+ * @param {[type]} width   [description]
+ * @param {[type]} height  [description]
+ */
+export function addImportedPage (xmlDoc, index, url, width, height) {
+  const surface = document.createElementNS('http://www.music-encoding.org/ns/mei', 'surface')
+  surface.setAttribute('xml:id', 's' + uuid())
+  surface.setAttribute('n', index + 1)
+  surface.setAttribute('label', index + 1)
+  surface.setAttribute('ulx', 0)
+  surface.setAttribute('uly', 0)
+  surface.setAttribute('lrx', width)
+  surface.setAttribute('lry', height)
+
+  const graphic = document.createElementNS('http://www.music-encoding.org/ns/mei', 'graphic')
+  graphic.setAttribute('xml:id', 'g' + uuid())
+  graphic.setAttribute('type', 'facsimile')
+  graphic.setAttribute('target', url)
+  graphic.setAttribute('width', width)
+  graphic.setAttribute('height', height)
+
+  surface.append(graphic)
+
+  const hasFacs = xmlDoc.querySelector('facsimile')
+  if (hasFacs !== null) {
+    hasFacs.append(surface)
+  } else {
+    const newFacs = document.createElementNS('http://www.music-encoding.org/ns/mei', 'facsimile')
+    xmlDoc.querySelector('music').prepend(newFacs)
+    newFacs.append(surface)
   }
 }
 

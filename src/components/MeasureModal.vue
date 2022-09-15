@@ -120,7 +120,7 @@ export default {
     selectMdiv: function (id) {
       console.log('selected ' + id)
       this.$store.dispatch('selectMdiv', id)
-      this.$store.dispatch('toggleMdivModal')
+      // this.$store.dispatch('toggleMdivModal')
     },
     createNewMdiv: function () {
       console.log('create new mdiv')

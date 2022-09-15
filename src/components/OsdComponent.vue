@@ -1,5 +1,5 @@
 <template>
-  <div id="osdContainer"></div>
+  <div id="osdContainer" :class="{'fullWidth': !measureListVisible}"></div>
 </template>
 
 <script>
@@ -21,6 +21,9 @@ export default {
     },
     mode: function () {
       return this.$store.getters.mode
+    },
+    measureListVisible: function () {
+      return this.$store.getters.showMeasureList
     }
   },
   methods: {
@@ -38,10 +41,12 @@ export default {
         const zoneId = annot.id.replace(/#/, '')
         const measureCssLink = annot.body.find(body => body.type === 'Dataset' && body.selector.value.startsWith('measure'))?.selector.value
         const mdivCssLink = annot.body.find(body => body.type === 'Dataset' && body.selector.value.startsWith('mdiv'))?.selector.value
+        const mdivIndizes = annot.body.find(body => body.type === 'Dataset' && body.selector.value.startsWith('mov_'))?.selector.value
 
         const overlay = document.createElement('div')
         overlay.id = zoneId
         overlay.classList.add('zone')
+        mdivIndizes.split(' ').forEach(mov => { overlay.classList.add(mov) })
         overlay.setAttribute('data-measure', measureCssLink)
         overlay.setAttribute('data-mdiv', mdivCssLink)
 
@@ -87,7 +92,7 @@ export default {
       // this.anno.setAnnotations(annots)
     },
     toggleSelection: function (mode) {
-      const activeModes = [allowedModes.manualRect, allowedModes.additionalZone]
+      const activeModes = [allowedModes.manualRect, allowedModes.additionalZone, allowedModes.addZoneToMeasure]
       this.anno.readOnly = activeModes.indexOf(mode) === -1
     }
   },
@@ -235,7 +240,12 @@ $thickLineColor: #cccccc66; // #ffffff99;
 
 #osdContainer {
   height: calc(100vh - $appHeaderHeight - $appFooterHeight);
-  width: calc(100% - $appSidebarWidth);
+  width: calc(100% - $appSidebarWidth - $contentPreviewPaneWidth);
+
+  &.fullWidth {
+    width: calc(100% - $appSidebarWidth);
+  }
+
   float: left;
   box-shadow: 0 0 1rem #00000066 inset;
 
@@ -255,9 +265,126 @@ $thickLineColor: #cccccc66; // #ffffff99;
     background-color: rgba(255,255,255,.1);
     z-index: 10;
 
-    &:hover {
-      background-color: rgba(255,255,255,.2);
+    &.mov_0 {
+      background-color: transparentize($mdiv0ZoneColor, .8);
+      outline: 1px solid transparentize($mdiv0ZoneColor, .4);
+
+      &:hover {
+        background-color: transparentize($mdiv0ZoneColor, .6);
+        outline: 1px solid transparentize($mdiv0ZoneColor, .4);
+      }
     }
+
+    &.mov_1 {
+      background-color: transparentize($mdiv1ZoneColor, .8);
+      outline: 1px solid transparentize($mdiv1ZoneColor, .4);
+
+      &:hover {
+        background-color: transparentize($mdiv1ZoneColor, .6);
+        outline: 1px solid transparentize($mdiv1ZoneColor, .4);
+      }
+    }
+
+    &.mov_2 {
+      background-color: transparentize($mdiv2ZoneColor, .8);
+      outline: 1px solid transparentize($mdiv2ZoneColor, .4);
+
+      &:hover {
+        background-color: transparentize($mdiv2ZoneColor, .6);
+        outline: 1px solid transparentize($mdiv2ZoneColor, .4);
+      }
+    }
+
+    &.mov_3 {
+      background-color: transparentize($mdiv3ZoneColor, .8);
+      outline: 1px solid transparentize($mdiv3ZoneColor, .4);
+
+      &:hover {
+        background-color: transparentize($mdiv3ZoneColor, .6);
+        outline: 1px solid transparentize($mdiv3ZoneColor, .4);
+      }
+    }
+
+    &.mov_4 {
+      background-color: transparentize($mdiv4ZoneColor, .8);
+      outline: 1px solid transparentize($mdiv4ZoneColor, .4);
+
+      &:hover {
+        background-color: transparentize($mdiv4ZoneColor, .6);
+        outline: 1px solid transparentize($mdiv4ZoneColor, .4);
+      }
+    }
+
+    &.mov_5 {
+      background-color: transparentize($mdiv5ZoneColor, .8);
+      outline: 1px solid transparentize($mdiv5ZoneColor, .4);
+
+      &:hover {
+        background-color: transparentize($mdiv5ZoneColor, .6);
+        outline: 1px solid transparentize($mdiv5ZoneColor, .4);
+      }
+    }
+
+    &.mov_6 {
+      background-color: transparentize($mdiv6ZoneColor, .8);
+      outline: 1px solid transparentize($mdiv6ZoneColor, .4);
+
+      &:hover {
+        background-color: transparentize($mdiv6ZoneColor, .6);
+        outline: 1px solid transparentize($mdiv6ZoneColor, .4);
+      }
+    }
+
+    &.mov_7 {
+      background-color: transparentize($mdiv7ZoneColor, .8);
+      outline: 1px solid transparentize($mdiv7ZoneColor, .4);
+
+      &:hover {
+        background-color: transparentize($mdiv7ZoneColor, .6);
+        outline: 1px solid transparentize($mdiv7ZoneColor, .4);
+      }
+    }
+
+    &.mov_8 {
+      background-color: transparentize($mdiv8ZoneColor, .8);
+      outline: 1px solid transparentize($mdiv8ZoneColor, .4);
+
+      &:hover {
+        background-color: transparentize($mdiv8ZoneColor, .6);
+        outline: 1px solid transparentize($mdiv8ZoneColor, .4);
+      }
+    }
+
+    &.mov_9 {
+      background-color: transparentize($mdiv9ZoneColor, .8);
+      outline: 1px solid transparentize($mdiv9ZoneColor, .4);
+
+      &:hover {
+        background-color: transparentize($mdiv9ZoneColor, .6);
+        outline: 1px solid transparentize($mdiv9ZoneColor, .4);
+      }
+    }
+
+    &.mov_10 {
+      background-color: transparentize($mdiv10ZoneColor, .8);
+      outline: 1px solid transparentize($mdiv10ZoneColor, .4);
+
+      &:hover {
+        background-color: transparentize($mdiv10ZoneColor, .6);
+        outline: 1px solid transparentize($mdiv10ZoneColor, .4);
+      }
+    }
+
+    &.mov_11 {
+      background-color: transparentize($mdiv11ZoneColor, .8);
+      outline: 1px solid transparentize($mdiv11ZoneColor, .4);
+
+      &:hover {
+        background-color: transparentize($mdiv11ZoneColor, .6);
+        outline: 1px solid transparentize($mdiv11ZoneColor, .4);
+      }
+    }
+
     .zoneLabel {
       text-align: center;
       position: absolute;

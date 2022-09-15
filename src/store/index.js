@@ -1,6 +1,6 @@
 import { createStore } from 'vuex'
 import { iiifManifest2mei, checkIiifManifest, getPageArray } from '@/tools/iiif.js'
-import { meiZone2annotorious, annotorious2meiZone, measureDetector2meiZone, generateMeasure, insertMeasure, addZoneToLastMeasure, deleteZone, setMultiRest, createNewMdiv, moveContentToMdiv, toggleAdditionalZone } from '@/tools/meiMappings.js'
+import { meiZone2annotorious, annotorious2meiZone, measureDetector2meiZone, generateMeasure, insertMeasure, addZoneToLastMeasure, deleteZone, setMultiRest, createNewMdiv, moveContentToMdiv, toggleAdditionalZone, addImportedPage } from '@/tools/meiMappings.js'
 
 import { mode as allowedModes } from '@/store/constants.js'
 
@@ -18,6 +18,9 @@ export default createStore({
     showLoadIIIFModal: false,
     showMeasureModal: false,
     showMdivModal: false,
+    showPagesModal: false,
+    showPageImportModal: false,
+    showMeasureList: false,
     loading: false,
     processing: false,
     mode: allowedModes.selection,
@@ -28,6 +31,7 @@ export default createStore({
     resultingArray: [],
     deleteZoneId: null,
     anno: null,
+    importingImages: [],
     currentMeasureId: null // used for the MeasureModal
 
     // TODO isScore: true
@@ -42,12 +46,21 @@ export default createStore({
     TOGGLE_MEASURE_MODAL (state) {
       state.showMeasureModal = !state.showMeasureModal
     },
+    TOGGLE_PAGES_MODAL (state) {
+      state.showPagesModal = !state.showPagesModal
+    },
+    TOGGLE_PAGE_IMPORT_MODAL (state) {
+      state.showPageImportModal = !state.showPageImportModal
+    },
     TOGGLE_MDIV_MODAL (state) {
       state.showMdivModal = !state.showMdivModal
     },
     HIDE_MODALS (state) {
       state.showMeasureModal = false
       state.showMdivModal = false
+    },
+    TOGGLE_MEASURE_LIST (state) {
+      state.showMeasureList = !state.showMeasureList
     },
     SET_ANNO (state, anno) {
       state.anno = anno
@@ -66,7 +79,7 @@ export default createStore({
     },
     SET_TOTAL_ZONES_COUNT (state, j) {
       state.totalZones = state.totalZones + j
-      console.log('this is j ' + state.totalZones)
+      // console.log('this is j ' + state.totalZones)
     },
     SET_LOADING (state, bool) {
       state.loading = bool
@@ -98,10 +111,16 @@ export default createStore({
       // add zone to last existing measure in file
       } else if (state.mode === allowedModes.additionalZone && state.selectedZoneId === null) {
         addZoneToLastMeasure(xmlDoc, zone.getAttribute('xml:id'))
+      } else if (state.mode === allowedModes.addZoneToMeasure) {
+        const lastMeasureWithoutZone = xmlDoc.querySelector('music measure:not([facs])')
+        if (lastMeasureWithoutZone !== null) {
+          state.currentMdivId = lastMeasureWithoutZone.closest('mdiv').getAttribute('xml:id')
+          lastMeasureWithoutZone.setAttribute('facs', '#' + zone.getAttribute('xml:id'))
+        }
       }
 
       state.xmlDoc = xmlDoc
-      console.log(state.xmlDoc)
+      // console.log(state.xmlDoc)
     },
     CREATE_ZONES_FROM_MEASURE_DETECTOR_ON_PAGE (state, { rects, pageIndex }) {
       const xmlDoc = state.xmlDoc.cloneNode(true)
@@ -111,9 +130,17 @@ export default createStore({
       rects.forEach(rect => {
         const zone = measureDetector2meiZone(rect)
         surface.appendChild(zone)
-        const measure = generateMeasure()
-        measure.setAttribute('facs', '#' + zone.getAttribute('xml:id'))
-        insertMeasure(xmlDoc, measure, state, zone, pageIndex)
+        if (state.mode !== allowedModes.addZoneToMeasure) {
+          const measure = generateMeasure()
+          measure.setAttribute('facs', '#' + zone.getAttribute('xml:id'))
+          insertMeasure(xmlDoc, measure, state, zone, pageIndex)
+        } else {
+          const lastMeasureWithoutZone = xmlDoc.querySelector('music measure:not([facs])')
+          if (lastMeasureWithoutZone !== null) {
+            state.currentMdivId = lastMeasureWithoutZone.closest('mdiv').getAttribute('xml:id')
+            lastMeasureWithoutZone.setAttribute('facs', '#' + zone.getAttribute('xml:id'))
+          }
+        }
       })
 
       state.xmlDoc = xmlDoc
@@ -139,11 +166,14 @@ export default createStore({
         state.mode = mode
       }
     },
-    SET_CURRENT_MEASURE_ID (state, zoneId) {
-      if (zoneId === null) {
+    SET_CURRENT_MEASURE_ID (state, id) {
+      if (id === null) {
         state.currentMeasureId = null
       } else {
-        const measure = state.xmlDoc.querySelector('measure[facs~="#' + zoneId + '"]')
+        let measure = [...state.xmlDoc.querySelectorAll('measure')].find(measure => measure.getAttribute('xml:id') === id)
+        if (measure === undefined) {
+          measure = state.xmlDoc.querySelector('measure[facs~="#' + id + '"]')
+        }
         state.currentMeasureId = measure.getAttribute('xml:id')
       }
     },
@@ -176,6 +206,12 @@ export default createStore({
         state.xmlDoc = xmlDoc
       }
     },
+    SET_PAGE_LABEL (state, { index, val }) {
+      const xmlDoc = state.xmlDoc.cloneNode(true)
+      const surface = xmlDoc.querySelectorAll('surface')[index]
+      surface.setAttribute('label', val)
+      state.xmlDoc = xmlDoc
+    },
     SET_CURRENT_MDIV_LABEL (state, val) {
       if (state.currentMdivId !== null && state.xmlDoc !== null) {
         const xmlDoc = state.xmlDoc.cloneNode(true)
@@ -197,8 +233,39 @@ export default createStore({
       if (state.currentMeasureId !== null) {
         const xmlDoc = state.xmlDoc.cloneNode(true)
         moveContentToMdiv(xmlDoc, state.currentMeasureId, id, state)
+        state.currentMdivId = id
         state.xmlDoc = xmlDoc
       }
+    },
+    SET_CURRENT_MDIV (state, id) {
+      state.currentMdivId = id
+    },
+    REGISTER_IMAGE_IMPORT (state, { url, index }) {
+      state.importingImages[index] = { index, url, width: null, height: null, status: 'loading' }
+    },
+    RECEIVE_IMAGE_IMPORT (state, { url, index, json }) {
+      state.importingImages[index].status = 'success'
+      state.importingImages[index].width = json.width
+      state.importingImages[index].height = json.height
+    },
+    FAILED_IMAGE_IMPORT (state, { url, index }) {
+      state.importingImages[index].status = 'failed'
+    },
+    ACCEPT_IMAGE_IMPORTS (state) {
+      const xmlDoc = state.xmlDoc.cloneNode(true)
+      state.importingImages.forEach(page => {
+        addImportedPage(xmlDoc, page.index, page.url, page.width, page.height)
+      })
+      const pageArray = getPageArray(xmlDoc)
+      state.pages = pageArray
+      state.importingImages = []
+      state.showPagesImportModal = false
+      state.xmlDoc = xmlDoc
+    },
+    CANCEL_IMAGE_IMPORTS (state) {
+      state.importingImages = []
+      state.showPagesImportModal = false
+      console.log('cancel imports')
     }
   },
   actions: {
@@ -211,8 +278,17 @@ export default createStore({
     toggleMeasureModal ({ commit }) {
       commit('TOGGLE_MEASURE_MODAL')
     },
+    togglePagesModal ({ commit }) {
+      commit('TOGGLE_PAGES_MODAL')
+    },
+    togglePageImportModal ({ commit }) {
+      commit('TOGGLE_PAGE_IMPORT_MODAL')
+    },
     toggleMdivModal ({ commit }) {
       commit('TOGGLE_MDIV_MODAL')
+    },
+    toggleMeasureList ({ commit }) {
+      commit('TOGGLE_MEASURE_LIST')
     },
     setCurrentPage ({ commit }, i) {
       console.log('setting current page to ' + i)
@@ -357,9 +433,9 @@ export default createStore({
         state.xmlDoc = xmlDoc
       }
     },
-    clickMeasureLabel ({ commit }, zoneId) {
+    clickMeasureLabel ({ commit }, id) {
       console.log('clicked measure label')
-      commit('SET_CURRENT_MEASURE_ID', zoneId)
+      commit('SET_CURRENT_MEASURE_ID', id)
       commit('TOGGLE_MEASURE_MODAL')
     },
     closeMeasureNumberModal ({ commit }) {
@@ -395,6 +471,12 @@ export default createStore({
     setCurrentMeasureMultiRest ({ commit }, val) {
       commit('SET_CURRENT_MEASURE_MULTI_REST', val)
     },
+    setPageLabel ({ commit }, { index, val }) {
+      commit('SET_PAGE_LABEL', { index, val })
+    },
+    setCurrentMdiv ({ commit }, id) {
+      commit('SET_CURRENT_MDIV', id)
+    },
     setCurrentMdivLabel ({ commit }, val) {
       commit('SET_CURRENT_MDIV_LABEL', val)
     },
@@ -403,6 +485,29 @@ export default createStore({
     },
     selectMdiv ({ commit }, id) {
       commit('SELECT_MDIV', id)
+    },
+    registerImageImports ({ commit }, urls) {
+      const arr = urls.replace(/\s+/g, ' ').trim().split(' ')
+      arr.forEach((url, index) => {
+        commit('REGISTER_IMAGE_IMPORT', { url, index })
+        fetch(url)
+          .then(res => res.json())
+          .then(json => {
+            console.log('retrieved info.json for ' + url)
+            commit('RECEIVE_IMAGE_IMPORT', { url, index, json })
+            console.log(json)
+          })
+          .catch(err => {
+            console.log('Unable to fetch ' + url + ': ' + err)
+            commit('FAILED_IMAGE_IMPORT', { url, index })
+          })
+      })
+    },
+    acceptImageImports ({ commit }) {
+      commit('ACCEPT_IMAGE_IMPORTS')
+    },
+    cancelImageImports ({ commit }) {
+      commit('CANCEL_IMAGE_IMPORTS')
     }
   },
   getters: {
@@ -445,15 +550,34 @@ export default createStore({
 
       return arr
     },
+    pagesDetailed: state => {
+      const arr = []
+      state.pages.forEach(page => {
+        const obj = {
+          tileSource: page.uri,
+          dim: page.width + 'x' + page.height,
+          n: page.n,
+          label: page.label
+        }
+        arr.push(obj)
+      })
+
+      return arr
+    },
     currentPageObject: state => {
       return state.pages[state.currentPage]
     },
     zonesOnCurrentPage: state => {
-      if (state.xmlDoc === null) {
+      if (state.xmlDoc === null || state.currentPage === -1) {
         return []
       }
       const index = state.currentPage + 1
       const surface = state.xmlDoc.querySelector('surface:nth-child(' + index + ')')
+
+      if (surface === null) {
+        return []
+      }
+
       const zones = surface.querySelectorAll('zone')
       const pageUri = state.pages[state.currentPage].uri
 
@@ -482,6 +606,30 @@ export default createStore({
         arr.push({
           id: mdiv.getAttribute('xml:id'),
           label: mdiv.getAttribute('label'),
+          index
+        })
+      })
+      return arr
+    },
+    measuresByMdivId: state => (id) => {
+      if (state.xmlDoc === null) {
+        return []
+      }
+      const arr = []
+      const mdiv = [...state.xmlDoc.querySelectorAll('mdiv')].find(mdiv => mdiv.getAttribute('xml:id') === id)
+      mdiv.querySelectorAll('measure').forEach((measure, index) => {
+        let zones = []
+        if (measure.hasAttribute('facs')) {
+          zones = measure.getAttribute('facs').replace(/\s+/g, ' ').trim().split(' ')
+        }
+        const mrElem = measure.querySelector('multiRest')
+        const multiRest = (mrElem === null) ? null : parseInt(mrElem.getAttribute('num'))
+        arr.push({
+          id: measure.getAttribute('xml:id'),
+          n: measure.getAttribute('n'),
+          label: measure.getAttribute('label'),
+          multiRest,
+          zones,
           index
         })
       })
@@ -553,6 +701,34 @@ export default createStore({
     showLoadIIIFModal: state => state.showLoadIIIFModal,
     showLoadXMLModal: state => state.showLoadXMLModal,
     showMeasureModal: state => state.showMeasureModal,
-    showMdivModal: state => state.showMdivModal
+    showPagesModal: state => state.showPagesModal,
+    showPageImportModal: state => state.showPageImportModal,
+    showMdivModal: state => state.showMdivModal,
+    showMeasureList: state => state.showMeasureList,
+    importingImages: state => state.importingImages,
+    readyForImageImport: state => {
+      let bool = true
+      if (state.importingImages.length === 0) {
+        return false
+      }
+      state.importingImages.every(img => {
+        if (img.status !== 'success') {
+          bool = false
+          return false
+        }
+        return true
+      })
+      return bool
+    },
+    firstMeasureWithoutZone: state => {
+      if (state.xmlDoc === null) {
+        return null
+      }
+      const measure = state.xmlDoc.querySelector('music measure:not([facs])')
+      if (measure === null) {
+        return null
+      }
+      return measure.getAttribute('xml:id')
+    }
   }
 })

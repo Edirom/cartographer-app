@@ -1,12 +1,15 @@
 <template>
-  <div id="app">
+  <div>
     <LoadXMLModal v-if="showLoadXMLModal"/>
     <LoadIIIFModal v-if="showLoadIIIFModal"/>
     <!--<ImageSelectionModal/>-->
     <MeasureModal v-if="showMeasureModal"/>
     <MdivModal v-if="showMdivModal"/>
+    <PagesModal v-if="showPagesModal"/>
+    <PageImportModal v-if="showPageImportModal"/>
     <AppHeader/>
     <OsdComponent/>
+    <ContentPreviewPane/>
     <AppSidebar/>
     <AppFooter/>
   </div>
@@ -15,11 +18,14 @@
 <script>
 import { mapGetters } from 'vuex'
 import AppHeader from '@/components/AppHeader.vue'
+import ContentPreviewPane from '@/components/ContentPreviewPane.vue'
 import AppSidebar from '@/components/AppSidebar.vue'
 import AppFooter from '@/components/AppFooter.vue'
 import OsdComponent from '@/components/OsdComponent.vue'
 // import ImageSelectionModal from '@/components/ImageSelectionModal.vue'
 import MeasureModal from '@/components/MeasureModal.vue'
+import PagesModal from '@/components/PagesModal.vue'
+import PageImportModal from '@/components/PageImportModal.vue'
 import MdivModal from '@/components/MdivModal.vue'
 import LoadXMLModal from '@/components/LoadXMLModal.vue'
 import LoadIIIFModal from '@/components/LoadIIIFModal.vue'
@@ -28,11 +34,14 @@ export default {
   name: 'App',
   components: {
     AppHeader,
+    ContentPreviewPane,
     AppSidebar,
     AppFooter,
     OsdComponent,
     // ImageSelectionModal,
     MeasureModal,
+    PagesModal,
+    PageImportModal,
     MdivModal,
     LoadXMLModal,
     LoadIIIFModal
@@ -42,8 +51,22 @@ export default {
       'showLoadXMLModal',
       'showLoadIIIFModal',
       'showMeasureModal',
-      'showMdivModal'
+      'showMdivModal',
+      'showPagesModal',
+      'showPageImportModal'
     ])
+  },
+  mounted () {
+    window.addEventListener('keyup', e => {
+      // console.log('keyupped ' + e.key)
+      if (e.key === 'm') {
+        // console.log('toggle measureList')
+        this.$store.dispatch('toggleMeasureList')
+      } else if (e.key === 'p') {
+        // console.log('toggle pageModal')
+        this.$store.dispatch('togglePagesModal')
+      }
+    })
   }
 }
 </script>

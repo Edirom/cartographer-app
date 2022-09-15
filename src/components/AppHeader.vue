@@ -1,27 +1,12 @@
 <template>
   <header class="navbar appHeader">
     <section class="navbar-section">
-      <span class="navbar-brand mr-2">MercatorApp</span>
+      <span class="navbar-brand mr-2">CartographerApp</span>
     </section>
     <section class="navbar-section">
       <div class="input-group input-inline">
         <div class="button-group">
-          <button class="btn btn-action btn-sm" @click="importXML" title="load MEI file">
-            <font-awesome-icon icon="fa-solid fa-file-import"/>
-          </button>
-          <button class="btn btn-action btn-sm" @click="importManifest" title="import IIIF Manifest">
-            <font-awesome-icon icon="fa-solid fa-cloud-arrow-down"/>
-          </button>
-          <template v-if="downloadAvailable">
-            <a class="btn btn-action btn-sm" :href="xmlDataUrl()" target="_blank" title="download MEI file" :download="xmlFilename">
-              <font-awesome-icon icon="fa-solid fa-download"/>
-            </a>
-          </template>
-          <template v-else>
-            <a class="btn btn-action btn-sm" :href="xmlDataUrl()" target="_blank" title="download MEI file" disabled :download="xmlFilename">
-              <font-awesome-icon icon="fa-solid fa-download"/>
-            </a>
-          </template>
+          <MainMenu/>
         </div>
       </div>
     </section>
@@ -29,6 +14,7 @@
 </template>
 
 <script>
+import MainMenu from '@/components/MainMenu.vue'
 // const xmlUri = 'testfile.xml'
 // 'https://digital.blb-karlsruhe.de/i3f/v20/6146583/manifest'
 // const manifestUri = 'https://api.beethovens-werkstatt.de/iiif/document/r24d1c005-acee-43a0-acfa-5dae796b7ec4/manifest.json' // 'https://iiif.bodleian.ox.ac.uk/iiif/manifest/644ee314-14a2-4006-9fe6-80eea1258a17.json'
@@ -36,34 +22,13 @@
 export default {
   name: 'AppHeader',
   components: {
-
+    MainMenu
   },
   computed: {
-    manifest: function () {
-      return this.$store.getters.manifest
-    },
-    xmlFilename: function () {
-      // TODO: Come up with better name, maybe generate from first title in file?!
-      return 'meiFile.xml'
-    },
-    downloadAvailable: function () {
-      return this.$store.getters.meiFileForDownload !== null
-    }
+
   },
   methods: {
-    importXML: function () {
-      this.$store.dispatch('toggleLoadXMLModal')
-    },
-    importManifest: function () {
-      this.$store.dispatch('toggleLoadIIIFModal')
-    },
-    xmlDataUrl () {
-      const xml = this.$store.getters.meiFileForDownload
-      if (xml !== null) {
-        return 'data:text/xml,' + encodeURIComponent(xml)
-      }
-      return '#'
-    }
+
   }
 }
 </script>
