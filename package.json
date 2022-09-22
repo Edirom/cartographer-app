@@ -7,6 +7,10 @@
     "build": "vue-cli-service build",
     "test:unit": "vue-cli-service test:unit",
     "lint": "vue-cli-service lint",
+    "electron:build": "vue-cli-service electron:build",
+    "electron:serve": "vue-cli-service electron:serve",
+    "postinstall": "electron-builder install-app-deps",
+    "postuninstall": "electron-builder install-app-deps",
     "test:lint": "npx standard --fix | npx snazzy"
   },
   "dependencies": {
@@ -36,6 +40,8 @@
     "@vue/eslint-config-standard": "^6.1.0",
     "@vue/test-utils": "^2.0.0-alpha.1",
     "@vue/vue2-jest": "^27.0.0-alpha.3",
+    "electron": "^16.0.0",
+    "electron-devtools-installer": "^3.1.0",
     "error-stack-parser": "2.0.6",
     "eslint": "^7.32.0",
     "eslint-plugin-import": "^2.25.3",
@@ -46,7 +52,8 @@
     "jest": "^27.1.0",
     "lint-staged": "^9.5.0",
     "sass": "^1.26.5",
-    "sass-loader": "^8.0.2"
+    "sass-loader": "^8.0.2",
+    "vue-cli-plugin-electron-builder": "^3.0.0-alpha.4"
   },
   "gitHooks": {
     "pre-commit": "lint-staged"
