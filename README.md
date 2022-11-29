@@ -1,6 +1,6 @@
-# mercator-app
+# Cartographer App
 
-The Mercator App is used to provide placement information of zones of interest
+The Cartographer App is used to provide placement information of zones of interest
 in (historical) documents. The first and foremost use case is the identification
 of bounding boxes of measures in music documents. It is a successor of the
 *Vertaktoid*, but other than that uses web technology and is thus platform
@@ -14,11 +14,6 @@ of measure positions, but allows manual correction of these results.
 * OpenSeadragon. See http://openseadragon.github.io/
 * Annotorious OpenSeadragon Plugin. See https://recogito.github.io/annotorious/getting-started/osd-plugin/
 
-## About the Name
-
-Gerhard Mercator (Gheert Cremer) was a famous 16th century cartographer. He is
-best known for his 1569 world map, in which he introduced a new projection still
-used today.
 
 ## Project setup
 ```
