@@ -11,6 +11,8 @@
     "electron:serve": "vue-cli-service electron:serve",
     "postinstall": "electron-builder install-app-deps",
     "postuninstall": "electron-builder install-app-deps",
+    "tauri:build": "vue-cli-service tauri:build",
+    "tauri:serve": "vue-cli-service tauri:serve",
     "test:lint": "npx standard --fix | npx snazzy"
   },
   "dependencies": {
@@ -53,7 +55,8 @@
     "lint-staged": "^9.5.0",
     "sass": "^1.26.5",
     "sass-loader": "^8.0.2",
-    "vue-cli-plugin-electron-builder": "^3.0.0-alpha.4"
+    "vue-cli-plugin-electron-builder": "^3.0.0-alpha.4",
+    "vue-cli-plugin-tauri": "~1.0.0"
   },
   "gitHooks": {
     "pre-commit": "lint-staged"
