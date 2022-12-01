@@ -1,6 +1,6 @@
 # Multi-Stage Docker file for building the MercatorApp
 # build stage
-FROM node:16-alpine as build-stage
+FROM node:14 as build-stage
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
