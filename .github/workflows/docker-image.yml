@@ -9,11 +9,42 @@ on:
 jobs:
 
   build:
-
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - name: cartgofrapher-app
-      run: docker build . -t cartgofrapher-app
+    # - name: cartographer-app
+      # run: docker build . -t cartographer-app
+          # Login against DockerHub registry
+   # - name: Log in to DockerHub
+    #  uses: docker/login-action@v2
+     # with:
+      #    username: vifebot
+       #   password: ${{ secrets.VIFEBOT_DOCKERHUB_TOKEN }}
+    - name: Log in to GitHub Container registry
+      uses: docker/login-action@v2
+      with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Extract Docker metadata
+      id: meta
+      uses: docker/metadata-action@v4
+      with:
+          images: |
+            ghcr.io/edirom/cartographer-app
+          flavor: |
+            latest=${{ github.ref == 'refs/heads/main' }}
+         # Build and push Docker image with Buildx (don't push on PR)
+      # https://github.com/docker/build-push-action
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v3
+      with:
+          context: .
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            BUILDTYPE=github
+    
 
       
