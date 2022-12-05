@@ -48,13 +48,4 @@
     "vue-cli-plugin-electron-builder": "^3.0.0-alpha.4",
     "vue-cli-plugin-tauri": "~1.0.0"
   },
-  "gitHooks": {
-    "pre-commit": "lint-staged"
-  },
-  "lint-staged": {
-    "*.{js,jsx,vue}": [
-      "vue-cli-service lint",
-      "git add"
-    ]
-  }
 }

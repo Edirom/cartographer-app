@@ -1,9 +1,9 @@
 <template>
   <div class="dropdown">
-    <button class="btn btn-action btn-sm dropdown-toggle" title="menu">
+    <a class="btn btn-action btn-sm dropdown-toggle" tabindex="1" title="menu" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
       <font-awesome-icon icon="fa-solid fa-bars"/>
       <!--<font-awesome-icon icon="fa-regular fa-images"/>-->
-    </button>
+    </a >
     <ul class="menu mainMenu">
       <li class="divider" data-content="Data"></li>
 
