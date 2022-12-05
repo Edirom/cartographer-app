@@ -124,11 +124,11 @@ export default {
 
     const annotoriousConfig = {
       disableEditor: true,
-      readOnly: this.mode !== 'manualRect'
     }
 
     // Initialize the Annotorious plugin
     this.anno = Annotorious(this.viewer, annotoriousConfig)
+    this.anno.setDrawingEnabled(true)
 
     // Load annotations in W3C WebAnnotation format
     // anno.loadAnnotations('annotations.w3c.json');
