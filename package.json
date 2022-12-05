@@ -47,5 +47,5 @@
     "sass-loader": "^8.0.2",
     "vue-cli-plugin-electron-builder": "^3.0.0-alpha.4",
     "vue-cli-plugin-tauri": "~1.0.0"
-  },
+  }
 }
