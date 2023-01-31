@@ -47,6 +47,7 @@ export default {
 
         const overlay = document.createElement('div')
         overlay.id = zoneId
+        overlay.style.backgroundColor = "black"
         overlay.classList.add('zone')
         try { mdivIndizes.split(' ').forEach(mov => { overlay.classList.add(mov) }) } catch (err) {}
         overlay.setAttribute('data-measure', measureCssLink)

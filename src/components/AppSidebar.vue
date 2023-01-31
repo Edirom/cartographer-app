@@ -184,6 +184,9 @@ export default {
         } else {
           this.$store.dispatch('setMode', mode)
         }
+        if (mode === allowedModes.deletion) {
+          this.$store.dispatch('setMode', mode)
+        }
       } else {
         console.error('mode ' + mode + ' is not known. Please check AppSidebar.vue and @/store/index.js.')
       }

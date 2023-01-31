@@ -123,6 +123,7 @@ export default createStore({
       } else {
         // standard mode -> create new measure for zone
         if (state.mode === allowedModes.manualRect) {
+          console.log('manualRect is clicked')
           const measure = generateMeasure()
           measure.setAttribute('facs', '#' + zone.getAttribute('xml:id'))
           insertMeasure(xmlDoc, measure, state, zone, state.currentPage)
@@ -436,8 +437,12 @@ export default createStore({
     },
     selectZone ({ commit }, id) {
       commit('SELECT_ZONE', id)
+      console.log("this is select zone")
     },
     clickZone ({ commit, state }, id) {
+      console.log("this is click zone")
+
+      console.log("this is the name of the node " + state.mode)
       if (state.mode === allowedModes.deletion) {
         state.deleteZoneId = id
         const xmlDoc = state.xmlDoc.cloneNode(true)
