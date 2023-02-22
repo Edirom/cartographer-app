@@ -47,7 +47,6 @@ export default {
 
         const overlay = document.createElement('div')
         overlay.id = zoneId
-        overlay.style.backgroundColor = "black"
         overlay.classList.add('zone')
         try { mdivIndizes.split(' ').forEach(mov => { overlay.classList.add(mov) }) } catch (err) {}
         overlay.setAttribute('data-measure', measureCssLink)
@@ -66,26 +65,37 @@ export default {
         })
 
         overlay.appendChild(label)
+        overlay.addEventListener('mouseout', (e) => {
+         console.log('mouseout')
+          this.$store.dispatch('unhoverZone', zoneId)
+          e.preventDefault()
+          e.stopPropagation()
+        })
+        overlay.addEventListener('mouseenter', (e) => {
+          console.log('mousenter')
+          this.$store.dispatch('hoverZone', zoneId)
+          e.preventDefault()
+          e.stopPropagation()
+        })
+        overlay.addEventListener('pointerdown', (e) => {
+          e.preventDefault();
+          overlay.click();
+
+        })
         overlay.addEventListener('click', (e) => {
+          console.log('clicked')
           this.$store.dispatch('clickZone', zoneId)
           e.preventDefault()
           e.stopPropagation()
         })
         overlay.addEventListener('dblclick', (e) => {
+          console.log('dblclicked')
           this.$store.dispatch('selectZone', zoneId)
           e.preventDefault()
           e.stopPropagation()
+
         })
-        overlay.addEventListener('mouseenter', (e) => {
-          this.$store.dispatch('hoverZone', zoneId)
-          e.preventDefault()
-          e.stopPropagation()
-        })
-        overlay.addEventListener('mouseout', (e) => {
-          this.$store.dispatch('unhoverZone', zoneId)
-          e.preventDefault()
-          e.stopPropagation()
-        })
+
 
         this.viewer.addOverlay({
           element: overlay,
@@ -111,7 +121,7 @@ export default {
       showFullPageControl: false,
       showSequenceControl: false,
       gestureSettingsMouse: {
-        clickToZoom: false
+        clickToZoom: false,
       },
       silenceMultiImageWarnings: true
       // navigatorId: 'someId',
@@ -131,6 +141,7 @@ export default {
     this.anno = Annotorious(this.viewer, annotoriousConfig)
     this.anno.setDrawingEnabled(true)
 
+
     // Load annotations in W3C WebAnnotation format
     // anno.loadAnnotations('annotations.w3c.json');
 
@@ -138,6 +149,8 @@ export default {
     const shiftKeyDown = (e) => {
       if (e.keyCode === 16) {
         annoLayer.classList.add('activeSelection')
+        console.log("anno layer " + annoLayer)
+
       }
     }
     const shiftKeyUp = (e) => {
