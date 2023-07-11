@@ -3,25 +3,43 @@ import { iiifManifest2mei, checkIiifManifest, getPageArray } from '@/tools/iiif.
 import { meiZone2annotorious, annotorious2meiZone, measureDetector2meiZone, generateMeasure, insertMeasure, addZoneToLastMeasure, deleteZone, setMultiRest, createNewMdiv, moveContentToMdiv, toggleAdditionalZone, addImportedPage } from '@/tools/meiMappings.js'
 
 import { mode as allowedModes } from '@/store/constants.js'
-
+import qs from 'qs';
+import { Octokit } from '@octokit/rest'
+//import axios from 'axios';
+//import qs from 'query-string';
+import CLIENT_ID  from './client_id';
+import { Base64 } from 'js-base64';
 const parser = new DOMParser()
 const serializer = new XMLSerializer()
-
 export default createStore({
   modules: {
   },
   state: {
+    repo: null,
+    path: null,
+    sha: null,
+    owner: null,
+    accessToken: null,
+    selectedRepo: null,
+    selectedDirectory: null,
+    branches: null,
+    repositories: null,
+    directories: [],
+    octokit: null,
+    repos: null,
     xmlDoc: null,
     pages: [],
     currentPage: -1,
     showLoadXMLModal: false,
     showLoadIIIFModal: false,
+    showLoadGitModal: false,
     showMeasureModal: false,
     showMdivModal: false,
     showPagesModal: false,
     showPageImportModal: false,
     showMeasureList: false,
     loading: false,
+    logedin: false,
     processing: false,
     mode: allowedModes.selection,
     existingMusicMode: false,
@@ -33,7 +51,8 @@ export default createStore({
     deleteZoneId: null,
     anno: null,
     importingImages: [],
-    currentMeasureId: null // used for the MeasureModal
+    currentMeasureId: null,
+    username: null,// used for the MeasureModal
 
     // TODO isScore: true
   },
@@ -41,8 +60,15 @@ export default createStore({
     TOGGLE_LOADXML_MODAL (state) {
       state.showLoadXMLModal = !state.showLoadXMLModal
     },
+    async SET_ACCESS_TOKEN (state,{auth}){
+      state.accessToken = auth
+      state.octokit = new Octokit({ auth: state.accessToken})
+    },
     TOGGLE_LOADIIIF_MODAL (state) {
       state.showLoadIIIFModal = !state.showLoadIIIFModal
+    },
+    TOGGLE_LOADGIT_MODAL (state) {
+      state.showLoadGitModal = !state.showLoadGitModal
     },
     TOGGLE_MEASURE_MODAL (state) {
       state.showMeasureModal = !state.showMeasureModal
@@ -66,14 +92,23 @@ export default createStore({
     SET_ANNO (state, anno) {
       state.anno = anno
     },
+    SET_SELECTED_DIRECTORY(state, gitdirec){
+      state.selectedDirectory = gitdirec
+    },
     SET_XML_DOC (state, xmlDoc) {
+      console.log("this is the xml doc in set " , xmlDoc)
       state.xmlDoc = xmlDoc
       state.currentPage = 0
     },
     SET_PAGES (state, pageArray) {
       state.pages = pageArray
+      console.log("this is the length of pages " , state.pages)
+    },
+    SET_USERNAME (state, username){
+      state.username = username
     },
     SET_CURRENT_PAGE (state, i) {
+      console.log("page is changed ", state.pages.length)
       if (i > -1 && i < state.pages.length) {
         state.currentPage = i
       }
@@ -94,7 +129,14 @@ export default createStore({
     HOVER_ZONE (state, id) {
       state.hoveredZoneId = id
     },
+    setAccessToken(state, accessToken) {
+      state.accessToken = accessToken
+    },
+    setDirectories(state, directories) {
+      state.directories = directories
+    },
     CREATE_ZONE_FROM_ANNOTORIOUS (state, annot) {
+      
       const xmlDoc = state.xmlDoc.cloneNode(true)
       // console.log('create ', annot)
       const index = state.currentPage + 1
@@ -269,6 +311,13 @@ export default createStore({
     FAILED_IMAGE_IMPORT (state, { url, index }) {
       state.importingImages[index].status = 'failed'
     },
+    SET_GIT_DIRECTORIES (state, repositories){
+      state.repositories = repositories;
+    },
+    SET_GIT_BRANCHES (state, branches){
+      state.branches = branches;
+    },
+  
     ACCEPT_IMAGE_IMPORTS (state) {
       const xmlDoc = state.xmlDoc.cloneNode(true)
       state.importingImages.forEach(page => {
@@ -284,15 +333,109 @@ export default createStore({
       state.importingImages = []
       state.showPagesImportModal = false
       console.log('cancel imports')
-    }
+    },
+    SET_LOGIN_STATUS(state, bool){
+      state.logedin = bool
+    },
+    SET_REPO (state, repo) {
+        state.repo = repo
+    },
+    SET_PATH (state, path) {
+      state.path = path
+    },
+    SET_SHA (state, sha) {
+      state.sha = sha
+    },
+    async SET_OCTOKIT (state, octokit) {
+      state.octokit = octokit
+      const repos = await octokit.rest.repos.listForAuthenticatedUser();
+      
+
+    },    
+    SET_REPOS (state, repos) {
+      state.repos = repos
+    },
+    async SET_OWNER (state, owner) {
+      var resultPromise = state.octokit.rest.users.getAuthenticated()
+      console.log("result promise ", resultPromise)
+      const result = await resultPromise;
+      const { data: user } = await result
+      state.owner = user.login
+    },
+    SET_BRANCH (state, branch) {
+      console.log("this is branch " + branch)
+      state.branch  = branch
+    },
   },
   actions: {
+    async fetchDirectories({ state, commit }) {
+      try {
+        const url = `https://api.github.com/repos/${state.username}/${state.repository}/contents/${state.path}`;
+        const headers = { Authorization: `token ${state.accessToken}` };
+        //const response = await axios.get(url, { headers });
+       // const directories = response.data.filter(item => item.type === 'dir').map(item => item.name);
+       // commit('setDirectories', directories);
+      } catch (error) {
+        console.error(error);
+      }
+    },
+    exportDirectory({ state }) {
+      return axios.get(`https://api.github.com/repos/:owner/:repo/contents/${state.selectedDirectory}`, {
+        headers: {
+          Authorization: `token ${state.accessToken}`
+        }
+      })
+      .then(response => {
+        const files = response.data.filter(file => file.type === 'file');
+        return files;
+      })
+      .catch(error => {
+        console.error(error);
+      });
+    },
+    setLOGIN ( state ){
+      commit('SET_LOGIN_STATUS', true)
+    },
     toggleLoadXMLModal ({ commit }) {
       commit('TOGGLE_LOADXML_MODAL')
     },
     toggleLoadIIIFModal ({ commit }) {
       commit('TOGGLE_LOADIIIF_MODAL')
     },
+    async toggleLoadGitModal ({ commit, getters, }) {
+      const octokit = getters.octokit
+      const { data: repositories } = await octokit.repos.listForAuthenticatedUser()
+      //state.username = state.octokit.users.getAuthenticated();
+      commit('SET_GIT_DIRECTORIES',repositories)
+     // commit('SET_GIT_BRANCHES', branches)
+      commit('TOGGLE_LOADGIT_MODAL')
+    },
+    authenticate ({commit, state}, {code}){
+
+    const url = `auth?code=${code}`
+
+    fetch(url).then(resp => {
+    if (resp.ok) {
+    resp.json().then(data => {
+    const accessToken = data.access_token
+    if (accessToken) {
+            state.logedin = true
+            const userId = data.id;
+            commit('SET_ACCESS_TOKEN', { auth: accessToken})
+            commit('SET_OWNER')
+
+
+    } else {
+            console.error('authentication failed', data)
+    }
+    })
+    } else {
+          console.error('authentication failed', resp.statusText)
+    }
+    })
+
+    },
+
     toggleMeasureModal ({ commit }) {
       commit('TOGGLE_MEASURE_MODAL')
     },
@@ -315,6 +458,310 @@ export default createStore({
     setCurrentPageZone ({ commit }, j) {
       commit('SET_TOTAL_ZONES_COUNT', j)
     },
+    logout ({commit, dispatch, state}){
+      state.logedin = false
+      state.accessToken = null
+      state.owner = null
+      state.repos = null
+      state.branches = null
+      state.repo = null
+      state.username = null
+    },
+      login ({ commit, dispatch, state}) {
+
+           
+    //   // NGINX has to be configured as a reverse proxy to
+    //   // https://github.com/login/oauth/access_token?code=${code}&client_id=${CLIENT_ID}& // client_secret=${CLIENT_SECRET}
+    //   const url = `auth?code=${code}`
+    //   fetch(url).then(resp => {
+    //   if (resp.ok) { resp.json().then(data => {
+    //   const accessToken = data.access_token // console.log(data, accessToken)
+    //   if (accessToken) {
+    //   commit('SET_ACCESS_TOKEN', { auth: accessToken, store, remove }) } else {
+    //   console.error('authentication failed', data) }
+    //   })
+    //   } else {
+    //   console.error('authentication failed', resp.statusText) }
+    //   }) },
+    // acceptImageImports ({ commit }) {
+    //   commit('ACCEPT_IMAGE_IMPORTS')
+    // },
+    // cancelImageImports ({ commit }) {
+    //   commit('CANCEL_IMAGE_IMPORTS')
+    // }
+
+      const clientId = CLIENT_ID;
+      const redirectUri = 'http://localhost:8082/callback';
+      const scope = 'user';
+
+
+      const query = qs.stringify({
+        client_id: clientId,
+        redirect_uri: redirectUri,
+        scope,
+      });
+     window.location.href = `https://github.com/login/oauth/authorize?${query}`;
+    },
+
+// Call the callback function
+
+    fileToBase64(file, callback) {
+      const reader = new FileReader();
+      reader.onload = function() {
+        const content = reader.result;
+        // use the file content here
+      }
+      reader.readAsBinaryString(file); // pass the file as a parameter to readAsBinaryString
+    },
+
+    async commitGithub ({ commit, dispatch, state, getters} ){
+        
+      /**
+           * encode string to utf-8 base64
+           * @param {string} str text to encode
+           * @returns base64 encoded utf-8 coded string
+           */
+          const str2base64 = str => {
+            const enc = new TextEncoder('utf-8')
+            return Base64.fromUint8Array(enc.encode(str))
+          }
+      // const utf8text = TextEncoder
+      // const binaryString = String.fromCharCode.apply(null, state.xmlDoc);
+      // const binaryB64 = btoa(binaryString);
+      // console.log(" this is the octokit ",  state.octokit)
+
+      // const octokit = getters.octokit
+      // const commit2 = {
+      //   owner:  state.owner, // owner of repository
+      //   repo: state.repo, // repository slug
+      //   path: state.path, // path of file in directory
+      //   sha: state.sha, // sha of previous version
+      //   branch: str2base64(state.xml), // branch of repository
+      //   message: "Commit from vertaktoid", // commit message
+      //    // base64 encoded content
+      //   }
+      //   octokit.repos.createOrUpdateFileContents(commit2).then(({ data }) => {
+      //     // Handle the response from the API call
+      //     console.log('File contents updated:', data);
+      //   }).catch((err) => {
+      //     // Handle any errors that occurred
+
+      //     console.error('Error updating file contents:', err);
+      //   });   
+        //console.log("permssion is " , permissions)
+
+
+
+        const { data } = await state.octokit.pulls.create({
+          owner: state.owner,
+          repo: state.repo,
+          title: 'This is the title ',
+          head: state.owner+"main",
+          base: "main",
+          body: 'we are trying to change things here',
+        });
+        
+ 
+      },
+    async setBranches({ commit, dispatch, state, getters}, directory){
+      console.log("this is branch " + directory)
+      const indexFirst = directory.indexOf("/")
+      const repo = indexFirst > 0 ? directory.substring(0, indexFirst) : directory
+      const path = indexFirst > 0 ? directory.substring(indexFirst) : ""
+      let owner = ""
+      
+      const octokit = getters.octokit
+      const repos = await octokit.rest.repos.listForAuthenticatedUser();
+      
+           // const [_, owner, repo, branch, ...path] = directory.split("/");
+      for (const re of repos.data) {
+        if(re.name == repo){
+          owner = re.owner.login
+        }
+      }           
+
+      console.log('repo and path are:', directory)
+      const { data: rootContents } = await octokit.repos.getContent({
+        owner: owner,
+        repo: repo,
+        path: path,
+      });
+
+      console.log("this si the owner , " + owner)
+
+      console.log("this is the url  " , rootContents.download_url)
+      const parts =  rootContents.download_url.split("/");
+      const branchName = parts[5];
+      console.log("this is branch name   " , branchName)
+
+      dispatch('setOwner', owner)
+      dispatch('setRepo', repo)
+      dispatch('setPath', path)
+      dispatch('setSha', rootContents.sha)
+//      dispatch('setOctokit', octokit)
+      dispatch('setRepos', repos)
+
+      if (path.includes(".json")){
+        dispatch('importIIIF', rootContents.download_url)
+
+      }
+    //   let xmlDoc2 = ""
+
+
+    //   fetch(rootContents.download_url)
+    //   .then(response => response.text())
+    //   .then(xmlString => {
+    //     const parser = new DOMParser();
+    //     const xmlDoc2 = parser.parseFromString(xmlString, "application/xml");
+
+    //     console.log("this is xmlDoc inside fetch: ", xmlDoc2);
+
+    //     // Call a function that needs to use the xmlDoc variable
+    //     myFunction(xmlDoc2);
+    //   })
+    //   .catch(error => console.error(error));
+    
+    // function myFunction(xmlDoc2) {
+    //   console.log("this is xmlDoc outside fetch:", xmlDoc2);
+    //   dispatch('setData', xmlDoc2)
+
+
+    //   // Do something with the xmlDoc variable
+    // }
+
+      // const decodedContent = new TextDecoder().decode(
+      //   Uint8Array.from(atob(rootContents.data.content), c => c.charCodeAt(0))
+      // );
+      
+      // Print the file content
+
+
+      // const filteredContents = contents.data.filter(content => content.type === 'file' && content.name.match(/\.(mei|xml)$/i))
+
+      // // If no files with .mei or .xml extension found, return null
+      // if (filteredContents.length === 0) {
+      //   return null
+      // }
+
+      // // Get the content of the first file found
+      // const fileContent = await octokit.rest.repos.getContent({ owner, repo, path: filteredContents[0].path })
+
+      // // Decode the base64-encoded content
+      // const decodedContent = Buffer.from(fileContent.data.content, 'base64').toString('utf-8')
+
+      // console.log(decodedContent)
+
+      // const manifest = rootContents.filter(content => content.type === 'file' && content.path.match(/\.(mei|xml)$/i));
+      // const pageArray = getPageArray(manifest)
+      // print("this is the pageArray " + manifest)
+
+      // let countImage = images.length
+      // const imgload = new Promise(function (resolve, reject) {
+      //   const arr = []
+        
+        // images.forEach(image => {       
+        //   var img = new Image() 
+        //   const obj = {}
+        //     const url = image.download_url;
+    
+        //     img.onload = function (){
+        //       obj.width = img.width
+        //       obj.height = img.height
+        //       obj.uri = image.download_url
+        //       arr.push(obj)
+        //       --countImage
+        //       if(countImage == 0){
+        //         console.log("this is the length of arr ", arr[0])
+        //         commit('SET_PAGES', arr)
+        //         resolve(arr)
+        //       }
+
+        //   }
+        //   img.onerror = function () {
+        //     --countImage
+        //     if(countImage == 0){
+        //       console.log("this is the length of arr ", arr[0])
+        //       commit('SET_PAGES', arr)
+        //       resolve(arr)
+        //     }
+        // }
+        //   img.src = url
+      
+        // })
+          
+
+        
+        // fetch(url)
+        //   .then(response => response.blob())
+        //   .then(blob => {
+        //     const reader = new FileReader();
+        //     reader.onload = () => {
+        //       const dataUrl = reader.result;
+        //       console.log('Image downloaded successfully', reader);
+        //     };
+        //     reader.readAsDataURL(blob);
+        //   })
+        //   .catch(error => {
+        //     console.log(`Error downloading image: ${error.message}`);
+        //   });
+        
+
+      //});
+      
+
+
+
+
+
+     // const repos = await octokit.rest.repos.listForAuthenticatedUser();
+
+// Iterate over each repository to get its subrepositories
+
+
+    //   rootContents.forEach  ((content) => console.log("this is the content " , content));
+  // if(repo.name == directory || subrepo.full_name == directory){
+  //   console.log("this is the folder inside " + repo.name)
+  // }
+  // console.log(`${repo.name} has ${subrepos.data.length} subrepositories:`);
+  // console.log(subrepos.data.map((subrepo) => subrepo.full_name));
+
+    //  const directory_name = directory.name    
+    //  const  owner = directory.owner.login
+    //   console.log("this are repo " , directory)
+
+    //   const baseBranch = "main"; // replace with your desired branch name
+    //   const octokit = new Octokit({ auth: this.state.accessToken})
+      
+    //   const { data: rootContents } = await octokit.repos.getContent({
+    //     owner: owner,
+    //     repo: directory_name,
+    //     path: ''
+    //   });
+    //   rootContents.forEach  ((content) => console.log("this is the content " , content));
+      
+      // Filter the contents to include only directorie
+},
+setOwner ({ commit, dispatch }, owner) {
+  commit('SET_OWNER', owner)
+},
+setRepo ({ commit, dispatch }, repo) {
+  commit('SET_REPO', repo)
+},
+setPath ({ commit, dispatch }, path) {
+  commit('SET_PATH', path)
+},
+setSha ({ commit, dispatch }, sha) {
+  commit('SET_SHA', sha)
+}, 
+setOctokit ({ commit, dispatch }, octokit) {
+  commit('SET_OCTOKIT', octokit)
+},
+setRepos ({ commit, dispatch }, repos) {
+  commit('SET_REPOS', repos)
+},
+setBranch ({ commit, dispatch }, branch) {
+  commit('SET_BRANCH', branch)
+}, 
     importIIIF ({ commit, dispatch }, url) {
       commit('SET_LOADING', true)
       fetch(url)
@@ -355,8 +802,9 @@ export default createStore({
     },
     async autoDetectZonesOnCurrentPage ({ commit, state }) {
       const pageIndex = state.currentPage
-      const imageUri = state.pages[pageIndex].uri + '/full/full/0/default.jpg'
+      const imageUri = state.pages[pageIndex].uri.replace(/\/info\.json/, '') + '/full/full/0/default.jpg'
       const blob = await fetch(imageUri).then(r => r.blob())
+      console.log("this is blob ", imageUri)
 
       const successFunc = (json) => {
         commit('SET_LOADING', false)
@@ -428,12 +876,20 @@ export default createStore({
     setData ({ commit }, mei) {
       const pageArray = getPageArray(mei)
       commit('SET_PAGES', pageArray)
+      console.log("this is SET_PAGES ", mei)
 
       commit('SET_XML_DOC', mei)
+      console.log("this is SET_XML_DOC ", mei)
 
       commit('SET_CURRENT_PAGE', 0)
+      console.log("this is SET_XML_DOC ", mei)
+
       commit('SET_PROCESSING', false)
+      console.log("this is SET_PROCESSING ", mei)
+
       commit('HIDE_MODALS')
+      console.log("this is HIDE_MODALS ", mei)
+
     },
     selectZone ({ commit }, id) {
       commit('SELECT_ZONE', id)
@@ -502,6 +958,9 @@ export default createStore({
     setCurrentMdiv ({ commit }, id) {
       commit('SET_CURRENT_MDIV', id)
     },
+    setDirectory ({ commit }, directory) {
+      commit('SET_SELECTED_DIRECTORY', directory)
+    },
     setCurrentMdivLabel ({ commit }, val) {
       commit('SET_CURRENT_MDIV_LABEL', val)
     },
@@ -513,6 +972,7 @@ export default createStore({
     },
     registerImageImports ({ commit }, urls) {
       const arr = urls.replace(/\s+/g, ' ').trim().split(' ')
+      console.log("this is arr in register Image " + arr)
       arr.forEach((url, index) => {
         commit('REGISTER_IMAGE_IMPORT', { url, index })
         fetch(url)
@@ -536,14 +996,47 @@ export default createStore({
     }
   },
   getters: {
+    accesstoken: state => {
+      return state.accessToken
+    },
+    getowner: state=>{
+      console.log("this is owner "+ state.owner)
+      return state.owner
+    },
+    octokit: state => {
+      return state.octokit
+    },
     isReady: state => {
       return state.xmlDoc !== null
     },
+    accessToken: state => state.accessToken,
+    directories: state => state.directories,
+
     isLoading: state => {
       return state.loading
     },
     totalZones: state => {
       return state.totalZones
+    },
+    getBranch: state => {
+      return state.branch
+    },
+    getPath: state => {
+      return state.path
+
+    },
+    getSha: state => {
+      return state.sha
+
+    },
+    getLoginStatus: state => {
+      return state.logedin
+    },
+    getUsername: state => {
+      return state.username
+    },
+    getRepo: state => {
+      return state.repo
     },
     meiFileForDownload: state => {
       if (state.xmlDoc === null) {
@@ -572,7 +1065,6 @@ export default createStore({
         }
         arr.push(obj)
       })
-
       return arr
     },
     pagesDetailed: state => {
@@ -724,6 +1216,7 @@ export default createStore({
       return meiZone2annotorious(state.xmlDoc, zone, pageUri)
     },
     showLoadIIIFModal: state => state.showLoadIIIFModal,
+    showLoadGitModal: state => state.showLoadGitModal,
     showLoadXMLModal: state => state.showLoadXMLModal,
     showMeasureModal: state => state.showMeasureModal,
     showPagesModal: state => state.showPagesModal,
@@ -757,6 +1250,15 @@ export default createStore({
         return null
       }
       return measure.getAttribute('xml:id')
+    },
+    getGitRepositotries: state => {
+      return state.repositories
+    },
+    getGitRepositotry: state => {
+      return state.selectedDirectory
+    },
+    getGitBranches: state => {
+      return state.branches
     }
   }
 })

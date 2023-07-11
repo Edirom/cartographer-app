@@ -1,10 +1,20 @@
 import { uuid } from '@/tools/uuid.js'
 
-function addPage (canvas, n, file, meiSurfaceTemplate) {
+function addPage (canvas, n, file, meiSurfaceTemplate, hasItems) {
+  console.log("this is the meisurface " , canvas)
   const label = canvas.label
   const height = canvas.height
   const width = canvas.width
-  const uri = canvas?.images[0]?.resource?.service['@id']
+  var uri = ""
+  if(hasItems == true){
+    console.log("has item is true")
+    uri = canvas?.items[0]?.items[0]?.body?.service[0].id+"/info.json"
+  }else{
+    console.log("has item is false")
+     uri = canvas?.images[0]?.resource?.service['@id']+"/info.json"
+  }
+
+  console.log("this is the url " + uri )
 
   const surfaceId = 's' + uuid()
   const graphicId = 'g' + uuid()
@@ -75,10 +85,17 @@ export async function iiifManifest2mei (json, url, parser) {
         console.log('Apparently, there is no metadata for this IIIF Manifest.')
       }
       // handle pages
-      json.sequences[0].canvases.forEach((canvas, i) => {
-        addPage(canvas, i + 1, file, meiSurfaceTemplate)
-      })
-
+      if(json.sequences){
+        json.sequences[0].canvases.forEach((canvas, i) => {
+          var hasItems = false
+          addPage(canvas, i + 1, file, meiSurfaceTemplate, hasItems)
+        })
+      }else{
+        json.items.forEach((canvas, i) => {
+          var hasItems = true
+          addPage(canvas, i + 1, file, meiSurfaceTemplate, hasItems)
+        })
+      }
       return file
     })
 }
@@ -90,8 +107,14 @@ export function checkIiifManifest (json) {
 
   const hasId = typeof json['@id'] === 'string' && json['@id'].length > 0
   const hasSequences = Array.isArray(json.sequences)
+  const hasItems = Array.isArray(json.items)
+  console.log("has items is " , claimsManifest)
 
-  return (claimsIiif2 || claimsIiif3) && claimsManifest && hasId && hasSequences
+  if(hasItems == true){
+    return true
+  }else{
+    return (claimsIiif2 || claimsIiif3) && claimsManifest && hasId && (hasSequences || hasItems)
+  }
 }
 
 export function getPageArray (mei) {
@@ -101,9 +124,13 @@ export function getPageArray (mei) {
 
     const obj = {}
     obj.uri = graphic.getAttributeNS('', 'target').trim()
+    console.log("this is the target ", obj.uri)
     obj.id = surface.getAttribute('xml:id').trim()
+    console.log("this is the id ", obj.id)
     obj.n = surface.getAttributeNS('', 'n').trim()
-    obj.label = surface.getAttributeNS('', 'label').trim()
+    console.log("this is the n ", obj.n)
+    //obj.label = surface.getAttributeNS('', 'label').trim()
+    console.log("this is the label ", obj.label)
     obj.width = parseInt(graphic.getAttributeNS('', 'width').trim(), 10)
     obj.height = parseInt(graphic.getAttributeNS('', 'height').trim(), 10)
     obj.hasSvg = surface.querySelector('svg') !== null // exists(svg:svg) inside relevant /surface

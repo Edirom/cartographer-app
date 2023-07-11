@@ -11,12 +11,13 @@ import { library } from '@fortawesome/fontawesome-svg-core'
 /* import font awesome icon component */
 import { FontAwesomeIcon, FontAwesomeLayers } from '@fortawesome/vue-fontawesome'
 /* import specific icons */
-import { faAngleLeft, faAngleRight, faCropSimple, faPen, faScissors, faEraser, faArrowPointer, faWandSparkles, faGuitar, faLayerGroup, faStop, faSquarePlus as faSquarePlusSolid, faDownload, faFileImport, faCloudArrowDown, faTerminal, faSitemap, faBars, faListOl, faVectorSquare } from '@fortawesome/free-solid-svg-icons'
-import { faClone, faSquare, faSquarePlus, faRectangleXmark, faImages } from '@fortawesome/free-regular-svg-icons'
+import { faAngleLeft, faAngleRight, faCropSimple, faPen, faScissors, faUser, faFile, faPeace, faCodeCommit, faEraser, faCircleArrowDown , faArrowPointer, faWandSparkles, faGuitar, faLayerGroup, faStop, faSquarePlus as faSquarePlusSolid, faDownload, faFileImport, faCloudArrowDown, faTerminal, faSitemap, faBars, faListOl, faVectorSquare} from '@fortawesome/free-solid-svg-icons'
+import { faClone, faSquare, faSquarePlus, faRectangleXmark, faImages, faArrowAltCircleUp} from '@fortawesome/free-regular-svg-icons'
+import router from './router'
 /* add icons to the library */
-library.add(faAngleLeft, faAngleRight, faClone, faCropSimple, faPen, faScissors, faEraser, faArrowPointer, faSquare, faWandSparkles, faGuitar, faLayerGroup, faStop, faSquarePlus, faSquarePlusSolid, faDownload, faFileImport, faCloudArrowDown, faTerminal, faSitemap, faRectangleXmark, faImages, faBars, faListOl, faVectorSquare)
+library.add(faAngleLeft, faAngleRight, faClone, faCropSimple, faPen, faUser, faPeace, faArrowAltCircleUp, faCodeCommit, faFile,faCircleArrowDown, faScissors, faEraser, faArrowPointer, faSquare, faWandSparkles, faGuitar, faLayerGroup, faStop, faSquarePlus, faSquarePlusSolid, faDownload, faFileImport, faCloudArrowDown, faTerminal, faSitemap, faRectangleXmark, faImages, faBars, faListOl, faVectorSquare, faPeace)
 
-createApp(App)
+createApp(App).use(router)
   .use(store)
   .component('font-awesome-icon', FontAwesomeIcon)
   .component('font-awesome-layers', FontAwesomeLayers)

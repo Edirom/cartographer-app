@@ -377,6 +377,7 @@ export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex, t
           precedingMeasure.after(sb)
         }
       } else {
+        console.log("this is the index " + newIndex)
         // measure goes somewhere in current system
         console.log('new measure has ' + newIndex + ' preceding measures in current system')
 

@@ -51,7 +51,6 @@
       @click="activateMode('deletion')">
       <font-awesome-icon icon="fa-solid fa-eraser"/>
     </button>
-
     <!-- MDIV -->
     <!-- <button class="btn btn-action"  :class="{'activeMode': mode === 'mdiv'}"
       title="select movement" :disabled="!isReady"
@@ -185,6 +184,9 @@ export default {
           this.$store.dispatch('setMode', mode)
         }
         if (mode === allowedModes.deletion) {
+          this.$store.dispatch('setMode', mode)
+        }
+        if (mode === allowedModes.login) {
           this.$store.dispatch('setMode', mode)
         }
       } else {

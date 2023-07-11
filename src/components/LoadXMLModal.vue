@@ -54,9 +54,11 @@ export default {
       if (file) {
         const reader = new FileReader()
         reader.addEventListener('load', () => {
-          console.log(file)
+          console.log("this is file ", file)
           const xml = reader.result
+          console.log("this is the result ", reader.result)
           const mei = parser.parseFromString(xml, 'application/xml')
+          console.log("this is the mei ", mei)
           this.$store.dispatch('setData', mei)
           this.closeModal()
         })

@@ -10,11 +10,13 @@
       <div class="modal-body">
         <div class="content">
           <div class="form-group customFormGroup">
-            <select class="form-select">
+            <select class="form-select"  id="mdivSelect" @change="handleChange()">
               <option v-for="(mdiv, mdivIndex) in mdivs" @click="selectMdiv(mdiv.id)" :selected="mdiv.id === measure.mdiv" :value="mdiv.id" v-bind:key="mdivIndex">{{ mdiv.label }}</option>
-              <option value="___newMdiv___" @click="createNewMdiv">[new mdiv]</option>
+              <option tabindex="1" title="menu" value="___newMdiv___">[new mdiv]</option>
             </select>
+
           </div>
+    
 
           <div class="form-group customFormGroup">
             <label class="form-switch">
@@ -129,8 +131,18 @@ export default {
     },
     closeModal: function () {
       this.$store.dispatch('toggleMeasureModal')
-    }
+    },
+   handleChange: function() {
+    var select = document.getElementById("mdivSelect");
+    var selectedValue = select.options[select.selectedIndex].value;
+      if (selectedValue === "___newMdiv___") {
+        this.$store.dispatch('createNewMdiv')
+        this.$store.dispatch('toggleMdivModal')
+      } else {
+        // handle other options
+      }
   }
+ }
 }
 </script>
 

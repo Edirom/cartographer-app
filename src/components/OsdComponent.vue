@@ -88,13 +88,7 @@ export default {
           e.preventDefault()
           e.stopPropagation()
         })
-        overlay.addEventListener('dblclick', (e) => {
-          console.log('dblclicked')
-          this.$store.dispatch('selectZone', zoneId)
-          e.preventDefault()
-          e.stopPropagation()
 
-        })
 
 
         this.viewer.addOverlay({
@@ -152,7 +146,7 @@ export default {
         console.log("anno layer " + annoLayer)
 
       }
-    }
+    } 
     const shiftKeyUp = (e) => {
       if (e.keyCode === 16) {
         annoLayer.classList.remove('activeSelection')
