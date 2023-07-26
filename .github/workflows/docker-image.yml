@@ -37,15 +37,15 @@ jobs:
             latest=${{ github.ref == 'refs/heads/main' }}
          # and push Docker image with Buildx (don't push on PR)
       # https://github.com/docker/build-push-action
-    - name: build and push Docker image
-      uses: docker/build-push-action@v3
-      with:
-          context: .
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            BUILDTYPE=github
+   # - name: build and push Docker image
+    #  uses: docker/build-push-action@v3
+   #   with:
+    #      context: .
+    #      push: ${{ github.event_name != 'pull_request' }}
+    #      tags: ${{ steps.meta.outputs.tags }}
+    #      labels: ${{ steps.meta.outputs.labels }}
+   #       build-args: |
+   #         BUILDTYPE=github
     - name: deploy
       run: |
         curl -X POST https://keel3.edirom.de/v1/webhooks/native -H 'Content-Type: application/json' -d '{"name": "ghcr.io/edirom/cartographer-app", "tag": "dev"}'
