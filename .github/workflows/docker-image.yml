@@ -13,7 +13,8 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     # - name: cartographer-app
-      # run: docker build . -t cartographer-app
+          # run: docker build . -t cartographer-app
+    - run: docker-compose up -d --build
           # Login against DockerHub registry
    # - name: Log in to DockerHub
     #  uses: docker/login-action@v2
