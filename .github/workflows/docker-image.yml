@@ -47,8 +47,8 @@ jobs:
           build-args: |
               BUILDTYPE=github
     - name: deploy
-      run: 
-          curl -X POST https://keel3.edirom.de/v1/webhooks/native -H 'Content-Type: application/json' -d '{"name": "ghcr.io/edirom/cartographer-app", "tag": "dev"}'
+      run: | 
+        curl -X POST https://keel3.edirom.de/v1/webhooks/native -H 'Content-Type: application/json' -d '{"name": "ghcr.io/edirom/cartographer-app", "tag": "dev"}'
 
 #    - name: Docker Compose Actions Workflow
 #    on: push
