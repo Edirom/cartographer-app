@@ -47,7 +47,6 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
               BUILDTYPE=github
-      
     - name: build and push Docker image
       uses: docker/build-push-action@v3
       with:
