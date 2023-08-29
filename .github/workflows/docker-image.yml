@@ -41,28 +41,7 @@ jobs:
       uses: docker/build-push-action@v3
       with:
           context: .
-          file: nginx.conf/Dockerfile
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-              BUILDTYPE=github
-                    # https://github.com/docker/build-push-action
-    - name: build and push Docker image
-      uses: docker/build-push-action@v3
-      with:
-          context: .
-          file: node-ghcred/Dockerfile
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-              BUILDTYPE=github
-    - name: build and push Docker image
-      uses: docker/build-push-action@v3
-      with:
-          context: .
-          file: Dockerfile
+          file: Dockerfile.peter.txt
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
