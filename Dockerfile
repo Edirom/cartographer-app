@@ -11,7 +11,7 @@ FROM nginx:alpine
 WORKDIR /etc/nginx
 COPY ./nginx.conf/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=builder /usr/app/* /usr/share/nginx/html/
-COPY ngnix-ghcred/40-create-ghcred.sh /docker-entrypoint.d
+COPY 40-create-ghcred.sh /docker-entrypoint.d
 EXPOSE 80
 ENTRYPOINT [ "nginx" ]
 CMD [ "-g", "daemon off;" ]
