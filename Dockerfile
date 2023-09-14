@@ -9,7 +9,7 @@ RUN npm i  --legacy-peer-deps && npm run build
 FROM nginx:alpine
 
 WORKDIR /etc/nginx
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY ngnix.conf /etc/nginx/conf.d/default.conf
 COPY --from=builder /usr/app/* /usr/share/nginx/html/
 COPY 40-create-ghcred.sh /docker-entrypoint.d
 EXPOSE 80
