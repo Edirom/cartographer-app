@@ -2,9 +2,9 @@ name: Docker Image CI
 
 on:
   push:
-    branches: [ "dev" ]
+    branches: [ "github-action" ]
   pull_request:
-    branches: [ "dev" ]
+    branches: [ "github-action" ]
 
 jobs:
 
@@ -70,8 +70,7 @@ jobs:
               BUILDTYPE=github
     - name: deploy
       run: | 
-        curl -X POST https://keel3.edirom.de/v1/webhooks/native -H 'Content-Type: application/json' -d '{"name": "ghcr.io/edirom/cartographer-app", "tag": "dev"}'
-
+        curl -X POST https://keel3.edirom.de/v1/webhooks/native -H 'Content-Type: application/json' -d '{"name": "ghcr.io/edirom/cartographer-app", "tag": "github-action"}'
 #    - name: Docker Compose Actions Workflow
 #    on: push
 #    jobs: 
