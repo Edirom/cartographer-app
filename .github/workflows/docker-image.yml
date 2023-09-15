@@ -2,9 +2,9 @@ name: Docker Image CI
 
 on:
   push:
-    branches: [ "dev" ]
+    branches: [ "github-action" ]
   pull_request:
-    branches: [ "dev" ]
+    branches: [ "github-action" ]
 
 jobs:
 
@@ -34,14 +34,14 @@ jobs:
           images: |
             ghcr.io/edirom/cartographer-app
           flavor: |
-            latest=${{ github.ref == 'refs/heads/main' }}
+            latest=${{ github.ref == 'github-action' }}
          # and push Docker image with Buildx (don't push on PR)
       # https://github.com/docker/build-push-action
     - name: build and push Docker image
       uses: docker/build-push-action@v3
       with:
           context: .
-          file: Dockerfile.peter.txt
+          file: Dockerfile
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -49,15 +49,4 @@ jobs:
               BUILDTYPE=github
     - name: deploy
       run: | 
-        curl -X POST https://keel3.edirom.de/v1/webhooks/native -H 'Content-Type: application/json' -d '{"name": "ghcr.io/edirom/cartographer-app", "tag": "dev"}'
-
-#    - name: Docker Compose Actions Workflow
-#    on: push
-#    jobs: 
-#        test:
-#          runs-on: ubuntu-latest
-#          steps: 
-#          - uses: actions/checkout@v2
-#          - name: Build the stack
-#            run: docker-compose up -d
-          
+        curl -X POST https://keel3.edirom.de/v1/webhooks/native -H 'Content-Type: application/json' -d '{"name": "ghcr.io/edirom/cartographer-app", "tag": "github-action"}'
