@@ -34,7 +34,7 @@ jobs:
           images: |
             ghcr.io/edirom/cartographer-app
           flavor: |
-            latest=${{ github.ref == 'refs/heads/main' }}
+            latest=${{ github.ref == 'github-action' }}
          # and push Docker image with Buildx (don't push on PR)
       # https://github.com/docker/build-push-action
     - name: build and push Docker image
