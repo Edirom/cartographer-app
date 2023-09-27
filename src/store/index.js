@@ -8,9 +8,10 @@ import { Octokit } from '@octokit/rest'
 //import axios from 'axios';
 //import qs from 'query-string';
 import CLIENT_ID  from './client_id';
-console.log("this is CLIENT ID  " + CLIENT_ID)
 import CALL_BACK  from './call_back';
 import CLIENT_SECRET  from './client_secret';
+console.log("this is CLIENT SECRET  " + CLIENT_SECRET)
+
 import { Base64 } from 'js-base64';
 const parser = new DOMParser()
 const serializer = new XMLSerializer()
