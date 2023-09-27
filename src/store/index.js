@@ -493,12 +493,9 @@ export default createStore({
     // }
 
       const clientId = CLIENT_ID;
-<<<<<<< HEAD
       const redirectUri = CALL_BACK;
       const clientSecret = CLIENT_SECRET;
-=======
       const redirectUri = 'https://cartographer-app.zenmem.de/callback';
->>>>>>> 03bc754534ee4a7789844d1eeaa6d7f095d65f0d
       const scope = 'user';
 
 
