@@ -2,6 +2,8 @@ FROM node:latest as builder
 WORKDIR /usr/app
 COPY . .
 RUN echo "VUE_APP_CLIENT_ID=$CLIENT_ID" >.env.development.local
+RUN echo "VUE_APP_CLIENT_SECRET=$CLIENT_SECRET" >.env.development.local
+RUN echo "VUE_APP_CALL_BACK=$CALL_BACK" >.env.development.local
 RUN npm install --legacy-peer-deps --force && npm run build
 
 
