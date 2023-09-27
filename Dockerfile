@@ -1,7 +1,7 @@
 FROM node:latest as builder
 WORKDIR /usr/app
 COPY . .
-#RUN echo "VUE_APP_CLIENT_ID=$CLIENT_ID" >.env.development.local
+RUN echo "VUE_APP_CLIENT_ID=$CLIENT_ID" >.env.development.local
 RUN npm i  --legacy-peer-deps && npm run build 
 
 
