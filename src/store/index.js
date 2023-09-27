@@ -10,9 +10,9 @@ import { Octokit } from '@octokit/rest'
 import CLIENT_ID  from './client_id';
 import CALL_BACK  from './call_back';
 import CLIENT_SECRET  from './client_secret';
-console.log("this is URL   " + url)
-console.log("this is CLIENT_ID   " + client_id)
-console.log("this is CLIENT_SECRET   " + client_secret)
+console.log("this is URL   " + CALL_BACK)
+console.log("this is CLIENT_ID   " + CLIENT_ID)
+console.log("this is CLIENT_SECRET   " + CLIENT_SECRET)
 
 
 import { Base64 } from 'js-base64';
