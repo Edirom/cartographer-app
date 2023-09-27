@@ -8,6 +8,8 @@ import { Octokit } from '@octokit/rest'
 //import axios from 'axios';
 //import qs from 'query-string';
 import CLIENT_ID  from './client_id';
+import CALL_BACK  from './call_back';
+import CLIENT_SECRET  from './client_secret';
 import { Base64 } from 'js-base64';
 const parser = new DOMParser()
 const serializer = new XMLSerializer()
@@ -491,15 +493,18 @@ export default createStore({
     // }
 
       const clientId = CLIENT_ID;
-      const redirectUri = 'http://localhost:8082/callback';
+      const redirectUri = CALL_BACK;
+      const clientSecret = CLIENT_SECRET;
       const scope = 'user';
 
 
       const query = qs.stringify({
         client_id: clientId,
+        client_secret: clientSecret,
         redirect_uri: redirectUri,
         scope,
       });
+      console.log("this is the client id " + clientId)
      window.location.href = `https://github.com/login/oauth/authorize?${query}`;
     },
 

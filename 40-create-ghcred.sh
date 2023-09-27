@@ -4,4 +4,5 @@
 cat <<EOT | envsubst | tr '@' '$' >/GH_OAUTH_CLIENT.conf
 set @CLIENT_ID $CLIENT_ID;
 set @CLIENT_SECRET $CLIENT_SECRET;
+set @CALL_BACK $CALL_BACK
 EOT
