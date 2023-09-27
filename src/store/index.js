@@ -10,7 +10,7 @@ import { Octokit } from '@octokit/rest'
 import CLIENT_ID  from './client_id';
 import CALL_BACK  from './call_back';
 import CLIENT_SECRET  from './client_secret';
-console.log("this is CLIENT SECRET  " + CLIENT_SECRET)
+console.log("this is URL   " + CALL_BACK)
 
 import { Base64 } from 'js-base64';
 const parser = new DOMParser()
