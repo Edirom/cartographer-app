@@ -10,7 +10,10 @@ import { Octokit } from '@octokit/rest'
 import CLIENT_ID  from './client_id';
 import CALL_BACK  from './call_back';
 import CLIENT_SECRET  from './client_secret';
-console.log("this is URL   " + CALL_BACK)
+console.log("this is URL   " + url)
+console.log("this is CLIENT_ID   " + client_id)
+console.log("this is CLIENT_SECRET   " + client_secret)
+
 
 import { Base64 } from 'js-base64';
 const parser = new DOMParser()
@@ -496,7 +499,6 @@ export default createStore({
 
       const clientId = CLIENT_ID;
       const redirectUri = CALL_BACK;
-      console.log("this is CLIENT ID  " + clientId)
       const clientSecret = CLIENT_SECRET;
       const scope = 'user';
 
@@ -507,7 +509,6 @@ export default createStore({
         redirect_uri: redirectUri,
         scope,
       });
-      console.log("this is the client id " + clientId)
      window.location.href = `https://github.com/login/oauth/authorize?${query}`;
     },
 
