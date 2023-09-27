@@ -494,6 +494,7 @@ export default createStore({
 
       const clientId = CLIENT_ID;
       const redirectUri = CALL_BACK;
+      console.log("this is CLIENT ID  " + clientId)
       const clientSecret = CLIENT_SECRET;
       const scope = 'user';
 
