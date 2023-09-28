@@ -434,8 +434,8 @@ export default createStore({
     const url = `https://github.com/login/oauth/authorize?auth?code=${code}&${query}`
 
     fetch(url).then(resp => {
+      console.log(resp.ok)
     if (resp.ok) {
-    console.log("OK")
     resp.json().then(data => {
     const accessToken = data.access_token
     if (accessToken) {
