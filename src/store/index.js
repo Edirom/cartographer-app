@@ -432,14 +432,15 @@ export default createStore({
     });
 
     const url = `https://github.com/login/oauth/authorize?auth?code=${code}&${query}`
-    console.log(url)
 
     fetch(url).then(resp => {
     if (resp.ok) {
+    console.log("OK")
     resp.json().then(data => {
     const accessToken = data.access_token
     if (accessToken) {
             state.logedin = true
+        
             const userId = data.id;
             commit('SET_ACCESS_TOKEN', { auth: accessToken})
             commit('SET_OWNER')
