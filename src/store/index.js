@@ -413,8 +413,23 @@ export default createStore({
       commit('TOGGLE_LOADGIT_MODAL')
     },
     authenticate ({commit, state}, {code}){
+    
+    console.log("this is the authenticate function ")
+    const clientId = CLIENT_ID;
+    const redirectUri = CALL_BACK;
+    const clientSecret = CLIENT_SECRET;
+    const scope = 'user';
 
-    const url = `auth?code=${code}`
+
+    const query = qs.stringify({
+      client_id: clientId,
+      client_secret: clientSecret,
+      redirect_uri: redirectUri,
+      scope,
+    });
+
+    const url = `https://github.com/login/oauth/authorize?auth?code=${code}&${query}`
+    console.log(url)
 
     fetch(url).then(resp => {
     if (resp.ok) {
@@ -428,11 +443,11 @@ export default createStore({
 
 
     } else {
-            console.error('authentication failed', data)
+            console.error('authentication failed 1', data)
     }
     })
     } else {
-          console.error('authentication failed', resp.statusText)
+          console.error('authentication failed 2', resp.statusText)
     }
     })
 
@@ -493,12 +508,8 @@ export default createStore({
     // }
 
       const clientId = CLIENT_ID;
-<<<<<<< HEAD
       const redirectUri = CALL_BACK;
       const clientSecret = CLIENT_SECRET;
-=======
-      const redirectUri = 'https://cartographer-app.zenmem.de/callback';
->>>>>>> 03bc754534ee4a7789844d1eeaa6d7f095d65f0d
       const scope = 'user';
 
 
@@ -508,8 +519,8 @@ export default createStore({
         redirect_uri: redirectUri,
         scope,
       });
-      console.log("this is the client id " + clientId)
-     window.location.href = `https://github.com/login/oauth/authorize?${query}`;
+      state.logedin = true
+      window.location.href = `https://github.com/login/oauth/authorize?${query}`;
     },
 
 // Call the callback function
