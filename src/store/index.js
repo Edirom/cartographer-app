@@ -10,6 +10,9 @@ import { Octokit } from '@octokit/rest'
 import CLIENT_ID  from './client_id';
 import CALL_BACK  from './call_back';
 import CLIENT_SECRET  from './client_secret';
+
+
+
 import { Base64 } from 'js-base64';
 const parser = new DOMParser()
 const serializer = new XMLSerializer()
@@ -139,6 +142,8 @@ export default createStore({
     },
     CREATE_ZONE_FROM_ANNOTORIOUS (state, annot) {
       
+      if (state.mode !== allowedModes.selection) {
+      
       const xmlDoc = state.xmlDoc.cloneNode(true)
       // console.log('create ', annot)
       const index = state.currentPage + 1
@@ -180,6 +185,7 @@ export default createStore({
 
       state.xmlDoc = xmlDoc
       // console.log(state.xmlDoc)
+    }
     },
     CREATE_ZONES_FROM_MEASURE_DETECTOR_ON_PAGE (state, { rects, pageIndex }) {
       const xmlDoc = state.xmlDoc.cloneNode(true)
@@ -429,14 +435,14 @@ export default createStore({
     });
 
     const url = `https://github.com/login/oauth/authorize?auth?code=${code}&${query}`
-    console.log(url)
-
     fetch(url).then(resp => {
+      console.log(resp.ok)
     if (resp.ok) {
     resp.json().then(data => {
     const accessToken = data.access_token
     if (accessToken) {
             state.logedin = true
+        
             const userId = data.id;
             commit('SET_ACCESS_TOKEN', { auth: accessToken})
             commit('SET_OWNER')
@@ -519,8 +525,9 @@ export default createStore({
         redirect_uri: redirectUri,
         scope,
       });
-      state.logedin = true
+
       window.location.href = `https://github.com/login/oauth/authorize?${query}`;
+
     },
 
 // Call the callback function
