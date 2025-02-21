@@ -36,6 +36,7 @@ function addPage (canvas,canvases,  dimension, n, file, meiSurfaceTemplate, hasI
   surface.setAttribute('label', label)
   surface.setAttribute('lrx', width)
   surface.setAttribute('lry', height)
+  surface.removeAttribute('xmlns')
 
   const graphic = surface.querySelector('graphic')
   graphic.setAttributeNS('http://www.w3.org/XML/1998/namespace', 'xml:id', graphicId)
