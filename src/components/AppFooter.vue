@@ -87,12 +87,12 @@ export default {
       this.$store.dispatch('toggleMdivModal')
     },
     jumpToPage: function () {
-      const page = parseInt(this.pageInput) === NaN ? 0 : parseInt(this.pageInput) - 1;
-      if (page >= 0 && page <= this.$store.getters.maxPageNumber) {
+      const page = this.inputPage === NaN ? 0 : parseInt(this.inputPage) - 1
+      if (page >= 0 && page < this.$store.getters.maxPageNumber) {
         this.$store.dispatch('setCurrentPage', page)
       }
       else {
-        console.info('Invalid page number');
+        console.info('Invalid page number: ', this.inputPage)
       }
     }
     /* showImageSelectionOverlay: function () {
