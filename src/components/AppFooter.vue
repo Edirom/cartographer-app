@@ -12,14 +12,11 @@
           <span @click="showPrevPage" :disabled="!prevAvailable">
             <font-awesome-icon icon="fa-solid fa-angle-left" />
           </span>
-          {{ currentPage }} / {{ maxPage }}
+          <input type="text" class="ml-2 input pageInput" v-model="inputPage" v-on:keyup.enter="jumpToPage()" :placeholder="currentPage"/> / {{ maxPage }}
           <span @click="showNextPage" :disabled="!nextAvailable">
             <font-awesome-icon icon="fa-solid fa-angle-right" />
           </span>
-          <span class="ml-2">
-            <input type="text" class="input pageInput" v-model="pageInput" :placeholder="currentPage" />
-            <button class="btn jumpBtn" @click="jumpToPage()">Go</button>
-          </span>
+          <button class="ml-2 btn jumpBtn" @click="jumpToPage()">Go</button>
         </div>
         <div class="column col-3">
           zones: {{ zonesCount }}
@@ -40,9 +37,9 @@ export default {
   components: {
 
   },
-  data() {
+  data: function () {
     return {
-      pageInput: ''
+      inputPage: ''
     }
   },
   computed: {
@@ -75,12 +72,19 @@ export default {
       return (mdiv.index + 1) + ': ' + mdiv.label
     }
   },
+  watch: {
+    currentPage: function (newPage) {
+      this.inputPage = newPage
+    }
+  },
   methods: {
     showPrevPage: function () {
+      this.currentPage = this.currentPage - 1
       this.$store.dispatch('setCurrentPage', this.$store.getters.currentPageIndexZeroBased - 1)
       this.$store.dispatch('setCurrentPageZone', this.$store.getters.zonesOnCurrentPage.length)
     },
     showNextPage: function () {
+      this.currentPage = this.currentPage + 1
       this.$store.dispatch('setCurrentPage', this.$store.getters.currentPageIndexZeroBased + 1)
     },
     showMdivModal: function () {
