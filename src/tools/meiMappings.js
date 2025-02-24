@@ -608,6 +608,7 @@ export function createNewMdiv (xmlDoc, afterMdivId) {
   const mdivId = 'm' + uuid()
   mdiv.setAttribute('xml:id', mdivId)
   mdiv.setAttribute('label', 'Movement ' + (mdivArray.length + 1))
+  mdiv.setAttribute('n', mdivArray.length + 1)
 
   const score = document.createElementNS('http://www.music-encoding.org/ns/mei', 'score')
   const section = document.createElementNS('http://www.music-encoding.org/ns/mei', 'section')
