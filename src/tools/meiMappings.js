@@ -336,25 +336,36 @@ export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex, t
           } else {
             // this is the first zone for the whole document
             console.log('adding first measure to document')
+            // if there is exiting mdiv add to that, otherwise create new mdiv
+            if (zones.length > 1){
+            const mdivArray = [...xmlDoc.querySelectorAll('mdiv')]
+            const targetMdiv = mdivArray[0];
+            const nextMeasure = targetMdiv.querySelector('measure[facs~="#' + zones[0].id + '"]')
+            surface.append(newZone)
+            nextMeasure.before(newMeasure)
+            newMeasure.setAttribute('n', 1)
+            }else{
+              if (relativeWhere === 'before' && relativeTo !== null) {
+                newMeasure.setAttribute('n', 1)
+                const pb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'pb')
+                pb.setAttribute('facs', '#' + surface.getAttribute('xml:id'))
+                pb.setAttribute('n', surface.getAttribute('n'))
+                relativeTo.before(pb)
+                relativeTo.before(newMeasure)
+              } else {
+                const section = targetMdiv.querySelector('section')
+  
+                surface.append(newZone)
+                newMeasure.setAttribute('n', 1)
+                const pb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'pb')
+                pb.setAttribute('facs', '#' + surface.getAttribute('xml:id'))
+                pb.setAttribute('n', surface.getAttribute('n'))
+                section.append(pb)
+                section.append(newMeasure)
+              }
 
-            if (relativeWhere === 'before' && relativeTo !== null) {
-              newMeasure.setAttribute('n', 1)
-              const pb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'pb')
-              pb.setAttribute('facs', '#' + surface.getAttribute('xml:id'))
-              pb.setAttribute('n', surface.getAttribute('n'))
-              relativeTo.before(pb)
-              relativeTo.before(newMeasure)
-            } else {
-              const section = targetMdiv.querySelector('section')
-
-              surface.append(newZone)
-              newMeasure.setAttribute('n', 1)
-              const pb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'pb')
-              pb.setAttribute('facs', '#' + surface.getAttribute('xml:id'))
-              pb.setAttribute('n', surface.getAttribute('n'))
-              section.append(pb)
-              section.append(newMeasure)
             }
+
           }
         } else {
           // must be the first measure in new system, so introduce new <sb/> and get last measure from previous system
@@ -386,13 +397,24 @@ export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex, t
 
           }else{
             const precedingMeasure = targetMdiv.querySelector('measure[facs~="#' + precedingZoneId + '"]')
+              //if there is no prededing measure, add to the first measure of the mdiv
+              if (precedingMeasure == null) {
+                const mdivArray = [...xmlDoc.querySelectorAll('mdiv')]
+                const targetMdiv = mdivArray.find(mdiv => mdiv.querySelector('measure[facs~="#' + zones[0].id + '"]'));
+                const nextMeasure = targetMdiv.querySelector('measure[facs~="#' + zones[0].id + '"]')
+                surface.append(newZone)
+                //nextMeasure.after(targetMdiv)
+                nextMeasure.before(newMeasure)
+                newMeasure.setAttribute('n', 1)
+            }else{
+              newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), 1))
+              precedingMeasure.after(newMeasure)
+    
+              // create sb, insert after preceding measure
+              const sb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'sb')
+              precedingMeasure.after(sb)
+            }
 
-            newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), 1))
-            precedingMeasure.after(newMeasure)
-  
-            // create sb, insert after preceding measure
-            const sb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'sb')
-            precedingMeasure.after(sb)
           }
 
         }
