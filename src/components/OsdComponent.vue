@@ -15,6 +15,15 @@ export default {
   components: {
 
   },
+  data() {
+    return {
+      colors: [
+        'rgba(255, 87, 51, 0.2)', 'rgba(51, 255, 87, 0.2)', 'rgba(51, 87, 255, 0.2)', 'rgba(255, 51, 161, 0.2)', 'rgba(161, 51, 255, 0.2)',
+        'rgba(51, 255, 245, 0.2)', 'rgba(255, 140, 51, 0.2)', 'rgba(140, 255, 51, 0.2)', 'rgba(51, 140, 255, 0.2)', 'rgba(255, 51, 140, 0.2)'
+      ],
+      colorIndex: 0
+    }
+  },
   computed: {
     imageArray: function () {
       return this.$store.getters.imageArray
@@ -27,7 +36,11 @@ export default {
     }
   },
   methods: {
-  
+    getNextColor() {
+      const color = this.colors[this.colorIndex];
+      this.colorIndex = (this.colorIndex + 1) % this.colors.length;
+      return color;
+    },
     renderZones: function () {
       this.viewer.clearOverlays()
       const annots = this.$store.getters.zonesOnCurrentPage
@@ -98,7 +111,24 @@ export default {
           e.stopPropagation()
         })
 
+        // Set the background color dynamically
+        const color = this.getNextColor();
+        const borderColor = color.replace(/[\d\.]+\)$/g, '0.5)')
+        
+        // Set colors
+        overlay.style.backgroundColor = color
+        overlay.style.outline = `1px solid ${borderColor}`
 
+        // Set colors for :hover
+        overlay.onmouseenter = () => {
+          overlay.style.backgroundColor = color.replace(/[\d\.]+\)$/g, '0.1)')
+          overlay.style.outline = borderColor.replace(/[\d\.]+\)$/g, '0.4)')
+        }
+        // Reset colors after :hover
+        overlay.onmouseleave = () => {
+          overlay.style.backgroundColor = color
+          overlay.style.outline = borderColor
+        }
 
         this.viewer.addOverlay({
           element: overlay,
@@ -297,126 +327,6 @@ $thickLineColor: #cccccc66; // #ffffff99;
   .zone {
     background-color: rgba(255,255,255,.1);
     z-index: 10;
-
-    &.mov_0 {
-      background-color: transparentize($mdiv0ZoneColor, .8);
-      outline: 1px solid transparentize($mdiv0ZoneColor, .4);
-
-      &:hover {
-        background-color: transparentize($mdiv0ZoneColor, .6);
-        outline: 1px solid transparentize($mdiv0ZoneColor, .4);
-      }
-    }
-
-    &.mov_1 {
-      background-color: transparentize($mdiv1ZoneColor, .8);
-      outline: 1px solid transparentize($mdiv1ZoneColor, .4);
-
-      &:hover {
-        background-color: transparentize($mdiv1ZoneColor, .6);
-        outline: 1px solid transparentize($mdiv1ZoneColor, .4);
-      }
-    }
-
-    &.mov_2 {
-      background-color: transparentize($mdiv2ZoneColor, .8);
-      outline: 1px solid transparentize($mdiv2ZoneColor, .4);
-
-      &:hover {
-        background-color: transparentize($mdiv2ZoneColor, .6);
-        outline: 1px solid transparentize($mdiv2ZoneColor, .4);
-      }
-    }
-
-    &.mov_3 {
-      background-color: transparentize($mdiv3ZoneColor, .8);
-      outline: 1px solid transparentize($mdiv3ZoneColor, .4);
-
-      &:hover {
-        background-color: transparentize($mdiv3ZoneColor, .6);
-        outline: 1px solid transparentize($mdiv3ZoneColor, .4);
-      }
-    }
-
-    &.mov_4 {
-      background-color: transparentize($mdiv4ZoneColor, .8);
-      outline: 1px solid transparentize($mdiv4ZoneColor, .4);
-
-      &:hover {
-        background-color: transparentize($mdiv4ZoneColor, .6);
-        outline: 1px solid transparentize($mdiv4ZoneColor, .4);
-      }
-    }
-
-    &.mov_5 {
-      background-color: transparentize($mdiv5ZoneColor, .8);
-      outline: 1px solid transparentize($mdiv5ZoneColor, .4);
-
-      &:hover {
-        background-color: transparentize($mdiv5ZoneColor, .6);
-        outline: 1px solid transparentize($mdiv5ZoneColor, .4);
-      }
-    }
-
-    &.mov_6 {
-      background-color: transparentize($mdiv6ZoneColor, .8);
-      outline: 1px solid transparentize($mdiv6ZoneColor, .4);
-
-      &:hover {
-        background-color: transparentize($mdiv6ZoneColor, .6);
-        outline: 1px solid transparentize($mdiv6ZoneColor, .4);
-      }
-    }
-
-    &.mov_7 {
-      background-color: transparentize($mdiv7ZoneColor, .8);
-      outline: 1px solid transparentize($mdiv7ZoneColor, .4);
-
-      &:hover {
-        background-color: transparentize($mdiv7ZoneColor, .6);
-        outline: 1px solid transparentize($mdiv7ZoneColor, .4);
-      }
-    }
-
-    &.mov_8 {
-      background-color: transparentize($mdiv8ZoneColor, .8);
-      outline: 1px solid transparentize($mdiv8ZoneColor, .4);
-
-      &:hover {
-        background-color: transparentize($mdiv8ZoneColor, .6);
-        outline: 1px solid transparentize($mdiv8ZoneColor, .4);
-      }
-    }
-
-    &.mov_9 {
-      background-color: transparentize($mdiv9ZoneColor, .8);
-      outline: 1px solid transparentize($mdiv9ZoneColor, .4);
-
-      &:hover {
-        background-color: transparentize($mdiv9ZoneColor, .6);
-        outline: 1px solid transparentize($mdiv9ZoneColor, .4);
-      }
-    }
-
-    &.mov_10 {
-      background-color: transparentize($mdiv10ZoneColor, .8);
-      outline: 1px solid transparentize($mdiv10ZoneColor, .4);
-
-      &:hover {
-        background-color: transparentize($mdiv10ZoneColor, .6);
-        outline: 1px solid transparentize($mdiv10ZoneColor, .4);
-      }
-    }
-
-    &.mov_11 {
-      background-color: transparentize($mdiv11ZoneColor, .8);
-      outline: 1px solid transparentize($mdiv11ZoneColor, .4);
-
-      &:hover {
-        background-color: transparentize($mdiv11ZoneColor, .6);
-        outline: 1px solid transparentize($mdiv11ZoneColor, .4);
-      }
-    }
 
     .zoneLabel {
       text-align: center;
