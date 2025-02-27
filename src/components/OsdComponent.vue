@@ -21,7 +21,8 @@ export default {
         'rgba(255, 87, 51, 0.2)', 'rgba(51, 255, 87, 0.2)', 'rgba(51, 87, 255, 0.2)', 'rgba(255, 51, 161, 0.2)', 'rgba(161, 51, 255, 0.2)',
         'rgba(51, 255, 245, 0.2)', 'rgba(255, 140, 51, 0.2)', 'rgba(140, 255, 51, 0.2)', 'rgba(51, 140, 255, 0.2)', 'rgba(255, 51, 140, 0.2)'
       ],
-      colorIndex: 0
+      colorIndex: 0,
+      mdivColors: {}
     }
   },
   computed: {
@@ -59,6 +60,15 @@ export default {
         const measureCssLink = annot.body.find(body => body.type === 'Dataset' && body.selector.value.startsWith('measure'))?.selector.value
         const mdivCssLink = annot.body.find(body => body.type === 'Dataset' && body.selector.value.startsWith('mdiv'))?.selector.value
         const mdivIndizes = annot.body.find(body => body.type === 'Dataset' && body.selector.value.startsWith('mov_'))?.selector.value
+
+        console.log('mdivIndizes', mdivIndizes)
+
+        // Get or assign color for mdiv
+        if (!this.mdivColors[mdivIndizes]) {
+          this.mdivColors[mdivIndizes] = this.getNextColor()
+        }
+        const color = this.mdivColors[mdivIndizes]
+        const borderColor = color.replace(/[\d\.]+\)$/g, '0.5)')
         
         console.log("this is xywh " , "", xywh.x,"", xywh.y, "", xywh.w, "", xywh.h)
 
@@ -110,10 +120,6 @@ export default {
           e.preventDefault()
           e.stopPropagation()
         })
-
-        // Set the background color dynamically
-        const color = this.getNextColor();
-        const borderColor = color.replace(/[\d\.]+\)$/g, '0.5)')
         
         // Set colors
         overlay.style.backgroundColor = color
@@ -121,13 +127,13 @@ export default {
 
         // Set colors for :hover
         overlay.onmouseenter = () => {
-          overlay.style.backgroundColor = color.replace(/[\d\.]+\)$/g, '0.1)')
-          overlay.style.outline = borderColor.replace(/[\d\.]+\)$/g, '0.4)')
+          overlay.style.backgroundColor = color.replace(/[\d\.]+\)$/g, '0.1)');
+          overlay.style.outline = borderColor.replace(/[\d\.]+\)$/g, '0.4)');
         }
         // Reset colors after :hover
         overlay.onmouseleave = () => {
-          overlay.style.backgroundColor = color
-          overlay.style.outline = borderColor
+          overlay.style.backgroundColor = color;
+          overlay.style.outline = borderColor;
         }
 
         this.viewer.addOverlay({
