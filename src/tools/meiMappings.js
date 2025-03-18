@@ -278,6 +278,7 @@ export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex, t
   const thresholdDistance = minHeight * 0.8
 
   // function to compare newZone against existingZones
+
   const insertIntoRightSystem = (xmlDoc, surface, targetMdiv, newZone, newMeasure, zones, pageHeight, thresholdDistance, zonesToIncrement, lastGroup) => {
     const currentTop = zones[0].top
     const currentThreshold = currentTop + thresholdDistance
@@ -285,6 +286,7 @@ export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex, t
 
     const above = []
     const below = []
+
 
     zones.forEach(zone => {
       console.log("this is inside foreach of zones ")
@@ -370,35 +372,34 @@ export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex, t
         } else {
           // must be the first measure in new system, so introduce new <sb/> and get last measure from previous system
           console.log('adding measure to new system')
-
           // order by highest left value
           lastGroup.sort((a, b) => {
             return b.left - a.left
           })
-
           const precedingZone = lastGroup[0].elem
-
           precedingZone.after(newZone)
           const precedingZoneId = lastGroup[0].id
-
-            
           if(targetMdiv == null){
             const mdivArray = [...xmlDoc.querySelectorAll('mdiv')]
-            state.currentMdivId =  mdivArray[mdivArray.length-1].getAttribute("xml:id")
-            targetMdiv = [...xmlDoc.querySelectorAll('mdiv')].find(mdiv => mdiv.getAttribute('xml:id') === state.currentMdivId)
-            const precedingMeasure = targetMdiv.querySelector('measure[facs~="#' + precedingZoneId + '"]')
-
-            newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), 1))
-            precedingMeasure.after(newMeasure)
-  
-            // create sb, insert after preceding measure
-            const sb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'sb')
-            precedingMeasure.after(sb)
-
+              mdivArray.forEach((mdiv, index) => {
+                if (mdiv.querySelector(`measure[facs="#${precedingZoneId}"]`)) {
+                  state.precedingMdiv = mdiv; // Full DOM element
+              
+                  const nextMdiv = mdivArray[index + 1];
+                  if (nextMdiv) {
+                    state.currentMdiv = nextMdiv; // 👉 This is the actual <mdiv> Element
+                    const precedingMeasure = state.currentMdiv.querySelector('measure[n="1"]');
+                    newMeasure.setAttribute('n', 1)
+                    precedingMeasure.before(newMeasure)
+                    
+                  } 
+                }
+              });         
           }else{
             const precedingMeasure = targetMdiv.querySelector('measure[facs~="#' + precedingZoneId + '"]')
               //if there is no prededing measure, add to the first measure of the mdiv
               if (precedingMeasure == null) {
+                
                 const mdivArray = [...xmlDoc.querySelectorAll('mdiv')]
                 const targetMdiv = mdivArray.find(mdiv => mdiv.querySelector('measure[facs~="#' + zones[0].id + '"]'));
                 const nextMeasure = targetMdiv.querySelector('measure[facs~="#' + zones[0].id + '"]')
