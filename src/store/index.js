@@ -812,7 +812,7 @@ export default createStore({
             for (let i = 0; i < canvases.length; i++) {
               try {
                 // Build the info.json URL for the current canvas
-                const infoUrl = canvases[i].images[0].resource.service['@id'] + "/info.json";
+                const infoUrl = canvases[i].images[0].resource.service['@id'];
                 
                 // Push the URL to the state.infoJson array
                 state.infoJson.push(infoUrl);
@@ -880,7 +880,7 @@ export default createStore({
     
           // Map all canvas images to their info.json URLs
           const infoJsonUrls = canvases.map(canvas => {
-            return canvas.images[0].resource.service['@id'] + "/info.json";
+            return canvas.images[0].resource.service['@id'];
           });
     
           // Store all fetch promises for info.json
