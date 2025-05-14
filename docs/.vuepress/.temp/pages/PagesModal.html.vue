@@ -1,0 +1,73 @@
+<template><div><h1 id="pagesmodal-component" tabindex="-1"><a class="header-anchor" href="#pagesmodal-component"><span>PagesModal Component</span></a></h1>
+<p>Displays a modal dialog listing all pages in a table, with options to edit labels and import additional images.</p>
+<hr>
+<h2 id="overview" tabindex="-1"><a class="header-anchor" href="#overview"><span>Overview</span></a></h2>
+<p>The <code v-pre>PagesModal</code> component:</p>
+<ul>
+<li>Shows a modal dialog with a table of all pages.</li>
+<li>Displays page number, editable label, thumbnail, URI, and dimensions.</li>
+<li>Allows importing additional images via a button.</li>
+<li>Clicking a thumbnail (handled in <code v-pre>PagesListEntry</code>) sets the current page and closes the modal.</li>
+<li>Uses Vuex store for state management and actions.</li>
+</ul>
+<hr>
+<h2 id="layout" tabindex="-1"><a class="header-anchor" href="#layout"><span>Layout</span></a></h2>
+<ul>
+<li><strong>Header</strong>: Modal title (&quot;Pages&quot;) and close button.</li>
+<li><strong>Body</strong>: Table listing all pages with columns for number, label, thumbnail, URI, and dimensions.</li>
+<li><strong>Footer</strong>:
+<ul>
+<li>&quot;Import Images&quot; button to open the page import modal</li>
+<li>&quot;Close&quot; button to close the modal</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h2 id="props" tabindex="-1"><a class="header-anchor" href="#props"><span>Props</span></a></h2>
+<p><em>None</em></p>
+<hr>
+<h2 id="computed-properties" tabindex="-1"><a class="header-anchor" href="#computed-properties"><span>Computed Properties</span></a></h2>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>pages</td>
+<td>Returns the detailed list of pages from the store</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="methods" tabindex="-1"><a class="header-anchor" href="#methods"><span>Methods</span></a></h2>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>closeModal</td>
+<td>Closes the modal dialog</td>
+</tr>
+<tr>
+<td>showPageImportModal</td>
+<td>Opens the page import modal</td>
+</tr>
+<tr>
+<td>showPage</td>
+<td>Sets the current page (not used directly here)</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="example" tabindex="-1"><a class="header-anchor" href="#example"><span>Example</span></a></h2>
+<div class="language-vue line-numbers-mode" data-highlighter="prismjs" data-ext="vue"><pre v-pre><code><span class="line"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>PagesModal</span> <span class="token punctuation">/></span></span></span></code></pre>
+<div class="line-numbers" aria-hidden="true" style="counter-reset:line-number 0"></div></div></div></template>
+
+
