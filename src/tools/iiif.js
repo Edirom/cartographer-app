@@ -17,10 +17,10 @@ function addPage (canvas,canvases,  dimension, n, file, meiSurfaceTemplate, hasI
   var uri = ""
   if(hasItems == true){
     console.log("has item is true")
-    uri = canvas?.items[0]?.items[0]?.body?.service[0].id+"/info.json"
+    uri = canvas?.items[0]?.items[0]?.body?.service[0].id
   }else{
     console.log("has item is false")
-     uri = canvas?.images[0]?.resource?.service['@id']+"/info.json"
+     uri = canvas?.images[0]?.resource?.service['@id']
   }
 
 
