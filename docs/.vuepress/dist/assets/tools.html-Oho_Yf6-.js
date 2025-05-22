@@ -1,1 +1,0 @@
-import{_ as t,c as e,o}from"./app-BlID2ROR.js";const a={};function c(n,r){return o(),e("div")}const l=t(a,[["render",c]]),_=JSON.parse('{"path":"/tools.html","title":"","lang":"en-US","frontmatter":{},"git":{},"filePathRelative":"tools.md"}');export{l as comp,_ as data};
