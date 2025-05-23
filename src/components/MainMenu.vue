@@ -17,36 +17,6 @@
           <i class="icon icon-upload"></i> Commit changes
         </a>
       </li>-->
-      <li class="menu-item">
-        <template v-if="isLoggedin">
-          <p>Welcome! <b>{{ getOwner() }}</b></p>
-      <button class="btn btn-action btn-sm" @click="logoutGithub" title="Github Logout">
-        <font-awesome-icon icon="fa-solid fa-file-import"/>
-      </button>
-        Logout Github 
-    </template>
-    <template v-else>
-      <button class="btn btn-action btn-sm" @click="loginGithub" title="Github Login">
-        <font-awesome-icon icon="fa-solid fa-user"/>
-      </button>
-        Login Github
-    </template>
-    <li class="divider" data-content="Data"></li>
-    <li class="menu-item">
-        <template v-if="isLoggedin">
-        <button  class="btn btn-action btn-sm"  @click="getDirectory"  title="Git Path">
-          <font-awesome-icon class="fa-solid fa-user"/>
-        </button>
-        Git Path
-      </template>
-      </li>
-    </li>
-      <li class="menu-item">
-      <button class="btn btn-action btn-sm" @click="commitGithub" title="Commit Github">
-          <font-awesome-icon icon="fa-solid fa-code-commit"/>
-      </button>
-       Commit Github
-      </li>
         <li class="menu-item">
         <button class="btn btn-action btn-sm" @click="importXML" title="load MEI file">
           <font-awesome-icon icon="fa-solid fa-file"/> 
@@ -165,9 +135,6 @@ export default {
     },
     commitGithub: function (){
       this.$store.dispatch('commitGithub')
-    },
-    getDirectory: function (){
-      this.$store.dispatch('toggleLoadGitModal')
     },
     importManifest: function () {
       this.$store.dispatch('toggleLoadIIIFModal')
