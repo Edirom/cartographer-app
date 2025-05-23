@@ -1,6 +1,7 @@
 import { createStore } from 'vuex'
 import { iiifManifest2mei, checkIiifManifest, getPageArray } from '@/tools/iiif.js'
 import { meiZone2annotorious, annotorious2meiZone, measureDetector2meiZone, generateMeasure, insertMeasure, addZoneToLastMeasure, deleteZone, setMultiRest, createNewMdiv, moveContentToMdiv, toggleAdditionalZone, addImportedPage } from '@/tools/meiMappings.js'
+import { toRaw } from 'vue';
 
 import { mode as allowedModes } from '@/store/constants.js'
 
@@ -9,39 +10,39 @@ const serializer = new XMLSerializer()
 export default createStore({
   modules: {
   },
-    state: {
-      selectedRepo: null,            // Currently selected GitHub repository
-      selectedDirectory: null,       // Currently selected directory within the repo
-      directories: [],               // List of directories in the selected repo
-      repos: null,                   // List of available repositories
-      xmlDoc: null,                  // The loaded MEI XML document (DOM)
-      pages: [],                     // Array of page objects (from MEI or IIIF)
-      currentPage: -1,               // Index of the currently selected page
-      showLoadXMLModal: false,       // Show/hide modal for loading XML files
-      showLoadIIIFModal: false,      // Show/hide modal for loading IIIF manifests
-      showLoadGitModal: false,       // Show/hide modal for loading from Git
-      showMeasureModal: false,       // Show/hide modal for editing measure labels/numbers
-      showMdivModal: false,          // Show/hide modal for movement (mdiv) management
-      showPagesModal: false,         // Show/hide modal for page management
-      showPageImportModal: false,    // Show/hide modal for importing pages/images
-      showMeasureList: false,        // Show/hide the measure list panel
-      loading: false,                // Indicates if the app is currently loading data
-      logedin: false,                // Indicates if the user is logged in
-      processing: false,             // Indicates if the app is processing data
-      pageDimension: [],             // Array of [width, height] for each page
-      mode: allowedModes.selection,  // Current editor mode (selection, manualRect, etc.)
-      existingMusicMode: false,      // True if working with existing music content
-      selectedZoneId: null,          // xml:id of the currently selected zone
-      hoveredZoneId: null,           // xml:id of the currently hovered zone
-      currentMdivId: null,           // xml:id of the currently selected mdiv
-      totalZones: 0,                 // Total number of zones in the document
-      resultingArray: [],            // Generic array for storing results (usage varies)
-      deleteZoneId: null,            // xml:id of the zone to be deleted
-      anno: null,                    // Current annotation object (Annotorious)
-      canvases: [],                  // IIIF canvases (if loaded)
-      importingImages: [],           // Array of images being imported (with status)
-      currentMeasureId: null,        // xml:id of the currently selected measure
-      infoJson: []                   // Array of IIIF info.json URLs for canvases
+  state: {
+    selectedRepo: null,            // Currently selected GitHub repository
+    selectedDirectory: null,       // Currently selected directory within the repo
+    directories: [],               // List of directories in the selected repo
+    repos: null,                   // List of available repositories
+    xmlDoc: null,                  // The loaded MEI XML document (DOM)
+    pages: [],                     // Array of page objects (from MEI or IIIF)
+    currentPage: -1,               // Index of the currently selected page
+    showLoadXMLModal: false,       // Show/hide modal for loading XML files
+    showLoadIIIFModal: false,      // Show/hide modal for loading IIIF manifests
+    showLoadGitModal: false,       // Show/hide modal for loading from Git
+    showMeasureModal: false,       // Show/hide modal for editing measure labels/numbers
+    showMdivModal: false,          // Show/hide modal for movement (mdiv) management
+    showPagesModal: false,         // Show/hide modal for page management
+    showPageImportModal: false,    // Show/hide modal for importing pages/images
+    showMeasureList: false,        // Show/hide the measure list panel
+    loading: false,                // Indicates if the app is currently loading data
+    logedin: false,                // Indicates if the user is logged in
+    processing: false,             // Indicates if the app is processing data
+    pageDimension: [],             // Array of [width, height] for each page
+    mode: allowedModes.selection,  // Current editor mode (selection, manualRect, etc.)
+    existingMusicMode: false,      // True if working with existing music content
+    selectedZoneId: null,          // xml:id of the currently selected zone
+    hoveredZoneId: null,           // xml:id of the currently hovered zone
+    currentMdivId: null,           // xml:id of the currently selected mdiv
+    totalZones: 0,                 // Total number of zones in the document
+    resultingArray: [],            // Generic array for storing results (usage varies)
+    deleteZoneId: null,            // xml:id of the zone to be deleted
+    anno: null,                    // Current annotation object (Annotorious)
+    canvases: [],                  // IIIF canvases (if loaded)
+    importingImages: [],           // Array of images being imported (with status)
+    currentMeasureId: null,        // xml:id of the currently selected measure
+    infoJson: []                   // Array of IIIF info.json URLs for canvases
   },
   /**
  * Vuex mutations for managing application state.
@@ -121,16 +122,14 @@ export default createStore({
       state.selectedDirectory = gitdirec
     },
     SET_XML_DOC(state, xmlDoc) {
-      console.log("this is the xml doc in set ", xmlDoc)
+console.log("this is the xml doc in set ", xmlDoc)
       state.xmlDoc = xmlDoc
       state.currentPage = 0
     },
     SET_PAGES(state, pageArray) {
       state.pages = pageArray
-      console.log("this is the length of pages ", state.pages)
     },
     SET_CURRENT_PAGE(state, i) {
-      console.log("page is changed ", state.pages.length)
       if (i > -1 && i < state.pages.length) {
         state.currentPage = i
       }
@@ -304,6 +303,13 @@ export default createStore({
         state.xmlDoc = xmlDoc
       }
     },
+    SET_PAGE_DIMENSIONS(state, { index, width, height }) {
+      console.log("width is ", width)
+
+      // Ensure the update is reactive
+      state.pages[index].width =  width;
+      state.pages[index].height = height;
+    },
     CREATE_NEW_MDIV(state) {
       const xmlDoc = state.xmlDoc.cloneNode(true)
       state.currentMdivId = createNewMdiv(xmlDoc, state.currentMdivId)
@@ -426,16 +432,23 @@ export default createStore({
       commit('TOGGLE_MEASURE_LIST')
     },
     setCurrentPage({ commit }, i) {
-      console.log('setting current page to ' + i)
       commit('SET_CURRENT_PAGE', i)
+    },
+    setWidth({ commit }, width) {
+      commit('SET_CURRENT_WIDTH', width)
+    },
+    setHeight({ commit }, height) {
+      commit('SET_CURRENT_HEIGHT', height)
+    },
+    updatePage({ commit }, upatedArr) {
+      console.log("hi everyone")
+      commit('SET_PAGE_ARRAY', upatedArr)
     },
     setCurrentPageZone({ commit }, j) {
       commit('SET_TOTAL_ZONES_COUNT', j)
     },
     importIIIF({ commit, dispatch, state }, url) {
-      commit('SET_LOADING', true);
-    
-      // Fetch the IIIF manifest
+      commit('SET_LOADING', true)
       fetch(url)
         .then(res => res.json())
         .then(json => {
@@ -497,18 +510,6 @@ export default createStore({
               commit('SET_PROCESSING', false); // Ensure processing is set to false after completion
             });
         })
-        .catch(error => {
-          // Handle errors in the initial IIIF manifest fetch
-          console.error('Error fetching IIIF manifest:', error);
-          commit('SET_LOADING', false);
-        });
-    },
-    importIIIF({ commit, dispatch, state }, url) {
-      commit('SET_LOADING', true);
-    
-      // Fetch the IIIF manifest
-      fetch(url)
-        .then(res => res.json())
         .then(json => {
           commit('SET_LOADING', false);
           commit('SET_PROCESSING', true);
@@ -560,24 +561,20 @@ export default createStore({
               return iiifManifest2mei(json, url, parser, state);
             })
             .then(mei => {
-              // Dispatch setData with the generated MEI
-              dispatch('setData', mei);
+              dispatch('setData', mei)
             })
-            .catch(err => {
-              console.error('Error processing IIIF manifest or canvases:', err);
-              commit('SET_LOADING', false);
-              // Add any additional error messaging here
-            })
-            .finally(() => {
-              commit('SET_PROCESSING', false); // Ensure processing is set to false after completion
-            });
         })
-        .catch(error => {
-          // Handle errors in the initial IIIF manifest fetch
-          console.error('Error fetching IIIF manifest:', error);
-          commit('SET_LOADING', false);
-        });
+        .catch(err => {
+          commit('SET_LOADING', false)
+          console.log(err)
+          // add some error message
+        })
     },
+    updatePageDimensions({ commit }, { index, width, height }) {
+      commit('SET_PAGE_DIMENSIONS', { index, width, height });
+
+    },
+
         
     importXML({ commit, dispatch }, mei) {
       fetch(mei)
@@ -856,14 +853,14 @@ export default createStore({
     pages: state => {
       const arr = []
       state.pages.forEach(page => {
-        console.log("this is the page width and height at index", page.width, " " , page.height)
+
         const obj = {
           tileSource: page.uri,
-          width: page.width,
-          x: 0,
-          y: 0
+          width: page.width
         }
         arr.push(obj)
+        console.log("array is ", arr)
+
       })
       return arr
     },
