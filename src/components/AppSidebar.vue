@@ -34,9 +34,11 @@
     </button> -->
 
     <!-- ADDITIONAL ZONE PER MEASURE -->
+      <!-- @click="activateMode('additionalZone')"> -->
     <button class="btn btn-action"  :class="{'activeMode': mode === 'additionalZone'}"
-      title="add zone to last measure" :disabled="!isReady"
-      @click="activateMode('additionalZone')">
+      title="add zone to last measure"
+      :disabled="!isReady || measures.length === 0"
+      @click="printCurrentMeasure">
       <template v-if="mode === 'additionalZone'">
         <font-awesome-icon icon="fa-solid fa-square-plus"/>
       </template>
@@ -158,6 +160,9 @@ export default {
     },
     mode: function () {
       return this.$store.getters.mode
+    },
+    measures: function () {
+      return this.$store.getters.measures
     }
     /* visible: function() {
       return this.$store.getters.imageSelectionModalVisible
