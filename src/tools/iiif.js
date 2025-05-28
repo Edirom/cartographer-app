@@ -25,7 +25,6 @@ function addPage(canvas, canvases, dimension, n, file, meiSurfaceTemplate, hasIt
   let uri = ""
   if (hasItems === true) {
     // IIIF Presentation 3
-
     console.log("has item is true")
     uri = canvas?.items[0]?.items[0]?.body?.service[0].id
   }else{
@@ -57,6 +56,7 @@ function addPage(canvas, canvases, dimension, n, file, meiSurfaceTemplate, hasIt
   file.querySelector('facsimile').appendChild(surface)
 }
 
+
 /**
  * Converts a IIIF manifest JSON object into an MEI XML document.
  * - Loads MEI file and surface templates asynchronously.
@@ -71,11 +71,9 @@ function addPage(canvas, canvases, dimension, n, file, meiSurfaceTemplate, hasIt
  * @returns {Promise<Document>} - Resolves to the generated MEI XML document.
  */
 export async function iiifManifest2mei (json, url, parser, state) {
-
   const promises = []
   let meiFileTemplate
   let meiSurfaceTemplate
-
   promises.push(
     fetch('./assets/meiFileTemplate.xml')
       .then(res => res.text())
@@ -168,14 +166,10 @@ export function getPageArray (mei) {
   const arr = []
   mei.querySelectorAll('surface').forEach((surface, n) => {
     const graphic = surface.querySelector('graphic')
-
     const obj = {}
     obj.uri = graphic.getAttributeNS('', 'target').trim()
-    console.log("this is the target ", obj.uri)
     obj.id = surface.getAttribute('xml:id').trim()
-    console.log("this is the id ", obj.id)
     obj.n = surface.getAttributeNS('', 'n').trim()
-    
     // obj.label = surface.getAttributeNS('', 'label').trim() // Uncomment if label is needed
     obj.width = parseInt(graphic.getAttributeNS('', 'width').trim(), 10)
     obj.height = parseInt(graphic.getAttributeNS('', 'height').trim(), 10)
