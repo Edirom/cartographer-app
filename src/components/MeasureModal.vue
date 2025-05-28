@@ -113,8 +113,12 @@ export default {
         return this.measure.multiRest
       },
       set (val) {
-        console.log('setCurrentMeasureMultiRest', val)
-        this.$store.dispatch('setCurrentMeasureMultiRest', val)
+        const num = parseInt(val)
+        if (!isNaN(num)) {
+          this.$store.dispatch('setCurrentMeasureMultiRest', num)
+        } else {
+          console.info(val + ' is not a number')
+        }
       }
     }
   },

@@ -26,11 +26,10 @@ function addPage(canvas, canvases, dimension, n, file, meiSurfaceTemplate, hasIt
   if (hasItems === true) {
     // IIIF Presentation 3
     console.log("has item is true")
-    uri = canvas?.items[0]?.items[0]?.body?.service[0].id + "/info.json"
-  } else {
-    // IIIF Presentation 2
+    uri = canvas?.items[0]?.items[0]?.body?.service[0].id
+  }else{
     console.log("has item is false")
-    uri = canvas?.images[0]?.resource?.service['@id'] + "/info.json"
+     uri = canvas?.images[0]?.resource?.service['@id']
   }
 
   // Generate unique IDs for surface and graphic
@@ -44,6 +43,7 @@ function addPage(canvas, canvases, dimension, n, file, meiSurfaceTemplate, hasIt
   surface.setAttribute('label', label)
   surface.setAttribute('lrx', width)
   surface.setAttribute('lry', height)
+  surface.removeAttribute('xmlns')
 
   // Set up the graphic element with image info
   const graphic = surface.querySelector('graphic')

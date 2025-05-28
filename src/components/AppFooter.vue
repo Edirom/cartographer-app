@@ -12,10 +12,11 @@
           <span @click="showPrevPage" :disabled="!prevAvailable">
             <font-awesome-icon icon="fa-solid fa-angle-left" />
           </span>
-          {{ currentPage }} / {{ maxPage }}
+          <input type="text" class="ml-2 input pageInput" v-model="inputPage" v-on:keyup.enter="jumpToPage()" :placeholder="currentPage"/> / {{ maxPage }}
           <span @click="showNextPage" :disabled="!nextAvailable">
             <font-awesome-icon icon="fa-solid fa-angle-right" />
           </span>
+          <button class="ml-2 btn jumpBtn" @click="jumpToPage()">Go</button>
         </div>
         <div class="column col-3">
           zones: {{ zonesCount }}
@@ -35,6 +36,11 @@ export default {
   name: 'AppFooter',
   components: {
 
+  },
+  data: function () {
+    return {
+      inputPage: ''
+    }
   },
   computed: {
     currentPage: function () {
@@ -66,16 +72,32 @@ export default {
       return (mdiv.index + 1) + ': ' + mdiv.label
     }
   },
+  watch: {
+    currentPage: function (newPage) {
+      this.inputPage = newPage
+    }
+  },
   methods: {
     showPrevPage: function () {
+      this.currentPage = this.currentPage - 1
       this.$store.dispatch('setCurrentPage', this.$store.getters.currentPageIndexZeroBased - 1)
       this.$store.dispatch('setCurrentPageZone', this.$store.getters.zonesOnCurrentPage.length)
     },
     showNextPage: function () {
+      this.currentPage = this.currentPage + 1
       this.$store.dispatch('setCurrentPage', this.$store.getters.currentPageIndexZeroBased + 1)
     },
     showMdivModal: function () {
       this.$store.dispatch('toggleMdivModal')
+    },
+    jumpToPage: function () {
+      const page = this.inputPage === NaN ? 0 : parseInt(this.inputPage) - 1
+      if (page >= 0 && page < this.$store.getters.maxPageNumber) {
+        this.$store.dispatch('setCurrentPage', page)
+      }
+      else {
+        console.info('Invalid page number: ', this.inputPage)
+      }
     }
     /* showImageSelectionOverlay: function () {
       this.$store.dispatch('showImageSelectionModal')
@@ -107,5 +129,25 @@ export default {
     border: $thinBorder;
     background: #eef0f3 linear-gradient(to right, #999999 30%, #eef0f3 30%) top left/150% 150% no-repeat;
   }
+
+  button {
+    color: $fontColorDark;
+    border-color: $fontColorDark;
+  }
+  
+  .pageInput {
+    width: 2rem;
+    height: 1rem;
+    text-align: center;
+    border: $thinBorder;
+    border-radius: .2rem;
+    padding: .1rem;
+  }
+
+  .jumpBtn {
+      padding: 0 .1rem;
+      height: 1rem;
+      margin: 0 .2rem;
+    }
 }
 </style>
