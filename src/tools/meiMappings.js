@@ -367,15 +367,20 @@ export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex, t
             precedingMeasure.after(pb)
           } else {
             // this is the first zone for the whole document
-            console.log('adding first measure to document')
+            console.log('adding first measure to document ', zones.length)
             // if there is exiting mdiv add to that, otherwise create new mdiv
             if (zones.length > 1){
             const mdivArray = [...xmlDoc.querySelectorAll('mdiv')]
             const targetMdiv = mdivArray[0];
             const nextMeasure = targetMdiv.querySelector('measure[facs~="#' + zones[0].id + '"]')
-            surface.append(newZone)
+            surface.prepend(newZone)
             nextMeasure.before(newMeasure)
             newMeasure.setAttribute('n', 1)
+            // const followingMeasures = getFollowingMeasuresByMeasure(newMeasure)
+            // followingMeasures.forEach(measure => {
+            //   measure.setAttribute('n', incrementMeasureNum(measure.getAttribute('n'),1))
+            // })
+            console.log('adding first measure to document, next measure is ', nextMeasure)
             }else{
               if (relativeWhere === 'before' && relativeTo !== null) {
                 newMeasure.setAttribute('n', 1)
@@ -384,6 +389,7 @@ export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex, t
                 pb.setAttribute('n', surface.getAttribute('n'))
                 relativeTo.before(pb)
                 relativeTo.before(newMeasure)
+
               } else {
                 const section = targetMdiv.querySelector('section')
   
@@ -430,10 +436,13 @@ export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex, t
               targetMdiv = [...xmlDoc.querySelectorAll('mdiv')].find(mdiv => mdiv.getAttribute('xml:id') === state.currentMdivId)
               const precedingMeasure = targetMdiv.querySelector('measure[facs~="#' + precedingZoneId + '"]')
               if (!precedingMeasure) {
-
+             
                   newMeasure.setAttribute('n', 1)
-                  targetMdiv.querySelector('section').appendChild(newMeasure)
-                  
+                  targetMdiv.querySelector('section').prepend(newMeasure)
+                  const followingMeasures = getFollowingMeasuresByMeasure(newMeasure)
+                  console.log('current mdivs childern are are , ', targetMdiv.querySelector('section').children)
+
+
                 } else {
                   newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), 1))
                   precedingMeasure.after(newMeasure)
@@ -496,7 +505,9 @@ export function getFollowingMeasuresByMeasure (measure) {
 
   // recursively get next element of a given name
   const getFollowingByName = (elem, name) => {
+    console.log('looking for ' + name + ' after ', elem)
     const next = elem.nextElementSibling
+    console.log('next is ', next) 
 
     if (next === null) {
       if (name === 'measure') {
