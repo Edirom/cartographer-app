@@ -3,74 +3,87 @@ import { iiifManifest2mei, checkIiifManifest, getPageArray } from '@/tools/iiif.
 import { meiZone2annotorious, annotorious2meiZone, measureDetector2meiZone, generateMeasure, insertMeasure, addZoneToLastMeasure, deleteZone, setMultiRest, createNewMdiv, moveContentToMdiv, toggleAdditionalZone, addImportedPage } from '@/tools/meiMappings.js'
 
 import { mode as allowedModes } from '@/store/constants.js'
-import qs from 'qs';
-import { Octokit } from '@octokit/rest'
-//import axios from 'axios';
-//import qs from 'query-string';
-import CLIENT_ID from './client_id';
-import CALL_BACK from './call_back';
-import CLIENT_SECRET from './client_secret';
 
-
-
-import { Base64 } from 'js-base64';
 const parser = new DOMParser()
 const serializer = new XMLSerializer()
 export default createStore({
   modules: {
   },
-  state: {
-    repo: null,
-    path: null,
-    sha: null,
-    owner: null,
-    accessToken: null,
-    selectedRepo: null,
-    selectedDirectory: null,
-    branches: null,
-    repositories: null,
-    directories: [],
-    octokit: null,
-    repos: null,
-    xmlDoc: null,
-    pages: [],
-    currentPage: -1,
-    showLoadXMLModal: false,
-    showLoadIIIFModal: false,
-    showLoadGitModal: false,
-    showMeasureModal: false,
-    showMdivModal: false,
-    showPagesModal: false,
-    showPageImportModal: false,
-    showMeasureList: false,
-    loading: false,
-    logedin: false,
-    processing: false,
-    pageDimension: [],
-    mode: allowedModes.selection,
-    existingMusicMode: false,
-    selectedZoneId: null,
-    hoveredZoneId: null,
-    currentMdivId: null,
-    totalZones: 0,
-    resultingArray: [],
-    deleteZoneId: null,
-    anno: null,
-    canvases: [],
-    importingImages: [],
-    currentMeasureId: null,
-    username: null,// used for the MeasureModal
-    infoJson: []
-
-    // TODO isScore: true
+    state: {
+      allmdivs: [],   
+      xmlDoc: null,                  // The loaded MEI XML document (DOM)
+      pages: [],                     // Array of page objects (from MEI or IIIF)
+      currentPage: -1,               // Index of the currently selected page
+      showLoadXMLModal: false,       // Show/hide modal for loading XML files
+      showLoadIIIFModal: false,      // Show/hide modal for loading IIIF manifests
+      showLoadGitModal: false,       // Show/hide modal for loading from Git
+      showMeasureModal: false,       // Show/hide modal for editing measure labels/numbers
+      showMdivModal: false,          // Show/hide modal for movement (mdiv) management
+      showPagesModal: false,         // Show/hide modal for page management
+      showPageImportModal: false,    // Show/hide modal for importing pages/images
+      showMeasureList: false,        // Show/hide the measure list panel
+      loading: false,                // Indicates if the app is currently loading data
+      processing: false,             // Indicates if the app is processing data
+      pageDimension: [],             // Array of [width, height] for each page
+      mode: allowedModes.selection,  // Current editor mode (selection, manualRect, etc.)
+      existingMusicMode: false,      // True if working with existing music content
+      selectedZoneId: null,          // xml:id of the currently selected zone
+      hoveredZoneId: null,           // xml:id of the currently hovered zone
+      currentMdivId: null,           // xml:id of the currently selected mdiv
+      totalZones: 0,                 // Total number of zones in the document
+      resultingArray: [],            // Generic array for storing results (usage varies)
+      deleteZoneId: null,            // xml:id of the zone to be deleted
+      anno: null,                    // Current annotation object (Annotorious)
+      canvases: [],                  // IIIF canvases (if loaded)
+      importingImages: [],           // Array of images being imported (with status)
+      currentMeasureId: null,        // xml:id of the currently selected measure
+      infoJson: []                   // Array of IIIF info.json URLs for canvases
   },
+  /**
+ * Vuex mutations for managing application state.
+ * Each mutation updates a specific part of the state in response to actions or UI events.
+ *
+ * - TOGGLE_LOADXML_MODAL: Toggle the visibility of the XML file load modal.
+ * - TOGGLE_LOADIIIF_MODAL: Toggle the visibility of the IIIF manifest load modal.
+ * - TOGGLE_LOADGIT_MODAL: Toggle the visibility of the GitHub load modal.
+ * - TOGGLE_MEASURE_MODAL: Toggle the visibility of the measure label/number modal.
+ * - TOGGLE_PAGES_MODAL: Toggle the visibility of the page management modal.
+ * - TOGGLE_PAGE_IMPORT_MODAL: Toggle the visibility of the page/image import modal.
+ * - TOGGLE_MDIV_MODAL: Toggle the visibility of the movement (mdiv) management modal.
+ * - HIDE_MODALS: Hide both the measure and mdiv modals.
+ * - TOGGLE_MEASURE_LIST: Toggle the visibility of the measure list panel.
+ * - SET_ANNO: Set the current annotation object.
+ * - SET_SELECTED_DIRECTORY: Set the currently selected directory in the repo.
+ * - SET_XML_DOC: Set the loaded MEI XML document and reset the current page to 0.
+ * - SET_PAGES: Set the array of page objects.
+ * - SET_CURRENT_PAGE: Set the index of the currently selected page.
+ * - SET_TOTAL_ZONES_COUNT: Increment the total number of zones by a given value.
+ * - SET_LOADING: Set the loading state (true/false).
+ * - SET_PROCESSING: Set the processing state (true/false).
+ * - SELECT_ZONE: Set the xml:id of the currently selected zone.
+ * - HOVER_ZONE: Set the xml:id of the currently hovered zone.
+ * - CREATE_ZONE_FROM_ANNOTORIOUS: Create a new zone from an Annotorious annotation and update the MEI document accordingly.
+ * - CREATE_ZONES_FROM_MEASURE_DETECTOR_ON_PAGE: Create zones from detected rectangles and update the MEI document.
+ * - UPDATE_ZONE_FROM_ANNOTORIOUS: Update an existing zone's coordinates from an Annotorious annotation.
+ * - SET_MODE: Set the current editor mode.
+ * - TOGGLE_EXISTING_MUSIC_MODE: Toggle whether the app is in existing music mode.
+ * - SET_CURRENT_MEASURE_ID: Set the xml:id of the currently selected measure.
+ * - SET_CURRENT_MEASURE_LABEL: Set or remove the label of the current measure.
+ * - SET_CURRENT_MEASURE_MULTI_REST: Set, update, or remove a multiRest element in the current measure.
+ * - SET_PAGE_LABEL: Set the label for a specific page.
+ * - SET_CURRENT_MDIV_LABEL: Set the label for the current mdiv.
+ * - CREATE_NEW_MDIV: Create a new mdiv and move content to it.
+ * - SELECT_MDIV: Move content to a selected mdiv and update the current mdiv id.
+ * - SET_CURRENT_MDIV: Set the xml:id of the currently selected mdiv.
+ * - REGISTER_IMAGE_IMPORT: Register an image being imported (with status).
+ * - RECEIVE_IMAGE_IMPORT: Mark an image import as successful and store its dimensions.
+ * - FAILED_IMAGE_IMPORT: Mark an image import as failed.
+ * - ACCEPT_IMAGE_IMPORTS: Add all successfully imported images as pages to the MEI document.
+ * - CANCEL_IMAGE_IMPORTS: Cancel all pending image imports and hide the import modal.
+ */
   mutations: {
     TOGGLE_LOADXML_MODAL(state) {
       state.showLoadXMLModal = !state.showLoadXMLModal
-    },
-    async SET_ACCESS_TOKEN(state, { auth }) {
-      state.accessToken = auth
-      state.octokit = new Octokit({ auth: state.accessToken })
     },
     TOGGLE_LOADIIIF_MODAL(state) {
       state.showLoadIIIFModal = !state.showLoadIIIFModal
@@ -100,20 +113,17 @@ export default createStore({
     SET_ANNO(state, anno) {
       state.anno = anno
     },
-    SET_SELECTED_DIRECTORY(state, gitdirec) {
-      state.selectedDirectory = gitdirec
-    },
     SET_XML_DOC(state, xmlDoc) {
       console.log("this is the xml doc in set ", xmlDoc)
       state.xmlDoc = xmlDoc
       state.currentPage = 0
     },
+    SET_ALL_MDIVS(state, mdiv) {
+      state.allmdivs.push(mdiv)
+    },
     SET_PAGES(state, pageArray) {
       state.pages = pageArray
       console.log("this is the length of pages ", state.pages)
-    },
-    SET_USERNAME(state, username) {
-      state.username = username
     },
     SET_CURRENT_PAGE(state, i) {
       console.log("page is changed ", state.pages.length)
@@ -136,12 +146,6 @@ export default createStore({
     },
     HOVER_ZONE(state, id) {
       state.hoveredZoneId = id
-    },
-    setAccessToken(state, accessToken) {
-      state.accessToken = accessToken
-    },
-    setDirectories(state, directories) {
-      state.directories = directories
     },
     CREATE_ZONE_FROM_ANNOTORIOUS(state, annot) {
 
@@ -324,13 +328,6 @@ export default createStore({
     FAILED_IMAGE_IMPORT(state, { url, index }) {
       state.importingImages[index].status = 'failed'
     },
-    SET_GIT_DIRECTORIES(state, repositories) {
-      state.repositories = repositories;
-    },
-    SET_GIT_BRANCHES(state, branches) {
-      state.branches = branches;
-    },
-
     ACCEPT_IMAGE_IMPORTS(state) {
       const xmlDoc = state.xmlDoc.cloneNode(true)
       state.importingImages.forEach(page => {
@@ -348,123 +345,56 @@ export default createStore({
       state.showPagesImportModal = false
       console.log('cancel imports')
     },
-    SET_LOGIN_STATUS(state, bool) {
-      state.logedin = bool
-    },
-    SET_REPO(state, repo) {
-      state.repo = repo
-    },
-    SET_PATH(state, path) {
-      state.path = path
-    },
-    SET_SHA(state, sha) {
-      state.sha = sha
-    },
-    async SET_OCTOKIT(state, octokit) {
-      state.octokit = octokit
-      const repos = await octokit.rest.repos.listForAuthenticatedUser();
-
-
-    },
-    SET_REPOS(state, repos) {
-      state.repos = repos
-    },
-    async SET_OWNER(state, owner) {
-      var resultPromise = state.octokit.rest.users.getAuthenticated()
-      console.log("result promise ", resultPromise)
-      const result = await resultPromise;
-      const { data: user } = await result
-      state.owner = user.login
-    },
-    SET_BRANCH(state, branch) {
-      console.log("this is branch " + branch)
-      state.branch = branch
-    },
   },
+  /**
+ * Vuex actions for asynchronous operations and complex state updates.
+ * Actions can dispatch mutations, perform async tasks, and coordinate multiple state changes.
+ *
+ * - toggleLoadXMLModal: Toggles the visibility of the XML file load modal.
+ * - toggleLoadIIIFModal: Toggles the visibility of the IIIF manifest load modal.
+ * - toggleMeasureModal: Toggles the visibility of the measure label/number modal.
+ * - togglePagesModal: Toggles the visibility of the page management modal.
+ * - togglePageImportModal: Toggles the visibility of the page/image import modal.
+ * - toggleMdivModal: Toggles the visibility of the movement (mdiv) management modal.
+ * - toggleMeasureList: Toggles the visibility of the measure list panel.
+ * - setCurrentPage: Sets the currently selected page index.
+ * - setCurrentPageZone: Updates the total number of zones on the current page.
+ * - importIIIF: Imports a IIIF manifest, fetches image info, and converts to MEI (two implementations: sequential and concurrent).
+ * - importXML: Loads an MEI XML file and parses it into the application state.
+ * - autoDetectZonesOnCurrentPage: Sends the current page image to a remote service for automatic measure detection.
+ * - autoDetectZonesOnAllPage: Runs automatic measure detection for all pages.
+ * - setData: Sets the MEI document and updates related state (pages, processing, modals).
+ * - selectZone: Selects a zone by xml:id.
+ * - clickZone: Handles zone click events (deletion or additional zone logic).
+ * - clickMeasureLabel: Opens the measure label/number modal for a measure.
+ * - closeMeasureNumberModal: Closes the measure label/number modal.
+ * - hoverZone: Sets the currently hovered zone.
+ * - unhoverZone: Clears the hovered zone if it matches the given id.
+ * - createZone: Creates a new zone from an annotation.
+ * - deleteZone: Deletes a zone by xml:id.
+ * - updateZone: Updates a zone's coordinates from an annotation.
+ * - setMode: Sets the current editor mode.
+ * - toggleExistingMusicMode: Toggles whether the app is in existing music mode.
+ * - setCurrentMeasureLabel: Sets or removes the label for the current measure.
+ * - setCurrentMeasureMultiRest: Sets, updates, or removes a multiRest element in the current measure.
+ * - setPageLabel: Sets the label for a specific page.
+ * - setCurrentMdiv: Sets the currently selected mdiv by xml:id.
+ * - setDirectory: Sets the currently selected directory.
+ * - setCurrentMdivLabel: Sets the label for the current mdiv.
+ * - createNewMdiv: Creates a new mdiv and moves content to it.
+ * - selectMdiv: Moves content to a selected mdiv and updates the current mdiv id.
+ * - registerImageImports: Registers images for import and fetches their info.json data.
+ * - acceptImageImports: Adds all successfully imported images as pages to the MEI document.
+ * - cancelImageImports: Cancels all pending image imports and hides the import modal.
+ */
   actions: {
-    async fetchDirectories({ state, commit }) {
-      try {
-        const url = `https://api.github.com/repos/${state.username}/${state.repository}/contents/${state.path}`;
-        const headers = { Authorization: `token ${state.accessToken}` };
-        //const response = await axios.get(url, { headers });
-        // const directories = response.data.filter(item => item.type === 'dir').map(item => item.name);
-        // commit('setDirectories', directories);
-      } catch (error) {
-        console.error(error);
-      }
-    },
-    exportDirectory({ state }) {
-      return axios.get(`https://api.github.com/repos/:owner/:repo/contents/${state.selectedDirectory}`, {
-        headers: {
-          Authorization: `token ${state.accessToken}`
-        }
-      })
-        .then(response => {
-          const files = response.data.filter(file => file.type === 'file');
-          return files;
-        })
-        .catch(error => {
-          console.error(error);
-        });
-    },
-    setLOGIN(state) {
-      commit('SET_LOGIN_STATUS', true)
-    },
+  
     toggleLoadXMLModal({ commit }) {
       commit('TOGGLE_LOADXML_MODAL')
     },
     toggleLoadIIIFModal({ commit }) {
       commit('TOGGLE_LOADIIIF_MODAL')
     },
-    async toggleLoadGitModal({ commit, getters, }) {
-      const octokit = getters.octokit
-      const { data: repositories } = await octokit.repos.listForAuthenticatedUser()
-      //state.username = state.octokit.users.getAuthenticated();
-      commit('SET_GIT_DIRECTORIES', repositories)
-      // commit('SET_GIT_BRANCHES', branches)
-      commit('TOGGLE_LOADGIT_MODAL')
-    },
-    authenticate({ commit, state }, { code }) {
-
-      console.log("this is the authenticate function ")
-      const clientId = CLIENT_ID;
-      const redirectUri = CALL_BACK;
-      const clientSecret = CLIENT_SECRET;
-      const scope = 'user';
-
-
-      const query = qs.stringify({
-        client_id: clientId,
-        client_secret: clientSecret,
-        redirect_uri: redirectUri,
-        scope,
-      });
-      console.log("this is authentication ")
-      const url = `https://github.com/login/oauth/authorize?auth?code=${code}&${query}`
-      fetch(url).then(resp => {
-        console.log(resp.ok)
-        if (resp.ok) {
-          resp.json().then(data => {
-            const accessToken = data.access_token
-            if (accessToken) {
-              state.logedin = true
-
-              const userId = data.id;
-              commit('SET_ACCESS_TOKEN', { auth: accessToken })
-              commit('SET_OWNER')
-              console.log("Loged in")
-
-            } else {
-              console.error('authentication failed 1', data)
-            }
-          })
-        } else {
-          console.error('authentication failed 2', resp.statusText)
-        }
-      })
-
-    },
-
     toggleMeasureModal({ commit }) {
       commit('TOGGLE_MEASURE_MODAL')
     },
@@ -484,316 +414,11 @@ export default createStore({
       console.log('setting current page to ' + i)
       commit('SET_CURRENT_PAGE', i)
     },
+    setAllMdivs({ commit }, i) {
+      commit('SET_ALL_MDIVS', i)
+    },
     setCurrentPageZone({ commit }, j) {
       commit('SET_TOTAL_ZONES_COUNT', j)
-    },
-    logout({ commit, dispatch, state }) {
-      state.logedin = false
-      state.accessToken = null
-      state.owner = null
-      state.repos = null
-      state.branches = null
-      state.repo = null
-      state.username = null
-    },
-    login({ commit, dispatch, state }) {
-
-
-      //   // NGINX has to be configured as a reverse proxy to
-      //   // https://github.com/login/oauth/access_token?code=${code}&client_id=${CLIENT_ID}& // client_secret=${CLIENT_SECRET}
-      //   const url = `auth?code=${code}`
-      //   fetch(url).then(resp => {
-      //   if (resp.ok) { resp.json().then(data => {
-      //   const accessToken = data.access_token // console.log(data, accessToken)
-      //   if (accessToken) {
-      //   commit('SET_ACCESS_TOKEN', { auth: accessToken, store, remove }) } else {
-      //   console.error('authentication failed', data) }
-      //   })
-      //   } else {
-      //   console.error('authentication failed', resp.statusText) }
-      //   }) },
-      // acceptImageImports ({ commit }) {
-      //   commit('ACCEPT_IMAGE_IMPORTS')
-      // },
-      // cancelImageImports ({ commit }) {
-      //   commit('CANCEL_IMAGE_IMPORTS')
-      // }
-
-      const clientId = CLIENT_ID;
-      const redirectUri = CALL_BACK;
-      const clientSecret = CLIENT_SECRET;
-      const scope = 'user';
-
-
-      const query = qs.stringify({
-        client_id: clientId,
-        client_secret: clientSecret,
-        redirect_uri: redirectUri,
-        scope,
-      });
-
-      window.location.href = `https://github.com/login/oauth/authorize?${query}`;
-
-    },
-
-    // Call the callback function
-
-    fileToBase64(file, callback) {
-      const reader = new FileReader();
-      reader.onload = function () {
-        const content = reader.result;
-        // use the file content here
-      }
-      reader.readAsBinaryString(file); // pass the file as a parameter to readAsBinaryString
-    },
-
-    async commitGithub({ commit, dispatch, state, getters }) {
-
-      /**
-           * encode string to utf-8 base64
-           * @param {string} str text to encode
-           * @returns base64 encoded utf-8 coded string
-           */
-      const str2base64 = str => {
-        const enc = new TextEncoder('utf-8')
-        return Base64.fromUint8Array(enc.encode(str))
-      }
-      // const utf8text = TextEncoder
-      // const binaryString = String.fromCharCode.apply(null, state.xmlDoc);
-      // const binaryB64 = btoa(binaryString);
-      // console.log(" this is the octokit ",  state.octokit)
-
-      // const octokit = getters.octokit
-      // const commit2 = {
-      //   owner:  state.owner, // owner of repository
-      //   repo: state.repo, // repository slug
-      //   path: state.path, // path of file in directory
-      //   sha: state.sha, // sha of previous version
-      //   branch: str2base64(state.xml), // branch of repository
-      //   message: "Commit from vertaktoid", // commit message
-      //    // base64 encoded content
-      //   }
-      //   octokit.repos.createOrUpdateFileContents(commit2).then(({ data }) => {
-      //     // Handle the response from the API call
-      //     console.log('File contents updated:', data);
-      //   }).catch((err) => {
-      //     // Handle any errors that occurred
-
-      //     console.error('Error updating file contents:', err);
-      //   });   
-      //console.log("permssion is " , permissions)
-
-
-
-      const { data } = await state.octokit.pulls.create({
-        owner: state.owner,
-        repo: state.repo,
-        title: 'This is the title ',
-        head: state.owner + "main",
-        base: "main",
-        body: 'we are trying to change things here',
-      });
-
-
-    },
-    async setBranches({ commit, dispatch, state, getters }, directory) {
-      console.log("this is branch " + directory)
-      const indexFirst = directory.indexOf("/")
-      const repo = indexFirst > 0 ? directory.substring(0, indexFirst) : directory
-      const path = indexFirst > 0 ? directory.substring(indexFirst) : ""
-      let owner = ""
-
-      const octokit = getters.octokit
-      const repos = await octokit.rest.repos.listForAuthenticatedUser();
-
-      // const [_, owner, repo, branch, ...path] = directory.split("/");
-      for (const re of repos.data) {
-        if (re.name == repo) {
-          owner = re.owner.login
-        }
-      }
-
-      console.log('repo and path are:', directory)
-      const { data: rootContents } = await octokit.repos.getContent({
-        owner: owner,
-        repo: repo,
-        path: path,
-      });
-
-      console.log("this si the owner , " + owner)
-
-      console.log("this is the url  ", rootContents.download_url)
-      const parts = rootContents.download_url.split("/");
-      const branchName = parts[5];
-      console.log("this is branch name   ", branchName)
-
-      dispatch('setOwner', owner)
-      dispatch('setRepo', repo)
-      dispatch('setPath', path)
-      dispatch('setSha', rootContents.sha)
-      //      dispatch('setOctokit', octokit)
-      dispatch('setRepos', repos)
-
-      if (path.includes(".json")) {
-        dispatch('importIIIF', rootContents.download_url)
-
-      }
-      //   let xmlDoc2 = ""
-
-
-      //   fetch(rootContents.download_url)
-      //   .then(response => response.text())
-      //   .then(xmlString => {
-      //     const parser = new DOMParser();
-      //     const xmlDoc2 = parser.parseFromString(xmlString, "application/xml");
-
-      //     console.log("this is xmlDoc inside fetch: ", xmlDoc2);
-
-      //     // Call a function that needs to use the xmlDoc variable
-      //     myFunction(xmlDoc2);
-      //   })
-      //   .catch(error => console.error(error));
-
-      // function myFunction(xmlDoc2) {
-      //   console.log("this is xmlDoc outside fetch:", xmlDoc2);
-      //   dispatch('setData', xmlDoc2)
-
-
-      //   // Do something with the xmlDoc variable
-      // }
-
-      // const decodedContent = new TextDecoder().decode(
-      //   Uint8Array.from(atob(rootContents.data.content), c => c.charCodeAt(0))
-      // );
-
-      // Print the file content
-
-
-      // const filteredContents = contents.data.filter(content => content.type === 'file' && content.name.match(/\.(mei|xml)$/i))
-
-      // // If no files with .mei or .xml extension found, return null
-      // if (filteredContents.length === 0) {
-      //   return null
-      // }
-
-      // // Get the content of the first file found
-      // const fileContent = await octokit.rest.repos.getContent({ owner, repo, path: filteredContents[0].path })
-
-      // // Decode the base64-encoded content
-      // const decodedContent = Buffer.from(fileContent.data.content, 'base64').toString('utf-8')
-
-      // console.log(decodedContent)
-
-      // const manifest = rootContents.filter(content => content.type === 'file' && content.path.match(/\.(mei|xml)$/i));
-      // const pageArray = getPageArray(manifest)
-      // print("this is the pageArray " + manifest)
-
-      // let countImage = images.length
-      // const imgload = new Promise(function (resolve, reject) {
-      //   const arr = []
-
-      // images.forEach(image => {       
-      //   var img = new Image() 
-      //   const obj = {}
-      //     const url = image.download_url;
-
-      //     img.onload = function (){
-      //       obj.width = img.width
-      //       obj.height = img.height
-      //       obj.uri = image.download_url
-      //       arr.push(obj)
-      //       --countImage
-      //       if(countImage == 0){
-      //         console.log("this is the length of arr ", arr[0])
-      //         commit('SET_PAGES', arr)
-      //         resolve(arr)
-      //       }
-
-      //   }
-      //   img.onerror = function () {
-      //     --countImage
-      //     if(countImage == 0){
-      //       console.log("this is the length of arr ", arr[0])
-      //       commit('SET_PAGES', arr)
-      //       resolve(arr)
-      //     }
-      // }
-      //   img.src = url
-
-      // })
-
-
-
-      // fetch(url)
-      //   .then(response => response.blob())
-      //   .then(blob => {
-      //     const reader = new FileReader();
-      //     reader.onload = () => {
-      //       const dataUrl = reader.result;
-      //       console.log('Image downloaded successfully', reader);
-      //     };
-      //     reader.readAsDataURL(blob);
-      //   })
-      //   .catch(error => {
-      //     console.log(`Error downloading image: ${error.message}`);
-      //   });
-
-
-      //});
-
-
-
-
-
-
-      // const repos = await octokit.rest.repos.listForAuthenticatedUser();
-
-      // Iterate over each repository to get its subrepositories
-
-
-      //   rootContents.forEach  ((content) => console.log("this is the content " , content));
-      // if(repo.name == directory || subrepo.full_name == directory){
-      //   console.log("this is the folder inside " + repo.name)
-      // }
-      // console.log(`${repo.name} has ${subrepos.data.length} subrepositories:`);
-      // console.log(subrepos.data.map((subrepo) => subrepo.full_name));
-
-      //  const directory_name = directory.name    
-      //  const  owner = directory.owner.login
-      //   console.log("this are repo " , directory)
-
-      //   const baseBranch = "main"; // replace with your desired branch name
-      //   const octokit = new Octokit({ auth: this.state.accessToken})
-
-      //   const { data: rootContents } = await octokit.repos.getContent({
-      //     owner: owner,
-      //     repo: directory_name,
-      //     path: ''
-      //   });
-      //   rootContents.forEach  ((content) => console.log("this is the content " , content));
-
-      // Filter the contents to include only directorie
-    },
-    setOwner({ commit, dispatch }, owner) {
-      commit('SET_OWNER', owner)
-    },
-    setRepo({ commit, dispatch }, repo) {
-      commit('SET_REPO', repo)
-    },
-    setPath({ commit, dispatch }, path) {
-      commit('SET_PATH', path)
-    },
-    setSha({ commit, dispatch }, sha) {
-      commit('SET_SHA', sha)
-    },
-    setOctokit({ commit, dispatch }, octokit) {
-      commit('SET_OCTOKIT', octokit)
-    },
-    setRepos({ commit, dispatch }, repos) {
-      commit('SET_REPOS', repos)
-    },
-    setBranch({ commit, dispatch }, branch) {
-      commit('SET_BRANCH', branch)
     },
     importIIIF({ commit, dispatch, state }, url) {
       commit('SET_LOADING', true);
@@ -812,7 +437,7 @@ export default createStore({
             for (let i = 0; i < canvases.length; i++) {
               try {
                 // Build the info.json URL for the current canvas
-                const infoUrl = canvases[i].images[0].resource.service['@id'] + "/info.json";
+                const infoUrl = canvases[i].images[0].resource.service['@id'];
                 
                 // Push the URL to the state.infoJson array
                 state.infoJson.push(infoUrl);
@@ -880,7 +505,7 @@ export default createStore({
     
           // Map all canvas images to their info.json URLs
           const infoJsonUrls = canvases.map(canvas => {
-            return canvas.images[0].resource.service['@id'] + "/info.json";
+            return canvas.images[0].resource.service['@id'];
           });
     
           // Store all fetch promises for info.json
@@ -1159,48 +784,46 @@ export default createStore({
       commit('CANCEL_IMAGE_IMPORTS')
     }
   },
+  /**
+ * Vuex getters for accessing and computing derived state.
+ * Getters provide convenient access to state properties and computed values for components.
+ *
+ * - isReady: Returns true if an MEI XML document is loaded.
+ * - totalZones: Returns the total number of zones in the document.
+ * - meiFileForDownload: Returns the serialized MEI XML as a string for download, or null if not loaded.
+ * - currentPageIndexOneBased: Returns the current page index (1-based).
+ * - currentPageIndexZeroBased: Returns the current page index (0-based).
+ * - maxPageNumber: Returns the total number of pages.
+ * - pages: Returns an array of page objects with tileSource, width, and coordinates for OpenSeadragon.
+ * - pagesDetailed: Returns an array of page objects with tileSource, dimensions, page number, and label.
+ * - currentPageObject: Returns the page object for the currently selected page.
+ * - zonesOnCurrentPage: Returns an array of annotation objects for all zones on the current page except the selected one.
+ * - measures: Returns an array of all <measure> elements in the MEI document.
+ * - mdivs: Returns an array of all mdivs with id, label, and index.
+ * - measuresByMdivId: Returns an array of measure objects for a given mdiv id, including zones and multiRest info.
+ * - currentMdiv: Returns the currently selected mdiv object (id, label, index), or null if not set.
+ * - currentMeasure: Returns the currently selected measure object (id, n, label, multiRest, mdiv), or null if not set.
+ * - mode: Returns the current editor mode.
+ * - selectedZone: Returns the annotation object for the currently selected zone, or null if not set.
+ * - showLoadIIIFModal: Returns true if the IIIF modal is visible.
+ * - showLoadGitModal: Returns true if the Git modal is visible.
+ * - showLoadXMLModal: Returns true if the XML modal is visible.
+ * - showMeasureModal: Returns true if the measure modal is visible.
+ * - showPagesModal: Returns true if the pages modal is visible.
+ * - showPageImportModal: Returns true if the page import modal is visible.
+ * - showMdivModal: Returns true if the mdiv modal is visible.
+ * - showMeasureList: Returns true if the measure list panel is visible.
+ * - importingImages: Returns the array of images being imported.
+ * - readyForImageImport: Returns true if all images are successfully imported and ready to be added as pages.
+ * - existingMusicMode: Returns true if working with existing music content.
+ * - firstMeasureWithoutZone: Returns the xml:id of the first measure without a zone, or null if all have zones.
+ */
   getters: {
-    accesstoken: state => {
-      return state.accessToken
-    },
-    getowner: state => {
-      console.log("this is owner " + state.owner)
-      return state.owner
-    },
-    octokit: state => {
-      return state.octokit
-    },
     isReady: state => {
       return state.xmlDoc !== null
     },
-    accessToken: state => state.accessToken,
-    directories: state => state.directories,
-
-    isLoading: state => {
-      return state.loading
-    },
     totalZones: state => {
       return state.totalZones
-    },
-    getBranch: state => {
-      return state.branch
-    },
-    getPath: state => {
-      return state.path
-
-    },
-    getSha: state => {
-      return state.sha
-
-    },
-    getLoginStatus: state => {
-      return state.logedin
-    },
-    getUsername: state => {
-      return state.username
-    },
-    getRepo: state => {
-      return state.repo
     },
     meiFileForDownload: state => {
       if (state.xmlDoc === null) {
@@ -1418,14 +1041,5 @@ export default createStore({
       }
       return measure.getAttribute('xml:id')
     },
-    getGitRepositotries: state => {
-      return state.repositories
-    },
-    getGitRepositotry: state => {
-      return state.selectedDirectory
-    },
-    getGitBranches: state => {
-      return state.branches
-    }
   }
 })

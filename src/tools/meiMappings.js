@@ -1,5 +1,17 @@
 import { uuid } from '@/tools/uuid.js'
-
+/**
+ * Converts an MEI <zone> element into an Annotorious annotation object.
+ * - Finds all measures linked to the zone (via @facs or @data).
+ * - Gathers measure and mdiv references for annotation metadata.
+ * - Computes a label for the annotation based on measure numbers or labels.
+ * - Calculates the bounding box (xywh) for the zone.
+ * - Returns an annotation object compatible with the W3C Web Annotation Data Model and Annotorious.
+ *
+ * @param {Document} mei - The MEI XML document.
+ * @param {Element|string} zoneInput - The <zone> element or its xml:id.
+ * @param {string} pageUri - The image URI for the page.
+ * @returns {Object} - Annotorious-compatible annotation object.
+ */
 export function meiZone2annotorious (mei, zoneInput, pageUri) {
   const zone = (typeof zoneInput === 'string') ? mei.querySelector('[*|id=' + zoneInput + ']') : zoneInput
   const zoneId = zone.getAttribute('xml:id')
@@ -116,6 +128,15 @@ export function meiZone2annotorious (mei, zoneInput, pageUri) {
   return annot
 }
 
+/**
+ * Converts an Annotorious annotation object into an MEI <zone> element.
+ * - Extracts the bounding box (xywh) from the annotation's selector.
+ * - Rounds and maps the coordinates to MEI zone attributes (ulx, uly, lrx, lry).
+ * - Sets the zone type to "measure" and assigns the annotation's id.
+ *
+ * @param {Object} annot - Annotorious annotation object.
+ * @returns {Element} - An MEI <zone> element representing the annotation region.
+ */
 export function annotorious2meiZone (annot) {
   const rawDimensions = annot.target.selector.value.substr(11).split(',')
   const xywh = {
@@ -136,6 +157,15 @@ export function annotorious2meiZone (annot) {
 
   return zone
 }
+/**
+ * Converts a rectangle (e.g., from a measure detector tool) into an MEI <zone> element.
+ * - Generates a unique zone ID.
+ * - Sets the zone type to "measure".
+ * - Maps and rounds the rectangle's coordinates to MEI zone attributes (ulx, uly, lrx, lry).
+ *
+ * @param {Object} rect - Rectangle object with ulx, uly, lrx, lry properties.
+ * @returns {Element} - An MEI <zone> element representing the detected measure region.
+ */
 
 export function measureDetector2meiZone (rect) {
   const id = 'd' + uuid()
@@ -149,7 +179,11 @@ export function measureDetector2meiZone (rect) {
 
   return zone
 }
-
+/**
+ * Creates a new MEI <measure> element with a unique xml:id.
+ *
+ * @returns {Element} - A new MEI <measure> element.
+ */
 export function generateMeasure () {
   const measure = document.createElementNS('http://www.music-encoding.org/ns/mei', 'measure')
   measure.setAttribute('xml:id', 'b' + uuid())
@@ -157,7 +191,6 @@ export function generateMeasure () {
   return measure
 }
 
-// TODO: this needs to be more clever
 function incrementMeasureNum (num, diff) {
   return parseInt(num) + diff
 }
@@ -228,7 +261,7 @@ export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex, t
   if (targetMdiv === undefined) {
     const mdivArray = [...xmlDoc.querySelectorAll('mdiv')]
     if (mdivArray.length === 0) {
-      const mdivId = createNewMdiv(xmlDoc)
+      const mdivId = createNewMdiv(xmlDoc,state)
       state.currentMdivId = mdivId
     }
 
@@ -279,7 +312,7 @@ export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex, t
 
   // function to compare newZone against existingZones
 
-  const insertIntoRightSystem = (xmlDoc, surface, targetMdiv, newZone, newMeasure, zones, pageHeight, thresholdDistance, zonesToIncrement, lastGroup) => {
+  const insertIntoRightSystem = (xmlDoc, surface, targetMdiv, newZone, newMeasure, zones, pageHeight, thresholdDistance, zonesToIncrement, lastGroup, state) => {
     const currentTop = zones[0].top
     const currentThreshold = currentTop + thresholdDistance
     // console.log('looking for measures above ' + currentThreshold)
@@ -289,10 +322,8 @@ export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex, t
 
 
     zones.forEach(zone => {
-      console.log("this is inside foreach of zones ")
       if (zone.top < currentThreshold) {
         above.push(zone)
-        console.log("this is inside foreach of zones ", zone, above)
       } else {
         below.push(zone)
       }
@@ -315,9 +346,8 @@ export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex, t
         // new zone is first within current system
         if (lastGroup.length === 0) {
           // must be the first measure on new page, so introduce new <pb/>
-
           const precedingZone = getPrecedingZone(xmlDoc, surface)
-          console.log('precedingZone')
+          console.log('adding a new measure at the begining of a sytem precedingZone')
           console.log(precedingZone)
 
           if (precedingZone !== null) {
@@ -365,65 +395,57 @@ export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex, t
                 section.append(pb)
                 section.append(newMeasure)
               }
-
             }
 
           }
         } else {
-          // must be the first measure in new system, so introduce new <sb/> and get last measure from previous system
+          console.log('last group is not empty and it is ', lastGroup)
+          // must be the first measure in a new or an exiting system, so introduce new <sb/> by geting the last measure from previous system if it is a new system or adding to the first measure of the previous system
+
           console.log('adding measure to new system')
           // order by highest left value
           lastGroup.sort((a, b) => {
             return b.left - a.left
           })
+
+          console.log('adding measure to new system')
+
           const precedingZone = lastGroup[0].elem
           precedingZone.after(newZone)
           const precedingZoneId = lastGroup[0].id
           if(targetMdiv == null){
             const mdivArray = [...xmlDoc.querySelectorAll('mdiv')]
-              mdivArray.forEach((mdiv, index) => {
-                if (mdiv.querySelector(`measure[facs="#${precedingZoneId}"]`)) {
-                  state.precedingMdiv = mdiv; // Full DOM element
-              
-                  const nextMdiv = mdivArray[index + 1];
-                  if (nextMdiv) {
-                    state.currentMdiv = nextMdiv; // 👉 This is the actual <mdiv> Element
-                    const precedingMeasure = state.currentMdiv.querySelector('measure[n="1"]');
-                    newMeasure.setAttribute('n', 1)
-                    precedingMeasure.before(newMeasure)
-                    
-                  } 
-                }
-              });         
-          }else{
+            state.currentMdivId =  mdivArray[mdivArray.length-1].getAttribute("xml:id")
+            targetMdiv = [...xmlDoc.querySelectorAll('mdiv')].find(mdiv => mdiv.getAttribute('xml:id') === state.currentMdivId)
             const precedingMeasure = targetMdiv.querySelector('measure[facs~="#' + precedingZoneId + '"]')
-              //if there is no prededing measure, add to the first measure of the mdiv
-              if (precedingMeasure == null) {
-                
-                const mdivArray = [...xmlDoc.querySelectorAll('mdiv')]
-                const targetMdiv = mdivArray.find(mdiv => mdiv.querySelector('measure[facs~="#' + zones[0].id + '"]'));
-                const nextMeasure = targetMdiv.querySelector('measure[facs~="#' + zones[0].id + '"]')
-                surface.append(newZone)
-                //nextMeasure.after(targetMdiv)
-                nextMeasure.before(newMeasure)
-                newMeasure.setAttribute('n', 1)
-            }else{
-              newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), 1))
-              precedingMeasure.after(newMeasure)
-    
-              // create sb, insert after preceding measure
-              const sb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'sb')
-              precedingMeasure.after(sb)
-            }
 
+            newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), 1))
+            precedingMeasure.after(newMeasure)
+  
+            // create sb, insert after preceding measure
+            const sb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'sb')
+            precedingMeasure.after(sb)
+
+          }else{
+              targetMdiv = [...xmlDoc.querySelectorAll('mdiv')].find(mdiv => mdiv.getAttribute('xml:id') === state.currentMdivId)
+              const precedingMeasure = targetMdiv.querySelector('measure[facs~="#' + precedingZoneId + '"]')
+              if (!precedingMeasure) {
+
+                  newMeasure.setAttribute('n', 1)
+                  targetMdiv.querySelector('section').appendChild(newMeasure)
+                  
+                } else {
+                  newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), 1))
+                  precedingMeasure.after(newMeasure)
+                  // create sb, insert after preceding measure
+                  const sb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'sb')
+                  precedingMeasure.after(sb)
+                }
           }
 
         }
       } else {
-        console.log("this is the index " + newIndex)
-        // measure goes somewhere in current system
-        console.log('new measure has ' + newIndex + ' preceding measures in current system')
-
+       
         const precedingZone = above[newIndex - 1].elem
         precedingZone.after(newZone)
 
@@ -449,11 +471,11 @@ export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex, t
 
       return zonesToIncrement
     } else {
-      return insertIntoRightSystem(xmlDoc, surface, targetMdiv, newZone, newMeasure, below, pageHeight, thresholdDistance, zonesToIncrement, above)
+      return insertIntoRightSystem(xmlDoc, surface, targetMdiv, newZone, newMeasure, below, pageHeight, thresholdDistance, zonesToIncrement, above, state)
     }
   }
 
-  insertIntoRightSystem(xmlDoc, surface, mdiv, currentZone, measure, allZones, pageHeight, thresholdDistance, [], [])
+  insertIntoRightSystem(xmlDoc, surface, mdiv, currentZone, measure, allZones, pageHeight, thresholdDistance, [], [], state)
 
   const followingMeasures = getFollowingMeasuresByMeasure(measure)
   // keep track of all measures that have been incremented already, i.e. avoid to increment measures with multiple zones more than once
@@ -462,7 +484,13 @@ export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex, t
     measure.setAttribute('n', incrementMeasureNum(measure.getAttribute('n'), 1))
   })
 }
-
+/**
+ * Increments a measure number by a given difference.
+ *
+ * @param {string|number} num - The current measure number.
+ * @param {number} diff - The amount to increment (can be negative).
+ * @returns {number} - The new measure number.
+ */
 export function getFollowingMeasuresByMeasure (measure) {
   const arr = []
 
@@ -508,26 +536,29 @@ export function getFollowingMeasuresByMeasure (measure) {
   return arr
 }
 
+/**
+ * Adds a zone reference to the @facs attribute of the last measure in the MEI document.
+ * - Retrieves the last <measure> element.
+ * - Appends the new zone ID to the existing @facs attribute (if present).
+ *
+ * @param {Document} xmlDoc - The MEI XML document.
+ * @param {string} zoneId - The xml:id of the zone to add.
+ */
+
 export function addZoneToLastMeasure (xmlDoc, zoneId) {
   const measure = getLastMeasure(xmlDoc)
   const oldFacs = measure.hasAttribute('facs') ? measure.getAttribute('facs') + ' ' : ''
-  console.log(oldFacs)
+  console.log("last measure ", measure)
   measure.setAttribute('facs', oldFacs + '#' + zoneId)
+  console.log("new measure ", measure)
 }
 
-/* // this works, but isn't currently used
-function getPrecedingMeasure (measure) {
-  const measureId = measure.getAttribute('xml:id')
-  const mdiv = measure.closest('mdiv')
-  const arr = [...mdiv.querySelectorAll('measure')]
-  const index = arr.findIndex(measure => measure.getAttribute('xml:id') === measureId)
-  if (index === 0) {
-    return null
-  } else {
-    return arr[index - 1]
-  }
-} */
-
+/**
+ * Retrieves the last <measure> element from the MEI XML document.
+ *
+ * @param {Document} xmlDoc - The MEI XML document.
+ * @returns {Element} - The last <measure> element, or undefined if none exist.
+ */
 function getLastMeasure (xmlDoc) {
   const measure = [...xmlDoc.querySelectorAll('measure')].slice(-1)[0]
   return measure
@@ -606,8 +637,17 @@ function getZonesFromMeasure (xmlDoc, measure) {
 
   return zones
 }
-
-export function createNewMdiv (xmlDoc, afterMdivId) {
+/**
+ * Creates a new <mdiv> (movement division) element in the MEI document.
+ * - Generates a unique xml:id and a label for the new movement.
+ * - Appends a <score> and <section> as children of the new <mdiv>.
+ * - Inserts the new mdiv at the end of <body> or after a specified mdiv.
+ *
+ * @param {Document} xmlDoc - The MEI XML document.
+ * @param {string} [afterMdivId] - Optional xml:id of an existing mdiv after which to insert the new mdiv.
+ * @returns {string} - The xml:id of the newly created mdiv.
+ */
+export function createNewMdiv (xmlDoc,state, afterMdivId) {
   const body = xmlDoc.querySelector('body')
   const mdivArray = xmlDoc.querySelectorAll('mdiv')
 
@@ -615,6 +655,7 @@ export function createNewMdiv (xmlDoc, afterMdivId) {
   const mdivId = 'm' + uuid()
   mdiv.setAttribute('xml:id', mdivId)
   mdiv.setAttribute('label', 'Movement ' + (mdivArray.length + 1))
+  mdiv.setAttribute('n', mdivArray.length + 1)
 
   const score = document.createElementNS('http://www.music-encoding.org/ns/mei', 'score')
   const section = document.createElementNS('http://www.music-encoding.org/ns/mei', 'section')
@@ -630,10 +671,23 @@ export function createNewMdiv (xmlDoc, afterMdivId) {
       precedingMdiv.after(mdiv)
     }
   }
-
   return mdivId
 }
-
+/**
+ * Deletes a zone and updates related measures in the MEI document.
+ * - Finds the zone on the current page by its xml:id.
+ * - For each measure linked to the zone:
+ *   - If the measure references multiple zones, just remove the zone reference from @facs.
+ *   - If the measure only references this zone:
+ *     - Adjust following measure numbers (including multiRest if present).
+ *     - Remove system/page breaks if necessary.
+ *     - Remove the measure itself.
+ * - Finally, removes the zone element from the document.
+ *
+ * @param {Document} xmlDoc - The MEI XML document.
+ * @param {string} id - The xml:id of the zone to delete.
+ * @param {Object} state - Application state (must include currentPage).
+ */
 export function deleteZone (xmlDoc, id, state) {
   const currentPage = state.currentPage
   console.log('this is deleted zone id  ' + id)
@@ -673,7 +727,17 @@ export function deleteZone (xmlDoc, id, state) {
   })
   zone.remove()
 }
-
+/**
+ * Toggles whether a zone is associated with a new measure or merged with the preceding measure.
+ * - If the zone is already part of the preceding measure, it creates a new measure for this zone.
+ * - If not, it merges the zone into the preceding measure and removes the current measure.
+ * - Handles both modes: with and without existing music content (state.existingMusicMode).
+ * - Updates @facs attributes and measure numbers as needed.
+ *
+ * @param {Document} xmlDoc - The MEI XML document.
+ * @param {string} id - The xml:id of the zone to toggle.
+ * @param {Object} state - Application state (must include currentPage and existingMusicMode).
+ */
 export function toggleAdditionalZone (xmlDoc, id, state) {
   const currentPage = state.currentPage
   const surface = xmlDoc.querySelectorAll('surface')[currentPage]
@@ -763,7 +827,16 @@ export function toggleAdditionalZone (xmlDoc, id, state) {
     }
   })
 }
-
+/**
+ * Sets, updates, or removes a <multiRest> element in a measure.
+ * - If a multiRest exists and a value is provided, updates its 'num' attribute.
+ * - If a multiRest exists and value is null, removes the multiRest(s) or the entire staff if empty.
+ * - If no multiRest exists and a value is provided, creates a new multiRest structure in the measure.
+ * - Adjusts following measure numbers if the multiRest value changes.
+ *
+ * @param {Element} measure - The MEI <measure> element to update.
+ * @param {number|null} val - The new value for multiRest, or null to remove.
+ */
 export function setMultiRest (measure, val) {
   const existingMultiRests = measure.querySelectorAll('multiRest')
   let oldVal = 1
@@ -805,9 +878,11 @@ export function setMultiRest (measure, val) {
       // no existing multiRest, and no multiRest is wanted -> do nothing
     }
   }
-  const diff = ((val !== null) ? val : 1) - oldVal
-  const followingMeasures = getFollowingMeasuresByMeasure(measure)
 
+  const diff = ((val !== null) ? val : 1) - oldVal
+  console.log("old value ", oldVal, " diff: ", diff, " val: ", val)
+
+  const followingMeasures = getFollowingMeasuresByMeasure(measure)
   if (diff !== 0) {
     followingMeasures.forEach(measure => {
       measure.setAttribute('n', incrementMeasureNum(measure.getAttribute('n'), diff))
@@ -815,6 +890,18 @@ export function setMultiRest (measure, val) {
   }
 }
 
+/**
+ * Moves a sequence of measures (and related elements) starting from a given measure to a target <mdiv>.
+ * - Determines the first node to move (may include preceding pb/sb).
+ * - Collects all following sibling elements to move as a group.
+ * - If the target mdiv is empty, appends all elements and renumbers measures.
+ * - If the target mdiv has measures, reinserts each measure using insertMeasure to preserve structure.
+ *
+ * @param {Document} xmlDoc - The MEI XML document.
+ * @param {string} firstMeasureId - The xml:id of the first measure to move.
+ * @param {string} targetMdivId - The xml:id of the target mdiv.
+ * @param {Object} state - Application state (used for page lookup).
+ */
 export function moveContentToMdiv (xmlDoc, firstMeasureId, targetMdivId, state) {
   console.log('trying to move measure ' + firstMeasureId + ' to mdiv ' + targetMdivId)
 
@@ -875,7 +962,6 @@ export function moveContentToMdiv (xmlDoc, firstMeasureId, targetMdivId, state) 
       const zones = getZonesFromMeasure(xmlDoc, measure)
       const surfaceId = zones[0].closest('surface').getAttribute('xml:id')
       const pageIndex = state.pages.findIndex(page => page.id === surfaceId)
-
       insertMeasure(xmlDoc, measure, state, zones[0], pageIndex, mdiv)
     })
   }
@@ -883,7 +969,7 @@ export function moveContentToMdiv (xmlDoc, firstMeasureId, targetMdivId, state) 
 
 /**
  * This creates a new page through the image import modal
- * @param {[type]} xmlDoc  [description]
+ * @param {[  type]} xmlDoc  [description]
  * @param {[type]} index   [description]
  * @param {[type]} url     [description]
  * @param {[type]} width   [description]
