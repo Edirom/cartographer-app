@@ -724,7 +724,7 @@ export function deleteZone (xmlDoc, id, state) {
         measure.setAttribute('n', incrementMeasureNum(measure.getAttribute('n'), diff))
       })
 
-      if (measure.nextElementSibling !== null) {
+      if (measure.nextElementSibling !== null && measure.previousElementSibling !== null) {
         if (measure.previousElementSibling.tagName === 'pb' && measure.nextElementSibling.tagName === 'sb') {
           measure.nextElementSibling.remove()
         } else if (measure.previousElementSibling.tagName === 'sb' && measure.nextElementSibling.tagName === 'sb') {
