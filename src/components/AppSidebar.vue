@@ -37,8 +37,8 @@
       <!-- @click="activateMode('additionalZone')"> -->
     <button class="btn btn-action"  :class="{'activeMode': mode === 'additionalZone'}"
       title="add zone to last measure"
-      :disabled="!isReady || measures.length === 0"
-      @click="printCurrentMeasure">
+      :disabled="!isReady && measures.length === 0"
+      @click="activateMode('additionalZone')">
       <template v-if="mode === 'additionalZone'">
         <font-awesome-icon icon="fa-solid fa-square-plus"/>
       </template>
