@@ -392,12 +392,17 @@ export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex, t
 
               } else {
                 const section = targetMdiv.querySelector('section')
-  
+                var pb = section.querySelector('pb[n="1"]')
+                if (pb!== null) {
+                  pb = section.querySelector('pb[n="1"]')
+                }else {
+                  pb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'pb')
+                  pb.setAttribute('facs', '#' + surface.getAttribute('xml:id'))
+                  pb.setAttribute('n', surface.getAttribute('n'))
+                }
+                console.log('this is section ', section)
                 surface.append(newZone)
                 newMeasure.setAttribute('n', 1)
-                const pb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'pb')
-                pb.setAttribute('facs', '#' + surface.getAttribute('xml:id'))
-                pb.setAttribute('n', surface.getAttribute('n'))
                 section.append(pb)
                 section.append(newMeasure)
               }
