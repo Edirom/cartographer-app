@@ -194,6 +194,9 @@ export function generateMeasure () {
 function incrementMeasureNum (num, diff) {
   return parseInt(num) + diff
 }
+function decrementMeasureNum (num, diff) {
+  return parseInt(num) - diff
+}
 
 /**
  * Inserts a measure into the MEI file
@@ -354,10 +357,9 @@ export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex, t
         if (lastGroup.length === 0) {
           // must be the first measure on new page, so introduce new <pb/>
           const precedingZone = getPrecedingZone(xmlDoc, surface)
-
-          if (precedingZone !== null) {
-             console.log('targetMdiv on number 355 ', targetMdiv)
+            if (precedingZone !== null) {
             // there are zones that can be continued
+            console.log('adding first measure to new page')
 
             surface.append(newZone)
             const precedingMeasure = getMeasuresFromZone(xmlDoc, precedingZone)[0]
@@ -370,44 +372,30 @@ export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex, t
             pb.setAttribute('facs', '#' + surface.getAttribute('xml:id'))
             pb.setAttribute('n', surface.getAttribute('n'))
             precedingMeasure.after(pb)
-          } else {
+          } 
+    else {
             // this is the first zone for the whole document
             console.log('adding first measure to document ', zones.length)
             // if there is exiting mdiv add to that, otherwise create new mdiv
-            if (zones.length > 1){
-            const mdivArray = [...xmlDoc.querySelectorAll('mdiv')]
-            const targetMdiv = mdivArray[0];
-            const nextMeasure = targetMdiv.querySelector('measure[facs~="#' + zones[0].id + '"]')
-            surface.prepend(newZone)
-            nextMeasure.before(newMeasure)
-            newMeasure.setAttribute('n', 1)
-            }else{
-              if (relativeWhere === 'before' && relativeTo !== null) {
-                newMeasure.setAttribute('n', 1)
-                const pb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'pb')
-                pb.setAttribute('facs', '#' + surface.getAttribute('xml:id'))
-                pb.setAttribute('n', surface.getAttribute('n'))
-                relativeTo.before(pb)
-                relativeTo.before(newMeasure)
 
-              } else {
-                const section = targetMdiv.querySelector('section')
-                var pb = section.querySelector('pb[n="1"]')
-                if (pb!== null) {
-                  pb = section.querySelector('pb[n="1"]')
-                }else {
-                  pb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'pb')
-                  pb.setAttribute('facs', '#' + surface.getAttribute('xml:id'))
-                  pb.setAttribute('n', surface.getAttribute('n'))
-                }
-                console.log('this is section ', section)
-                surface.append(newZone)
-                newMeasure.setAttribute('n', 1)
-                section.append(pb)
-                section.append(newMeasure)
-              }
+            if (relativeWhere === 'before' && relativeTo !== null) {
+              newMeasure.setAttribute('n', 1)
+              const pb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'pb')
+              pb.setAttribute('facs', '#' + surface.getAttribute('xml:id'))
+              pb.setAttribute('n', surface.getAttribute('n'))
+              relativeTo.before(pb)
+              relativeTo.before(newMeasure)
+            } else {
+              const section = targetMdiv.querySelector('section')
+
+              surface.append(newZone)
+              newMeasure.setAttribute('n', 1)
+              const pb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'pb')
+              pb.setAttribute('facs', '#' + surface.getAttribute('xml:id'))
+              pb.setAttribute('n', surface.getAttribute('n'))
+              section.append(pb)
+              section.append(newMeasure)
             }
-
           }
         } else {
           // must be the first measure in a new or an exiting system, so introduce new <sb/> by geting the last measure from previous system if it is a new system or adding to the first measure of the previous system
@@ -684,7 +672,6 @@ export function createNewMdiv (xmlDoc,state, afterMdivId) {
  */
 export function deleteZone (xmlDoc, id, state) {
   const currentPage = state.currentPage
-  console.log('this is deleted zone id  ' + id)
   const surface = xmlDoc.querySelectorAll('surface')[currentPage]
   const zone = [...surface.querySelectorAll('zone')].find(zone => zone.getAttribute('xml:id') === id)
 
@@ -706,8 +693,21 @@ export function deleteZone (xmlDoc, id, state) {
       followingMeasures.forEach(measure => {
         measure.setAttribute('n', incrementMeasureNum(measure.getAttribute('n'), diff))
       })
+      const pb = measure.previousElementSibling;
 
+      if (pb && pb.localName === 'pb') {
+        const section = pb.closest('section');
+        const mdiv = pb.closest('mdiv');
+        if (!section || !mdiv) return;
+        const allPbsInSection = section.querySelectorAll('pb');
+        if (allPbsInSection.length === 1) {
+          mdiv.remove();
+        } else {
+          pb.remove();
+        }
+      }
       if (measure.nextElementSibling !== null && measure.previousElementSibling !== null) {
+
         if (measure.previousElementSibling.tagName === 'pb' && measure.nextElementSibling.tagName === 'sb') {
           measure.nextElementSibling.remove()
         } else if (measure.previousElementSibling.tagName === 'sb' && measure.nextElementSibling.tagName === 'sb') {
@@ -716,6 +716,19 @@ export function deleteZone (xmlDoc, id, state) {
           measure.nextElementSibling.remove()
         }
       }
+      const mdiv = measure.closest('section');
+      console.log("this is the last measure ", mdiv.children.length)
+      if( mdiv.children.length <= 2){
+        mdiv.closest('mdiv').getAttribute("n") 
+        const body = xmlDoc.querySelector('body')
+        var mdivs = body.querySelectorAll('mdiv')
+        for (let i = 0; i < mdivs.length; i++) {
+          if (mdivs[i].getAttribute('n') > mdiv.getAttribute('n')) {
+            mdivs[i].setAttribute('n', decrementMeasureNum(mdivs[i].getAttribute('n'), 1))
+            mdivs[i].setAttribute('label', "Movement " + mdivs[i].getAttribute('n'))
+          }
+      }
+    }
       measure.remove()
     }
   })
