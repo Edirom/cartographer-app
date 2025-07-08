@@ -359,15 +359,23 @@ export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex, t
           const precedingZone = getPrecedingZone(xmlDoc, surface)
             if (precedingZone !== null) {
             // there are zones that can be continued
-            console.log('adding first measure to new page')
-
             surface.append(newZone)
+            console.log("line 364 ", getMeasuresFromZone(xmlDoc, precedingZone)[0])
             const precedingMeasure = getMeasuresFromZone(xmlDoc, precedingZone)[0]
 
             newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), 1))
             precedingMeasure.after(newMeasure)
+            const facsId = surface.getAttribute('xml:id');
+            const pageNum = surface.getAttribute('n');
 
+            const body = xmlDoc.querySelector('body');
+
+            const existingPb = body.querySelector(`pb[facs="#${facsId}"][n="${pageNum}"]`)
+            if(existingPb){
+              existingPb.remove()
+            }
             // create pb, insert after preceding measure
+            console.log("line 377")
             const pb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'pb')
             pb.setAttribute('facs', '#' + surface.getAttribute('xml:id'))
             pb.setAttribute('n', surface.getAttribute('n'))
@@ -375,27 +383,46 @@ export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex, t
           } 
     else {
             // this is the first zone for the whole document
-            console.log('adding first measure to document ', zones.length)
-            // if there is exiting mdiv add to that, otherwise create new mdiv
 
             if (relativeWhere === 'before' && relativeTo !== null) {
+                          console.log("line 387")
               newMeasure.setAttribute('n', 1)
               const pb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'pb')
               pb.setAttribute('facs', '#' + surface.getAttribute('xml:id'))
               pb.setAttribute('n', surface.getAttribute('n'))
               relativeTo.before(pb)
               relativeTo.before(newMeasure)
-            } else {
-              const section = targetMdiv.querySelector('section')
+            }else {
+                const section = targetMdiv.querySelector('section');
+                surface.append(newZone);
+                
+                const existingMeasure1 = section.querySelector('measure[n="1"]');
+                const existingPb = section.querySelector('pb');
 
-              surface.append(newZone)
-              newMeasure.setAttribute('n', 1)
-              const pb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'pb')
-              pb.setAttribute('facs', '#' + surface.getAttribute('xml:id'))
-              pb.setAttribute('n', surface.getAttribute('n'))
-              section.append(pb)
-              section.append(newMeasure)
-            }
+                newMeasure.setAttribute('n', 1);
+
+                if (existingMeasure1) {
+                  // There is already a measure with n="1", so just insert after existing <pb>
+                  if (existingPb) {
+                                      console.log("line 407")
+
+                    existingPb.after(newMeasure);
+                  } else {
+                    // fallback: no pb, just insert at the beginning of section
+                    section.prepend(newMeasure);
+                  }
+                } else {
+                  // No measure n="1", so this is a fresh start
+                  const pb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'pb');
+                  pb.setAttribute('facs', '#' + surface.getAttribute('xml:id'));
+                  pb.setAttribute('n', surface.getAttribute('n'));
+                  console.log("line 416")
+
+                  section.append(pb);
+                  section.append(newMeasure);
+                }
+              }
+
           }
         } else {
           // must be the first measure in a new or an exiting system, so introduce new <sb/> by geting the last measure from previous system if it is a new system or adding to the first measure of the previous system
@@ -670,69 +697,92 @@ export function createNewMdiv (xmlDoc,state, afterMdivId) {
  * @param {string} id - The xml:id of the zone to delete.
  * @param {Object} state - Application state (must include currentPage).
  */
-export function deleteZone (xmlDoc, id, state) {
-  const currentPage = state.currentPage
-  const surface = xmlDoc.querySelectorAll('surface')[currentPage]
-  const zone = [...surface.querySelectorAll('zone')].find(zone => zone.getAttribute('xml:id') === id)
+export function deleteZone(xmlDoc, id, state) {
+  const currentPage = state.currentPage;
+  const surface = xmlDoc.querySelectorAll('surface')[currentPage];
+  const zone = [...surface.querySelectorAll('zone')].find(zone => zone.getAttribute('xml:id') === id);
 
-  const measures = getMeasuresFromZone(xmlDoc, zone)
+  if (!zone) return;
+
+  const measures = getMeasuresFromZone(xmlDoc, zone);
   measures.forEach(measure => {
-    let followingMeasures = []
-    const facsArr = measure.getAttribute('facs').trim().split(' ')
+    let followingMeasures = [];
+    const facsArr = measure.getAttribute('facs').trim().split(' ');
     if (facsArr.length > 1) {
-      const index = facsArr.indexOf('#' + id)
-      facsArr.splice(index, 1)
-    } else {
-      let measureCount = 1
-      const multiRest = measure.querySelector('multiRest')
-      if (multiRest !== null) {
-        measureCount = parseInt(multiRest.getAttribute('num'))
+      // Remove only this zone from @facs
+      const index = facsArr.indexOf('#' + id);
+      if (index !== -1) {
+        facsArr.splice(index, 1);
+        measure.setAttribute('facs', facsArr.join(' '));
       }
-      const diff = measureCount * -1
-      followingMeasures = getFollowingMeasuresByMeasure(measure)
-      followingMeasures.forEach(measure => {
-        measure.setAttribute('n', incrementMeasureNum(measure.getAttribute('n'), diff))
-      })
-      const pb = measure.previousElementSibling;
+    } else {
+      // Only one zone, remove the measure and update following
+      let measureCount = 1;
+      const multiRest = measure.querySelector('multiRest');
+      if (multiRest !== null) {
+        measureCount = parseInt(multiRest.getAttribute('num'));
+      }
+      const diff = measureCount * -1;
+      followingMeasures = getFollowingMeasuresByMeasure(measure);
+      followingMeasures.forEach(m => {
+        m.setAttribute('n', incrementMeasureNum(m.getAttribute('n'), diff));
+      });
 
-      if (pb && pb.localName === 'pb') {
-        const section = pb.closest('section');
-        const mdiv = pb.closest('mdiv');
-        if (!section || !mdiv) return;
-        const allPbsInSection = section.querySelectorAll('pb');
-        if (allPbsInSection.length === 1) {
-          mdiv.remove();
-        } else {
+      // Remove pb if it's before this measure and not used elsewhere
+    const pb = measure.previousElementSibling;
+    if (pb && pb.localName === 'pb') {
+      const section = pb.closest('section');
+      if (section) {
+        // Check if there are any <measure> elements after pb (not just after the current measure)
+        let hasFollowingMeasure = false;
+        let node = pb.nextElementSibling;
+        while (node) {
+          if (node.localName === 'measure') {
+            hasFollowingMeasure = true;
+            break;
+          }
+          node = node.nextElementSibling;
+        }
+        // Only remove pb if there are NO following measures
+        if (!hasFollowingMeasure) {
           pb.remove();
         }
       }
-      if (measure.nextElementSibling !== null && measure.previousElementSibling !== null) {
+    }
 
-        if (measure.previousElementSibling.tagName === 'pb' && measure.nextElementSibling.tagName === 'sb') {
-          measure.nextElementSibling.remove()
-        } else if (measure.previousElementSibling.tagName === 'sb' && measure.nextElementSibling.tagName === 'sb') {
-          measure.nextElementSibling.remove()
-        } else if (followingMeasures.length === 0 && (measure.previousElementSibling.tagName === 'sb')) {
-          measure.nextElementSibling.remove()
+      // Remove sb if it's after this measure and not needed
+      if (measure.nextElementSibling && measure.nextElementSibling.tagName === 'sb') {
+        measure.nextElementSibling.remove();
+      }
+
+      // Remove the measure
+      const section = measure.closest('section');
+      measure.remove();
+
+      // If section is now empty, remove its mdiv and update movement numbers
+      if (section && section.querySelectorAll('measure').length === 0) {
+        const mdiv = section.closest('mdiv');
+        if (mdiv) {
+          const mdivN = parseInt(mdiv.getAttribute('n'));
+          mdiv.remove();
+
+          // Update n and label for all following mdivs
+          const body = xmlDoc.querySelector('body');
+          const mdivs = [...body.querySelectorAll('mdiv')];
+          mdivs.forEach(md => {
+            const n = parseInt(md.getAttribute('n'));
+            if (n > mdivN) {
+              md.setAttribute('n', n - 1);
+              md.setAttribute('label', 'Movement ' + (n - 1));
+            }
+          });
         }
       }
-      const mdiv = measure.closest('section');
-      console.log("this is the last measure ", mdiv.children.length)
-      if( mdiv.children.length <= 2){
-        mdiv.closest('mdiv').getAttribute("n") 
-        const body = xmlDoc.querySelector('body')
-        var mdivs = body.querySelectorAll('mdiv')
-        for (let i = 0; i < mdivs.length; i++) {
-          if (mdivs[i].getAttribute('n') > mdiv.getAttribute('n')) {
-            mdivs[i].setAttribute('n', decrementMeasureNum(mdivs[i].getAttribute('n'), 1))
-            mdivs[i].setAttribute('label', "Movement " + mdivs[i].getAttribute('n'))
-          }
-      }
     }
-      measure.remove()
-    }
-  })
-  zone.remove()
+  });
+
+  // Remove the zone itself
+  zone.remove();
 }
 /**
  * Toggles whether a zone is associated with a new measure or merged with the preceding measure.
