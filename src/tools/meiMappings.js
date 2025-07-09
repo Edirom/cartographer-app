@@ -349,7 +349,7 @@ export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex, t
           if (precedingZone !== null) {
             // there are zones that can be continued
 
-            surface.append(newZone)
+            surface.prepend(newZone)
             const precedingMeasure = getMeasuresFromZone(xmlDoc, precedingZone)[0]
 
             newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), 1))
@@ -379,7 +379,7 @@ export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex, t
               relativeTo.before(pb)
               relativeTo.before(newMeasure)
               } else {
-                surface.append(newZone)
+                surface.prepend(newZone)
                 newMeasure.setAttribute('n', 1)
                 if(section.querySelector('pb')){
                 }
