@@ -361,7 +361,6 @@ if (targetMdiv === undefined) {
             if (precedingZone !== null) {
             // there are zones that can be continued
             surface.append(newZone)
-            console.log("line 364 ", getMeasuresFromZone(xmlDoc, precedingZone)[0])
             const precedingMeasure = getMeasuresFromZone(xmlDoc, precedingZone)[0]
 
             newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), 1))
@@ -376,7 +375,6 @@ if (targetMdiv === undefined) {
               existingPb.remove()
             }
             // create pb, insert after preceding measure
-            console.log("line 377")
             const pb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'pb')
             pb.setAttribute('facs', '#' + surface.getAttribute('xml:id'))
             pb.setAttribute('n', surface.getAttribute('n'))
@@ -386,7 +384,6 @@ if (targetMdiv === undefined) {
             // this is the first zone for the whole document
 
             if (relativeWhere === 'before' && relativeTo !== null) {
-                          console.log("line 387")
               newMeasure.setAttribute('n', 1)
               const pb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'pb')
               pb.setAttribute('facs', '#' + surface.getAttribute('xml:id'))
@@ -405,8 +402,6 @@ if (targetMdiv === undefined) {
                 if (existingMeasure1) {
                   // There is already a measure with n="1", so just insert after existing <pb>
                   if (existingPb) {
-                                      console.log("line 407")
-
                     existingPb.after(newMeasure);
                   } else {
                     // fallback: no pb, just insert at the beginning of section
@@ -417,8 +412,6 @@ if (targetMdiv === undefined) {
                   const pb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'pb');
                   pb.setAttribute('facs', '#' + surface.getAttribute('xml:id'));
                   pb.setAttribute('n', surface.getAttribute('n'));
-                  console.log("line 416")
-
                   section.append(pb);
                   section.append(newMeasure);
                 }
@@ -431,12 +424,10 @@ if (targetMdiv === undefined) {
           lastGroup.sort((a, b) => {
             return b.left - a.left
           })
-          console.log('line 433 last group is ', lastGroup)
           const precedingZone = lastGroup[0].elem
           precedingZone.after(newZone)
           var precedingZoneId = lastGroup[0].id
           if(targetMdiv != null){
-              console.log('line 438 last group is ', lastGroup)
 
               const precedingMeasure = targetMdiv.querySelector('measure[facs~="#' + precedingZoneId + '"]')
                console.log("preceedingZoneId is second ", precedingZoneId)
@@ -446,7 +437,6 @@ if (targetMdiv === undefined) {
                   newMeasure.setAttribute('n', 1)
                   targetMdiv.querySelector('section').prepend(newMeasure)
                   //const followingMeasures = getFollowingMeasuresByMeasure(newMeasure)
-                  console.log('line 448 last group is ', lastGroup)
 
 
                 } else {
@@ -455,14 +445,12 @@ if (targetMdiv === undefined) {
                   // create sb, insert after preceding measure
                   const sb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'sb')
                   precedingMeasure.after(sb)
-                  console.log('line 457 last group is ', lastGroup)
 
                 }
           }
 
         }
       } else {  
-        console.log('line 462 new zone is not first in system')     
         const precedingZone = above[newIndex - 1].elem
         precedingZone.after(newZone)
 
@@ -478,7 +466,6 @@ if (targetMdiv === undefined) {
 
       // make sure to increment all following measures on current system
       for (let i = newIndex + 1; i < above.length; i++) {
-        console.log('line 480')
         zonesToIncrement.push(above[i].id)
       }
 
@@ -489,7 +476,6 @@ if (targetMdiv === undefined) {
 
       return zonesToIncrement
     } else {
-              console.log('line 480')
 
       return insertIntoRightSystem(xmlDoc, surface, targetMdiv, newZone, newMeasure, below, pageHeight, thresholdDistance, zonesToIncrement, above, state)
     }
@@ -501,7 +487,6 @@ if (targetMdiv === undefined) {
     // Only call insertIntoRightSystem if the new zone is NOT the first in the system
     if (newZoneIndex > 0) {
       insertIntoRightSystem(xmlDoc, surface, mdiv, currentZone, measure, allZones, pageHeight, thresholdDistance, [], [], state)
-      console.log('line 487')
       const followingMeasures = getFollowingMeasuresByMeasure(measure)
       // keep track of all measures that have been incremented already, i.e. avoid to increment measures with multiple zones more than once
       followingMeasures.forEach(measure => {
@@ -733,9 +718,8 @@ export function deleteZone(xmlDoc, id, state) {
   const currentPage = state.currentPage;
   const surface = xmlDoc.querySelectorAll('surface')[currentPage];
   const zone = [...surface.querySelectorAll('zone')].find(zone => zone.getAttribute('xml:id') === id);
-
+  
   if (!zone) return;
-
   const measures = getMeasuresFromZone(xmlDoc, zone);
   measures.forEach(measure => {
     let followingMeasures = [];
@@ -755,7 +739,6 @@ export function deleteZone(xmlDoc, id, state) {
         measureCount = parseInt(multiRest.getAttribute('num'));
       }
       const diff = measureCount * -1;
-      console.log('line 726')
       followingMeasures = getFollowingMeasuresByMeasure(measure);
       followingMeasures.forEach(m => {
         m.setAttribute('n', incrementMeasureNum(m.getAttribute('n'), diff));
@@ -864,7 +847,6 @@ export function toggleAdditionalZone (xmlDoc, id, state) {
         precedingMeasures.forEach(precedingMeasure => {
           precedingMeasure.setAttribute('facs', precedingMeasure.getAttribute('facs') + ' #' + id)
         })
-        console.log("line 830")
         const followingMeasures = getFollowingMeasuresByMeasure(measure)
         followingMeasures.forEach(measure => {
           measure.setAttribute('n', incrementMeasureNum(measure.getAttribute('n'), -1))
@@ -880,7 +862,6 @@ export function toggleAdditionalZone (xmlDoc, id, state) {
         const index = facsArr.indexOf('#' + id)
         facsArr.splice(index, 1)
         measure.setAttribute('facs', facsArr.join(' '))
-        console.log("line 850")
         const followingMeasures = getFollowingMeasuresByMeasure(measure)
         let zones = '#' + id
         followingMeasures.forEach(measure => {
@@ -902,7 +883,6 @@ export function toggleAdditionalZone (xmlDoc, id, state) {
         precedingMeasures.forEach(precedingMeasure => {
           precedingMeasure.setAttribute('facs', precedingMeasure.getAttribute('facs') + ' #' + id)
         })
-        console.log("line 871")
         const followingMeasures = getFollowingMeasuresByMeasure(measure)
         followingMeasures.unshift(measure)
 
@@ -973,7 +953,6 @@ export function setMultiRest (measure, val) {
 
   const diff = ((val !== null) ? val : 1) - oldVal
   console.log("old value ", oldVal, " diff: ", diff, " val: ", val)
-  console.log('line number  9667')
   const followingMeasures = getFollowingMeasuresByMeasure(measure)
   if (diff !== 0) {
     followingMeasures.forEach(measure => {
@@ -1043,7 +1022,6 @@ export function moveContentToMdiv (xmlDoc, firstMeasureId, targetMdivId, state) 
       section.appendChild(element)
     })
   } else {
-    console.log('line 1037')
     const followingMeasures = getFollowingMeasuresByMeasure(firstMeasure)
 
     const zones = getZonesFromMeasure(xmlDoc, firstMeasure)
@@ -1096,25 +1074,3 @@ export function addImportedPage (xmlDoc, index, url, width, height) {
     newFacs.append(surface)
   }
 }
-
-/*
-{
-  "type": "Annotation",
-  "body": [
-    {
-      "type": "TextualBody",
-      "purpose": "tagging",
-      "value": "measure"
-    }
-  ],
-  "target": {
-    "source": "http://edirom-images.beethovens-werkstatt.de/Scaler/IIIF/US-NYj_31_B393cp_no.5_errata%2F001.jpg",
-    "selector": {
-      "type": "FragmentSelector",
-      "conformsTo": "http://www.w3.org/TR/media-frags/",
-      "value": "xywh=pixel:864.4168090820312,1217.0018310546875,1298.1351928710938,718.6104736328125"
-    }
-  },
-  "@context": "http://www.w3.org/ns/anno.jsonld",
-  "id": "#d808b879-1d1a-44e7-85e7-ae95584b7933"
-} */
