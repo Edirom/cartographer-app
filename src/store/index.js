@@ -6,11 +6,13 @@ import { mode as allowedModes } from '@/store/constants.js'
 
 const parser = new DOMParser()
 const serializer = new XMLSerializer()
-export default createStore({
-  modules: {
-  },
-    state: {
-      allmdivs: [],   
+
+function getDefaultState() {
+  return {
+ selectedRepo: null,            // Currently selected GitHub repository
+      selectedDirectory: null,       // Currently selected directory within the repo
+      directories: [],               // List of directories in the selected repo
+      repos: null,                   // List of available repositories
       xmlDoc: null,                  // The loaded MEI XML document (DOM)
       pages: [],                     // Array of page objects (from MEI or IIIF)
       currentPage: -1,               // Index of the currently selected page
@@ -23,6 +25,7 @@ export default createStore({
       showPageImportModal: false,    // Show/hide modal for importing pages/images
       showMeasureList: false,        // Show/hide the measure list panel
       loading: false,                // Indicates if the app is currently loading data
+      logedin: false,                // Indicates if the user is logged in
       processing: false,             // Indicates if the app is processing data
       pageDimension: [],             // Array of [width, height] for each page
       mode: allowedModes.selection,  // Current editor mode (selection, manualRect, etc.)
@@ -38,11 +41,18 @@ export default createStore({
       importingImages: [],           // Array of images being imported (with status)
       currentMeasureId: null,        // xml:id of the currently selected measure
       infoJson: []                   // Array of IIIF info.json URLs for canvases
+  }
+}
+
+export default createStore({
+  modules: {
   },
+    state: getDefaultState(),
   /**
  * Vuex mutations for managing application state.
  * Each mutation updates a specific part of the state in response to actions or UI events.
  *
+ * - RESET_STATE: Resets the entire application state to its default values.
  * - TOGGLE_LOADXML_MODAL: Toggle the visibility of the XML file load modal.
  * - TOGGLE_LOADIIIF_MODAL: Toggle the visibility of the IIIF manifest load modal.
  * - TOGGLE_LOADGIT_MODAL: Toggle the visibility of the GitHub load modal.
@@ -82,6 +92,9 @@ export default createStore({
  * - CANCEL_IMAGE_IMPORTS: Cancel all pending image imports and hide the import modal.
  */
   mutations: {
+    RESET_STATE(state) {
+        Object.assign(state, getDefaultState())
+      },
     TOGGLE_LOADXML_MODAL(state) {
       state.showLoadXMLModal = !state.showLoadXMLModal
     },
@@ -113,13 +126,13 @@ export default createStore({
     SET_ANNO(state, anno) {
       state.anno = anno
     },
+    SET_SELECTED_DIRECTORY(state, gitdirec) {
+      state.selectedDirectory = gitdirec
+    },
     SET_XML_DOC(state, xmlDoc) {
       console.log("this is the xml doc in set ", xmlDoc)
       state.xmlDoc = xmlDoc
       state.currentPage = 0
-    },
-    SET_ALL_MDIVS(state, mdiv) {
-      state.allmdivs.push(mdiv)
     },
     SET_PAGES(state, pageArray) {
       state.pages = pageArray
@@ -350,6 +363,8 @@ export default createStore({
  * Vuex actions for asynchronous operations and complex state updates.
  * Actions can dispatch mutations, perform async tasks, and coordinate multiple state changes.
  *
+ * - fetchDirectories: Fetches directory listings from a GitHub repository (example, not fully implemented).
+ * - resetAll: Resets the entire application state to its default values.
  * - toggleLoadXMLModal: Toggles the visibility of the XML file load modal.
  * - toggleLoadIIIFModal: Toggles the visibility of the IIIF manifest load modal.
  * - toggleMeasureModal: Toggles the visibility of the measure label/number modal.
@@ -388,7 +403,20 @@ export default createStore({
  * - cancelImageImports: Cancels all pending image imports and hides the import modal.
  */
   actions: {
-  
+    async fetchDirectories({ state, commit }) {
+      try {
+        const url = `https://api.github.com/repos/${state.username}/${state.repository}/contents/${state.path}`;
+        const headers = { Authorization: `token ${state.accessToken}` };
+        //const response = await axios.get(url, { headers });
+        // const directories = response.data.filter(item => item.type === 'dir').map(item => item.name);
+        // commit('setDirectories', directories);
+      } catch (error) {
+        console.error(error);
+      }
+    },
+    resetAll({ commit }) {
+      commit('RESET_STATE')
+    },
     toggleLoadXMLModal({ commit }) {
       commit('TOGGLE_LOADXML_MODAL')
     },
@@ -414,86 +442,12 @@ export default createStore({
       console.log('setting current page to ' + i)
       commit('SET_CURRENT_PAGE', i)
     },
-    setAllMdivs({ commit }, i) {
-      commit('SET_ALL_MDIVS', i)
-    },
     setCurrentPageZone({ commit }, j) {
       commit('SET_TOTAL_ZONES_COUNT', j)
     },
     importIIIF({ commit, dispatch, state }, url) {
       commit('SET_LOADING', true);
-    
-      // Fetch the IIIF manifest
-      fetch(url)
-        .then(res => res.json())
-        .then(json => {
-          commit('SET_LOADING', false);
-          commit('SET_PROCESSING', true);
-    
-          let canvases = json.sequences[0].canvases;
-    
-          // Process each canvas one by one, sequentially
-          const processCanvasesSequentially = async () => {
-            for (let i = 0; i < canvases.length; i++) {
-              try {
-                // Build the info.json URL for the current canvas
-                const infoUrl = canvases[i].images[0].resource.service['@id'];
-                
-                // Push the URL to the state.infoJson array
-                state.infoJson.push(infoUrl);
-                
-                // Fetch the info.json
-                const res = await fetch(infoUrl);
-                const result = await res.json();
-    
-                // Check if this is a proper IIIF Manifest, then convert to MEI
-                const isManifest = checkIiifManifest(json);
-                if (!isManifest) {
-                  throw new Error("Invalid IIIF manifest");
-                }
-    
-                // Extract the width and height from the result
-                const width = result.width;
-                const height = result.height;
-    
-                // Push the dimensions into the state.pageDimension array
-                state.pageDimension.push([width, height]);
-    
-              } catch (error) {
-                console.error(`Error processing canvas ${i}:`, error);
-                throw error; // This will stop the loop and be caught in the outer catch block
-              }
-            }
-          };
-    
-          // Call the sequential processing function
-          processCanvasesSequentially()
-            .then(() => {
-              // After processing all canvases, convert the manifest to MEI
-              return iiifManifest2mei(json, url, parser, state);
-            })
-            .then(mei => {
-              // Dispatch setData with the generated MEI
-              dispatch('setData', mei);
-            })
-            .catch(err => {
-              console.error('Error processing IIIF manifest or canvases:', err);
-              commit('SET_LOADING', false);
-              // Add any additional error messaging here
-            })
-            .finally(() => {
-              commit('SET_PROCESSING', false); // Ensure processing is set to false after completion
-            });
-        })
-        .catch(error => {
-          // Handle errors in the initial IIIF manifest fetch
-          console.error('Error fetching IIIF manifest:', error);
-          commit('SET_LOADING', false);
-        });
-    },
-    importIIIF({ commit, dispatch, state }, url) {
-      commit('SET_LOADING', true);
-    
+
       // Fetch the IIIF manifest
       fetch(url)
         .then(res => res.json())

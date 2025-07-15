@@ -360,7 +360,7 @@ if (targetMdiv === undefined) {
           const precedingZone = getPrecedingZone(xmlDoc, surface)
             if (precedingZone !== null) {
             // there are zones that can be continued
-            surface.append(newZone)
+            surface.prepend(newZone)
             const precedingMeasure = getMeasuresFromZone(xmlDoc, precedingZone)[0]
 
             newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), 1))
@@ -391,31 +391,30 @@ if (targetMdiv === undefined) {
               relativeTo.before(pb)
               relativeTo.before(newMeasure)
             }else {
-                const section = targetMdiv.querySelector('section');
-                surface.append(newZone);
-                
-                const existingMeasure1 = section.querySelector('measure[n="1"]');
-                const existingPb = section.querySelector('pb');
-
-                newMeasure.setAttribute('n', 1);
-
-                if (existingMeasure1) {
-                  // There is already a measure with n="1", so just insert after existing <pb>
-                  if (existingPb) {
-                    existingPb.after(newMeasure);
-                  } else {
-                    // fallback: no pb, just insert at the beginning of section
-                    section.prepend(newMeasure);
-                  }
-                } else {
-                  // No measure n="1", so this is a fresh start
-                  const pb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'pb');
-                  pb.setAttribute('facs', '#' + surface.getAttribute('xml:id'));
-                  pb.setAttribute('n', surface.getAttribute('n'));
-                  section.append(pb);
-                  section.append(newMeasure);
+                const section = targetMdiv.querySelector('section')
+            if (relativeWhere === 'before' && relativeTo !== null) {
+              newMeasure.setAttribute('n', 1)
+              const pb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'pb')
+              pb.setAttribute('facs', '#' + surface.getAttribute('xml:id'))
+              pb.setAttribute('n', surface.getAttribute('n'))
+              relativeTo.before(pb)
+              relativeTo.before(newMeasure)
+              } else {
+                surface.prepend(newZone)
+                newMeasure.setAttribute('n', 1)
+                if(section.querySelector('pb')){
+                }
+                if(section.querySelector('pb') && section.querySelector('pb').getAttribute('facs') ===  ('#' + surface.getAttribute('xml:id'))){
+                    section.querySelector('pb').after(newMeasure)
+                }else{
+                    const pb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'pb')
+                    pb.setAttribute('facs', '#' + surface.getAttribute('xml:id'))
+                    pb.setAttribute('n', surface.getAttribute('n'))
+                    section.append(pb)
+                    section.append(newMeasure)
                 }
               }
+            }
 
           }
         } else {
@@ -430,7 +429,6 @@ if (targetMdiv === undefined) {
           if(targetMdiv != null){
 
               const precedingMeasure = targetMdiv.querySelector('measure[facs~="#' + precedingZoneId + '"]')
-               console.log("preceedingZoneId is second ", precedingZoneId)
 
               if (!precedingMeasure) {
              
@@ -440,13 +438,44 @@ if (targetMdiv === undefined) {
 
 
                 } else {
+                const precedingMeasure = targetMdiv.querySelector('measure[facs~="#' + precedingZoneId + '"]')
+                if(precedingMeasure.childNodes.length > 0){
+                  const previousMultiRests = precedingMeasure.querySelectorAll('multiRest')
+
+                  var multiRest =  previousMultiRests[0].getAttribute('num')
+
+                
+                  newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), parseInt(multiRest)))
+                  precedingMeasure.after(newMeasure)
+                  // create sb, insert after preceding measure
+                  const sb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'sb')
+                  precedingMeasure.after(sb)
+        
+                }else{
                   newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), 1))
                   precedingMeasure.after(newMeasure)
                   // create sb, insert after preceding measure
                   const sb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'sb')
                   precedingMeasure.after(sb)
 
+                  if (newMeasure.nextSibling && newMeasure.nextSibling.tagName === 'sb') {
+                    newMeasure.nextSibling.remove()
+                  }
+
+            }
+
                 }
+          }else {
+            const mdivArray = [...xmlDoc.querySelectorAll('mdiv')]
+            state.currentMdivId =  mdivArray[mdivArray.length-1].getAttribute("xml:id")
+            targetMdiv = [...xmlDoc.querySelectorAll('mdiv')].find(mdiv => mdiv.getAttribute('xml:id') === state.currentMdivId)
+            const precedingMeasure = targetMdiv.querySelector('measure[facs~="#' + precedingZoneId + '"]')
+            newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), 1))
+            precedingMeasure.after(newMeasure)
+            // create sb, insert after preceding measure
+            const sb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'sb')
+            precedingMeasure.after(sb)
+
           }
 
         }
@@ -952,7 +981,6 @@ export function setMultiRest (measure, val) {
   }
 
   const diff = ((val !== null) ? val : 1) - oldVal
-  console.log("old value ", oldVal, " diff: ", diff, " val: ", val)
   const followingMeasures = getFollowingMeasuresByMeasure(measure)
   if (diff !== 0) {
     followingMeasures.forEach(measure => {
