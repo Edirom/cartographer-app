@@ -10,10 +10,7 @@ export default createStore({
   modules: {
   },
     state: {
-      selectedRepo: null,            // Currently selected GitHub repository
-      selectedDirectory: null,       // Currently selected directory within the repo
-      directories: [],               // List of directories in the selected repo
-      repos: null,                   // List of available repositories
+      allmdivs: [],   
       xmlDoc: null,                  // The loaded MEI XML document (DOM)
       pages: [],                     // Array of page objects (from MEI or IIIF)
       currentPage: -1,               // Index of the currently selected page
@@ -26,7 +23,6 @@ export default createStore({
       showPageImportModal: false,    // Show/hide modal for importing pages/images
       showMeasureList: false,        // Show/hide the measure list panel
       loading: false,                // Indicates if the app is currently loading data
-      logedin: false,                // Indicates if the user is logged in
       processing: false,             // Indicates if the app is processing data
       pageDimension: [],             // Array of [width, height] for each page
       mode: allowedModes.selection,  // Current editor mode (selection, manualRect, etc.)
@@ -117,13 +113,13 @@ export default createStore({
     SET_ANNO(state, anno) {
       state.anno = anno
     },
-    SET_SELECTED_DIRECTORY(state, gitdirec) {
-      state.selectedDirectory = gitdirec
-    },
     SET_XML_DOC(state, xmlDoc) {
       console.log("this is the xml doc in set ", xmlDoc)
       state.xmlDoc = xmlDoc
       state.currentPage = 0
+    },
+    SET_ALL_MDIVS(state, mdiv) {
+      state.allmdivs.push(mdiv)
     },
     SET_PAGES(state, pageArray) {
       state.pages = pageArray
@@ -354,7 +350,6 @@ export default createStore({
  * Vuex actions for asynchronous operations and complex state updates.
  * Actions can dispatch mutations, perform async tasks, and coordinate multiple state changes.
  *
- * - fetchDirectories: Fetches directory listings from a GitHub repository (example, not fully implemented).
  * - toggleLoadXMLModal: Toggles the visibility of the XML file load modal.
  * - toggleLoadIIIFModal: Toggles the visibility of the IIIF manifest load modal.
  * - toggleMeasureModal: Toggles the visibility of the measure label/number modal.
@@ -393,17 +388,7 @@ export default createStore({
  * - cancelImageImports: Cancels all pending image imports and hides the import modal.
  */
   actions: {
-    async fetchDirectories({ state, commit }) {
-      try {
-        const url = `https://api.github.com/repos/${state.username}/${state.repository}/contents/${state.path}`;
-        const headers = { Authorization: `token ${state.accessToken}` };
-        //const response = await axios.get(url, { headers });
-        // const directories = response.data.filter(item => item.type === 'dir').map(item => item.name);
-        // commit('setDirectories', directories);
-      } catch (error) {
-        console.error(error);
-      }
-    },
+  
     toggleLoadXMLModal({ commit }) {
       commit('TOGGLE_LOADXML_MODAL')
     },
@@ -428,6 +413,9 @@ export default createStore({
     setCurrentPage({ commit }, i) {
       console.log('setting current page to ' + i)
       commit('SET_CURRENT_PAGE', i)
+    },
+    setAllMdivs({ commit }, i) {
+      commit('SET_ALL_MDIVS', i)
     },
     setCurrentPageZone({ commit }, j) {
       commit('SET_TOTAL_ZONES_COUNT', j)

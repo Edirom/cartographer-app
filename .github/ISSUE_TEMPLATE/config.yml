@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 🔒 Report a Security Vulnerability
+    url: https://github.com/Edirom/cartographer-app/security/advisories/new
+    about: Please report critical vulnerabilities through GitHub's private advisory system.
