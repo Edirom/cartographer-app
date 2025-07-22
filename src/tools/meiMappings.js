@@ -35,8 +35,6 @@ export function meiZone2annotorious (mei, zoneInput, pageUri) {
 
   if (measures.length === 0) {
     console.error('\nHouston!!!')
-    console.log(zoneInput)
-    console.log(zoneId)
   }
 
   const mdivIds = []
@@ -226,7 +224,6 @@ export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex, t
   let relativeWhere
 
   const pbAlreadyStarted = pb !== undefined
-  // console.log('pb started: ' + pbAlreadyStarted)
 
   if (pbAlreadyStarted) {
     // insert relative to that page
@@ -253,8 +250,6 @@ export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex, t
       relativeWhere = 'before'
     }
   }
-
-  console.log('need to insert ' + relativeWhere, relativeTo)
 
   const surface = xmlDoc.querySelectorAll('surface')[pageIndex]
   const zones = [...surface.querySelectorAll('zone')]
@@ -319,7 +314,7 @@ if (targetMdiv === undefined) {
   const insertIntoRightSystem = (xmlDoc, surface, targetMdiv, newZone, newMeasure, zones, pageHeight, thresholdDistance, zonesToIncrement, lastGroup, state) => {
     const currentTop = zones[0].top
     const currentThreshold = currentTop + thresholdDistance
-    // console.log('looking for measures above ' + currentThreshold)
+    // Looking for measures above ' + currentThreshold
 
     const above = []
     const below = []
@@ -358,7 +353,7 @@ if (targetMdiv === undefined) {
         if (lastGroup.length === 0) {
           // must be the first measure on new page, so introduce new <pb/>
           const precedingZone = getPrecedingZone(xmlDoc, surface)
-            if (precedingZone !== null) {
+          if (precedingZone !== null) {
             // there are zones that can be continued
             surface.prepend(newZone)
             const precedingMeasure = getMeasuresFromZone(xmlDoc, precedingZone)[0]
@@ -382,7 +377,6 @@ if (targetMdiv === undefined) {
           } 
     else {
             // this is the first zone for the whole document
-
             if (relativeWhere === 'before' && relativeTo !== null) {
               newMeasure.setAttribute('n', 1)
               const pb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'pb')
@@ -390,8 +384,8 @@ if (targetMdiv === undefined) {
               pb.setAttribute('n', surface.getAttribute('n'))
               relativeTo.before(pb)
               relativeTo.before(newMeasure)
-            }else {
-                const section = targetMdiv.querySelector('section')
+            } else {
+            const section = targetMdiv.querySelector('section')
             if (relativeWhere === 'before' && relativeTo !== null) {
               newMeasure.setAttribute('n', 1)
               const pb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'pb')
@@ -412,13 +406,14 @@ if (targetMdiv === undefined) {
                     pb.setAttribute('n', surface.getAttribute('n'))
                     section.append(pb)
                     section.append(newMeasure)
-                }
+
               }
+            }
             }
 
           }
         } else {
-          // must be the first measure in a new or an exiting system, so introduce new <sb/> by geting the last measure from previous system if it is a new system or adding to the first measure of the previous system
+          // must be the first measure in new system, so introduce new <sb/> and get last measure from previous system
           // order by highest left value
           lastGroup.sort((a, b) => {
             return b.left - a.left
@@ -475,20 +470,39 @@ if (targetMdiv === undefined) {
             // create sb, insert after preceding measure
             const sb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'sb')
             precedingMeasure.after(sb)
+            if(precedingMeasure.childNodes.length > 0){
+              const previousMultiRests = precedingMeasure.querySelectorAll('multiRest')
 
+              var multiRest =  previousMultiRests[0].getAttribute('num')
+
+             
+              newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), parseInt(multiRest)))
+              precedingMeasure.after(newMeasure)
+              // create sb, insert after preceding measure
+              const sb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'sb')
+              precedingMeasure.after(sb)
+    
+            }else{
+              newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), 1))
+              precedingMeasure.after(newMeasure)
+              // create sb, insert after preceding measure
+              const sb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'sb')
+              precedingMeasure.after(sb)
+
+              if (newMeasure.nextSibling && newMeasure.nextSibling.tagName === 'sb') {
+                newMeasure.nextSibling.remove()
+              }
+
+            }
           }
 
         }
-      } else {  
+      } else {
         const precedingZone = above[newIndex - 1].elem
         precedingZone.after(newZone)
 
         const precedingZoneId = above[newIndex - 1].id
         const precedingMeasure = xmlDoc.querySelector('measure[facs~="#' + precedingZoneId + '"]')
-
-        console.log('\n\nzone:' + precedingZoneId)
-        console.log(precedingMeasure)
-
         newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), 1))
         precedingMeasure.after(newMeasure)
       }
@@ -603,9 +617,7 @@ export function getFollowingMeasuresByMeasure(measure) {
 export function addZoneToLastMeasure (xmlDoc, zoneId) {
   const measure = getLastMeasure(xmlDoc)
   const oldFacs = measure.hasAttribute('facs') ? measure.getAttribute('facs') + ' ' : ''
-  console.log("last measure ", measure)
   measure.setAttribute('facs', oldFacs + '#' + zoneId)
-  console.log("new measure ", measure)
 }
 
 /**
@@ -650,7 +662,6 @@ function getPrecedingZoneNoMatterWhere (xmlDoc, zone) {
   let precedingSibling = zone.previousElementSibling
 
   while (precedingSibling !== null && precedingZone === null) {
-    console.log('looking at ', precedingSibling)
     if (precedingSibling.localName === 'zone') {
       precedingZone = precedingSibling
     } else {
@@ -857,11 +868,9 @@ export function toggleAdditionalZone (xmlDoc, id, state) {
 
     if (!state.existingMusicMode) {
       if (facsArr.indexOf('#' + precedingZoneId) !== -1) {
-        // console.log('This zone is part of preceding measure and should get a new measure instead')
         const index = facsArr.indexOf('#' + id)
         facsArr.splice(index, 1)
         measure.setAttribute('facs', facsArr.join(' '))
-        // console.log('setting @facs to ' + facsArr.join(' '))
         const followingMeasures = getFollowingMeasuresByMeasure(measure)
         const newMeasure = generateMeasure()
         newMeasure.setAttribute('facs', '#' + id)
@@ -871,7 +880,6 @@ export function toggleAdditionalZone (xmlDoc, id, state) {
           measure.setAttribute('n', incrementMeasureNum(measure.getAttribute('n'), 1))
         })
       } else {
-        // console.log('I need to add this zone to the measure of the preceding zone')
         const precedingMeasures = getMeasuresFromZone(xmlDoc, precedingZone)
         precedingMeasures.forEach(precedingMeasure => {
           precedingMeasure.setAttribute('facs', precedingMeasure.getAttribute('facs') + ' #' + id)
@@ -887,7 +895,7 @@ export function toggleAdditionalZone (xmlDoc, id, state) {
     // shifting zones in measures with existing content
     } else {
       if (facsArr.indexOf('#' + precedingZoneId) !== -1) {
-        // console.log('This zone is part of preceding measure and should get a new measure instead')
+        // This zone is part of preceding measure and should get a new measure instead'
         const index = facsArr.indexOf('#' + id)
         facsArr.splice(index, 1)
         measure.setAttribute('facs', facsArr.join(' '))
@@ -907,7 +915,7 @@ export function toggleAdditionalZone (xmlDoc, id, state) {
         })
       } else {
         // conflate -> move zones closer to begin of mdiv
-        // console.log('I need to add this zone to the measure of the preceding zone')
+        // I need to add this zone to the measure of the preceding zone'
         const precedingMeasures = getMeasuresFromZone(xmlDoc, precedingZone)
         precedingMeasures.forEach(precedingMeasure => {
           precedingMeasure.setAttribute('facs', precedingMeasure.getAttribute('facs') + ' #' + id)
@@ -946,7 +954,6 @@ export function setMultiRest (measure, val) {
     oldVal = parseInt(existingMultiRests[0].getAttribute('num'))
     // a new value for multiRest shall be written
     if (val !== null) {
-      console.log('case 1')
       existingMultiRests.forEach(mr => {
         mr.setAttribute('num', val)
       })
@@ -954,16 +961,15 @@ export function setMultiRest (measure, val) {
       const layerContent = measure.querySelectorAll('layer *')
       const otherContent = [...layerContent].find(elem => elem.localName !== 'multiRest')
       if (otherContent !== undefined) { // remove multiRests only
-        console.log('case 2a')
         existingMultiRests.forEach(mr => mr.remove())
       } else { // remove whole tree
-        console.log('case 2b')
         measure.querySelectorAll('staff').forEach(staff => staff.remove())
       }
     }
-  } else { // no prior multiRests available
-    if (val !== null) { // insert new multiRest to measure
-      console.log('case 3')
+  } else { 
+    // no prior multiRests available
+    if (val !== null) { 
+      // insert new multiRest to measure
       const staff = document.createElementNS('http://www.music-encoding.org/ns/mei', 'staff')
       staff.setAttribute('n', 1)
       const layer = document.createElementNS('http://www.music-encoding.org/ns/mei', 'layer')
@@ -975,7 +981,6 @@ export function setMultiRest (measure, val) {
       layer.append(multiRest)
       measure.append(staff)
     } else {
-      console.log('case 4')
       // no existing multiRest, and no multiRest is wanted -> do nothing
     }
   }
@@ -1002,8 +1007,6 @@ export function setMultiRest (measure, val) {
  * @param {Object} state - Application state (used for page lookup).
  */
 export function moveContentToMdiv (xmlDoc, firstMeasureId, targetMdivId, state) {
-  console.log('trying to move measure ' + firstMeasureId + ' to mdiv ' + targetMdivId)
-
   const firstMeasure = [...xmlDoc.querySelectorAll('measure')].find(measure => measure.getAttribute('xml:id') === firstMeasureId)
   const precedingSibling = firstMeasure.previousElementSibling
   let firstNode
