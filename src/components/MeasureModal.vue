@@ -124,9 +124,8 @@ export default {
   },
   methods: {
     selectMdiv: function (id) {
-      console.log('selected ' + id)
       this.$store.dispatch('selectMdiv', id)
-      // this.$store.dispatch('toggleMdivModal')
+      this.$store.dispatch('toggleMdivModal')
     },
     createNewMdiv: function () {
       console.log('create new mdiv')
@@ -136,16 +135,18 @@ export default {
     closeModal: function () {
       this.$store.dispatch('toggleMeasureModal')
     },
-   handleChange: function() {
-    var select = document.getElementById("mdivSelect");
-    var selectedValue = select.options[select.selectedIndex].value;
-      if (selectedValue === "___newMdiv___") {
-        this.$store.dispatch('createNewMdiv')
-        this.$store.dispatch('toggleMdivModal')
-      } else {
-        // handle other options
-      }
+handleChange: function() {
+  var select = document.getElementById("mdivSelect");
+  var selectedValue = select.options[select.selectedIndex].value;
+  if (selectedValue === "___newMdiv___") {
+    this.$store.dispatch('createNewMdiv')
+    this.$store.dispatch('toggleMdivModal')
+  } else {
+
+    console.log("line 146  measure modal selected mdiv is ", selectedValue)
+    this.$store.dispatch('selectMdiv', selectedValue)
   }
+}
  }
 }
 </script>

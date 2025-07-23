@@ -207,6 +207,7 @@ function decrementMeasureNum (num, diff) {
  * @return {[type]}             [description]
  */
 export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex, targetMdiv) {
+  console.log("line 210, targetMdiv is ", targetMdiv)
   const surfaceIDs = []
   xmlDoc.querySelectorAll('surface').forEach(surface => {
     surfaceIDs.push(surface.getAttribute('xml:id'))
@@ -254,7 +255,8 @@ export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex, t
   const surface = xmlDoc.querySelectorAll('surface')[pageIndex]
   const zones = [...surface.querySelectorAll('zone')]
 
-  let mdiv
+  let mdiv  
+  console.log("targetMdiv is ", targetMdiv)
 
 if (targetMdiv === undefined) {
     const mdivArray = [...xmlDoc.querySelectorAll('mdiv')]
@@ -267,6 +269,9 @@ if (targetMdiv === undefined) {
     }
 
     mdiv = [...xmlDoc.querySelectorAll('mdiv')].find(mdiv => mdiv.getAttribute('xml:id') === state.currentMdivId)
+}else{
+    mdiv = targetMdiv
+
 }
 
 
@@ -319,7 +324,6 @@ if (targetMdiv === undefined) {
     const above = []
     const below = []
 
-
     zones.forEach(zone => {
       if (zone.top < currentThreshold) {
         above.push(zone)
@@ -349,6 +353,10 @@ if (targetMdiv === undefined) {
       // get position of new zone within system
       const newIndex = above.findIndex(zone => zone.new)
       if (newIndex === 0 ) {
+        if(targetMdiv.getAttribute("xml:id") ==  state.currentMdivId)
+          {
+        console.log("new index is zero, inserting at beginning of system ")
+        
         // new zone is first within current system
         if (lastGroup.length === 0) {
           // must be the first measure on new page, so introduce new <pb/>
@@ -422,7 +430,7 @@ if (targetMdiv === undefined) {
           precedingZone.after(newZone)
           var precedingZoneId = lastGroup[0].id
           if(targetMdiv != null){
-
+            
               const precedingMeasure = targetMdiv.querySelector('measure[facs~="#' + precedingZoneId + '"]')
 
               if (!precedingMeasure) {
@@ -497,48 +505,112 @@ if (targetMdiv === undefined) {
           }
 
         }
-      } else {
-        const precedingZone = above[newIndex - 1].elem
-        precedingZone.after(newZone)
+     } else{
+            console.log("line 608 case 7 ", measure, " id is ", measure.getAttribute("n"), " and taragetMdiv is ", targetMdiv)
+            if(measure.getAttribute("n") === "1"){
+              targetMdiv = [...xmlDoc.querySelectorAll('mdiv')].find(mdiv => mdiv.getAttribute('xml:id') ===  state.currentMdivId)
+              targetMdiv.querySelector('section').prepend(newMeasure)
+              newMeasure.setAttribute('n', 1)
+            } 
 
-        const precedingZoneId = above[newIndex - 1].id
-        const precedingMeasure = xmlDoc.querySelector('measure[facs~="#' + precedingZoneId + '"]')
-        newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), 1))
-        precedingMeasure.after(newMeasure)
+     }} 
+     
+     else {
+        console.log("line 507 ",  state.currentMdivId , " targetMdiv is ", targetMdiv)
+           if(targetMdiv.getAttribute("xml:id") ==  state.currentMdivId)
+          {
+            if(newMeasure.getAttribute("n") != null && newMeasure.getAttribute("n") != undefined && newMeasure.getAttribute("n") === "1"){
+            console.log("line 509 ",  state.currentMdivId , " targetMdiv is ", targetMdiv, " new measure is ", newMeasure)
+            const precedingZone = above[newIndex - 1].elem
+            precedingZone.after(newZone)
+
+            const precedingZoneId = above[newIndex - 1].id
+            const precedingMeasure = xmlDoc.querySelector('measure[facs~="#' + precedingZoneId + '"]')
+            newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), 1))
+            precedingMeasure.after(newMeasure)
+            
+          }else{
+            const precedingZone = above[newIndex - 1].elem
+            precedingZone.after(newZone)
+
+            const precedingZoneId = above[newIndex - 1].id
+            const precedingMeasure = xmlDoc.querySelector('measure[facs~="#' + precedingZoneId + '"]')
+            newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), 1))
+            precedingMeasure.after(newMeasure)
+
+            console.log("new measure is ", newMeasure)
+          }}else{
+            targetMdiv = [...xmlDoc.querySelectorAll('mdiv')].find(mdiv => mdiv.getAttribute('xml:id') ===  state.currentMdivId)
+            targetMdiv.querySelector('section').prepend(newMeasure)
+            newMeasure.setAttribute('n', 1)
+            console.log("line 522 ",  state.currentMdivId , " targetMdiv is ", targetMdiv, "new measure is")
+
+            // keep track of all measures that have been incremented already, i.e. avoid to increment measures with multiple zones more than once
+          } 
+          const measures = Array.from(targetMdiv.querySelectorAll('measure'));
+          measures.forEach((measure, idx) => {
+            measure.setAttribute('n', idx + 1);
+          });
       }
 
       // make sure to increment all following measures on current system
       for (let i = newIndex + 1; i < above.length; i++) {
+        console.log("incrementing measure " + above[i].id)
         zonesToIncrement.push(above[i].id)
       }
 
       // make sure to increment all measures on lower systems
       below.forEach(zone => {
+        console.log("incrementing measure " + zone.id)
         zonesToIncrement.push(zone.id)
       })
 
       return zonesToIncrement
     } else {
+      if(targetMdiv === undefined){
+        console.log("line 570 case 1 ", measure)
+        targetMdiv = [...xmlDoc.querySelectorAll('mdiv')].find(mdiv => mdiv.getAttribute('xml:id') ===  state.currentMdivId) 
+        return insertIntoRightSystem(xmlDoc, surface, targetMdiv, newZone, newMeasure, below, pageHeight, thresholdDistance, zonesToIncrement, above, state)
 
+      }else{
+      console.log("line 575 case 2 ", measure)
       return insertIntoRightSystem(xmlDoc, surface, targetMdiv, newZone, newMeasure, below, pageHeight, thresholdDistance, zonesToIncrement, above, state)
+      }
     }
   }
-
-  insertIntoRightSystem(xmlDoc, surface, mdiv, currentZone, measure, allZones, pageHeight, thresholdDistance, [], [], state)
+    if (targetMdiv) {
+  state.currentMdivId = targetMdiv.getAttribute('xml:id')
+}
+    if(targetMdiv === undefined){
+    targetMdiv = [...xmlDoc.querySelectorAll('mdiv')].find(mdiv => mdiv.getAttribute('xml:id') ===  state.currentMdivId) 
+    insertIntoRightSystem(xmlDoc, surface, targetMdiv, currentZone, measure, allZones, pageHeight, thresholdDistance, [], [], state)
     const newZoneIndex = allZones.findIndex(z => z.new);
-
     // Only call insertIntoRightSystem if the new zone is NOT the first in the system
     if (newZoneIndex > 0) {
-      insertIntoRightSystem(xmlDoc, surface, mdiv, currentZone, measure, allZones, pageHeight, thresholdDistance, [], [], state)
+          console.log("line 583 case 3 ", measure)
+      if(targetMdiv === undefined){
+          console.log("line 591 case 4 ", measure)
+          targetMdiv = [...xmlDoc.querySelectorAll('mdiv')].find(mdiv => mdiv.getAttribute('xml:id') ===  state.currentMdivId) 
+          insertIntoRightSystem(xmlDoc, surface, targetMdiv, currentZone, measure, allZones, pageHeight, thresholdDistance, [], [], state)
+      }else{
+         console.log("line 595 case 5 ", measure)
+         insertIntoRightSystem(xmlDoc, surface, targetMdiv, currentZone, measure, allZones, pageHeight, thresholdDistance, [], [], state)
+      }
       const followingMeasures = getFollowingMeasuresByMeasure(measure)
       // keep track of all measures that have been incremented already, i.e. avoid to increment measures with multiple zones more than once
       followingMeasures.forEach(measure => {
+        console.log("line 600 case 6 ", measure)
         measure.setAttribute('n', incrementMeasureNum(measure.getAttribute('n'), 1))
       })
     } else {
       // Optionally handle the first-in-system case here, or do nothing
       console.log('This measure is the first in the system; skipping insertIntoRightSystem.')
     }
+    }else{
+        insertIntoRightSystem(xmlDoc, surface, targetMdiv, currentZone, measure, allZones, pageHeight, thresholdDistance, [], [], state)
+
+    }
+   
 
 }
 /**
@@ -1008,17 +1080,25 @@ export function setMultiRest (measure, val) {
  */
 export function moveContentToMdiv (xmlDoc, firstMeasureId, targetMdivId, state) {
   const firstMeasure = [...xmlDoc.querySelectorAll('measure')].find(measure => measure.getAttribute('xml:id') === firstMeasureId)
+  console.log("line 1040 first measure is ", firstMeasure, " target mdiv is ", [...xmlDoc.querySelectorAll('mdiv')].find(mdiv => mdiv.getAttribute('xml:id') === targetMdivId))
+
   const precedingSibling = firstMeasure.previousElementSibling
   let firstNode
+  
 
   if (precedingSibling === null) {
+    console.log("mdiv case 1")
     firstNode = firstMeasure
   } else if (precedingSibling.localName === 'pb') {
-    firstNode = precedingSibling
+    firstNode = firstMeasure
+    console.log("mdiv case 2")
+
   } else if (precedingSibling.localName === 'sb') {
-    firstNode = precedingSibling
+    firstNode = firstMeasure
+    console.log("mdiv case 3")
   } else {
     firstNode = firstMeasure
+    console.log("mdiv case 4")
   }
 
   const elements = [firstNode]
@@ -1028,12 +1108,14 @@ export function moveContentToMdiv (xmlDoc, firstMeasureId, targetMdivId, state) 
     elements.push(nextSibling)
     nextSibling = nextSibling.nextElementSibling
   }
+  console.log("line 1046 selected mdiv is ", targetMdivId)
 
   const mdiv = [...xmlDoc.querySelectorAll('mdiv')].find(mdiv => mdiv.getAttribute('xml:id') === targetMdivId)
-
   const existingMeasures = [...mdiv.querySelectorAll('measure')]
+  console.log("line 1050 new mdiv is  ", mdiv)
 
   if (existingMeasures.length === 0) {
+    console.log("mdiv case 5")
     // TODO: We need to identify if that position is correct
     const section = [...mdiv.querySelectorAll('section')].at(-1)
 
@@ -1053,14 +1135,25 @@ export function moveContentToMdiv (xmlDoc, firstMeasureId, targetMdivId, state) 
       section.appendChild(element)
     })
   } else {
+    console.log("mdiv case 6")
+
     const followingMeasures = getFollowingMeasuresByMeasure(firstMeasure)
 
     const zones = getZonesFromMeasure(xmlDoc, firstMeasure)
     const surfaceId = zones[0].closest('surface').getAttribute('xml:id')
     const pageIndex = state.pages.findIndex(page => page.id === surfaceId)
+    console.log("zones are ", zones)
+    console.log("pageIndex is ", pageIndex)
+    console.log("surdace id is ", surfaceId)
+    console.log("following measures ", followingMeasures)
+
+    
 
     insertMeasure(xmlDoc, firstMeasure, state, zones[0], pageIndex, mdiv)
+
     followingMeasures.forEach(measure => {
+      console.log("line 1143 inserting measure ", measure)
+
       const zones = getZonesFromMeasure(xmlDoc, measure)
       const surfaceId = zones[0].closest('surface').getAttribute('xml:id')
       const pageIndex = state.pages.findIndex(page => page.id === surfaceId)

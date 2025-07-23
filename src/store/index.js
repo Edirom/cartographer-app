@@ -323,6 +323,7 @@ export default createStore({
       if (state.currentMeasureId !== null) {
         const xmlDoc = state.xmlDoc.cloneNode(true)
         moveContentToMdiv(xmlDoc, state.currentMeasureId, id, state)
+        console.log("line 326  index mdiv id is ", id, " and current measure id is ", state.currentMeasureId)
         state.currentMdivId = id
         state.xmlDoc = xmlDoc
       }
