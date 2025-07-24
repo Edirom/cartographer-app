@@ -507,12 +507,22 @@ if (targetMdiv === undefined) {
      } else{
             if(measure.getAttribute("n") === "1"){
               state.newFirstMeasure = targetMdiv.querySelector('measure[n="1"]')  
-              console.log("line 513 case 7 ", measure, " id is ", measure.getAttribute("n"), " and taragetMdiv is ", targetMdiv,  " new first measure is  ", state.newFirstMeasure)
+              const prevSibling =   targetMdiv.querySelector('measure[n="1"]') ? targetMdiv.querySelector('measure[n="1"]').previousElementSibling : null;
+              console.log("line 513 case 7 ", measure, " id is ", measure.getAttribute("n"), " and taragetMdiv is ", targetMdiv,  " new first measure is  ", state.newFirstMeasure, " sb is ", targetMdiv.querySelector('measure[n="1"]').previousElementSibling.tagName)
               targetMdiv = [...xmlDoc.querySelectorAll('mdiv')].find(mdiv => mdiv.getAttribute('xml:id') ===  state.currentMdivId)
               targetMdiv.querySelector('section').prepend(newMeasure)
-              newMeasure.setAttribute('n', 1)        
-              
+              newMeasure.setAttribute('n', 1)    
+              const section = targetMdiv.querySelector('section');    
 
+            if ( prevSibling && (prevSibling.tagName === "sb" || prevSibling.tagName === "pb")) {
+              section.prepend(prevSibling); // sb should be defined
+              prevSibling.after(newMeasure); // Insert newMeasure after sb
+
+            }
+            else{
+              console.log("line 524 ", prevSibling)
+              section.prepend(newMeasure) // Insert newMeasure at the beginning of the section
+            }
             } 
 
      }} 
@@ -541,6 +551,7 @@ if (targetMdiv === undefined) {
             precedingMeasure.after(newMeasure)
 
           }}else{
+            console.log("line 522 old mdiv ", targetMdiv, " measure is ", measure, " new measure is ", newMeasure, " state.currentMdivId is ", state.currentMdivId)
             targetMdiv = [...xmlDoc.querySelectorAll('mdiv')].find(mdiv => mdiv.getAttribute('xml:id') ===  state.currentMdivId)
 
              if (state.newFirstMeasure !== "") {
@@ -550,10 +561,9 @@ if (targetMdiv === undefined) {
                 targetMdiv.querySelector('section').prepend(newMeasure)
                 newMeasure.setAttribute('n', 1)        
              }
-            console.log("line 522 old mdiv ", [...xmlDoc.querySelectorAll('mdiv')].find(mdiv => mdiv.getAttribute('xml:id')))
             targetMdiv = [...xmlDoc.querySelectorAll('mdiv')].find(mdiv => mdiv.getAttribute('xml:id') ===  state.currentMdivId)
 
-            console.log("line 522 ",  newMeasure, " targetMdiv is ", targetMdiv, " old mdivs measures ", state.oldMdivMeasures, " new first measure is  ", state.newFirstMeasure) 
+            console.log("line 522 ",  newMeasure, " targetMdiv is ", targetMdiv, " old mdiv", " old mdivs measures ", state.oldMdivMeasures, " new first measure is  ", state.newFirstMeasure) 
 
             // keep track of all measures that have been incremented already, i.e. avoid to increment measures with multiple zones more than once
           } 
@@ -617,6 +627,7 @@ if (targetMdiv === undefined) {
       console.log('This measure is the first in the system; skipping insertIntoRightSystem.')
     }
     }else{
+        console.log("line 630 case 7 ", measure, " and targetMdiv is ", targetMdiv, " xmlDoc is ", xmlDoc)
         insertIntoRightSystem(xmlDoc, surface, targetMdiv, currentZone, measure, allZones, pageHeight, thresholdDistance, [], [], state)
 
     }
