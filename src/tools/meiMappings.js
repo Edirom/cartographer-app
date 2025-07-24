@@ -207,7 +207,6 @@ function decrementMeasureNum (num, diff) {
  * @return {[type]}             [description]
  */
 export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex, targetMdiv) {
-  console.log("line 210, targetMdiv is ", targetMdiv)
   const surfaceIDs = []
   xmlDoc.querySelectorAll('surface').forEach(surface => {
     surfaceIDs.push(surface.getAttribute('xml:id'))
@@ -506,11 +505,14 @@ if (targetMdiv === undefined) {
 
         }
      } else{
-            console.log("line 608 case 7 ", measure, " id is ", measure.getAttribute("n"), " and taragetMdiv is ", targetMdiv)
             if(measure.getAttribute("n") === "1"){
+              state.newFirstMeasure = targetMdiv.querySelector('measure[n="1"]')  
+              console.log("line 513 case 7 ", measure, " id is ", measure.getAttribute("n"), " and taragetMdiv is ", targetMdiv,  " new first measure is  ", state.newFirstMeasure)
               targetMdiv = [...xmlDoc.querySelectorAll('mdiv')].find(mdiv => mdiv.getAttribute('xml:id') ===  state.currentMdivId)
               targetMdiv.querySelector('section').prepend(newMeasure)
-              newMeasure.setAttribute('n', 1)
+              newMeasure.setAttribute('n', 1)        
+              
+
             } 
 
      }} 
@@ -538,12 +540,20 @@ if (targetMdiv === undefined) {
             newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), 1))
             precedingMeasure.after(newMeasure)
 
-            console.log("new measure is ", newMeasure)
           }}else{
             targetMdiv = [...xmlDoc.querySelectorAll('mdiv')].find(mdiv => mdiv.getAttribute('xml:id') ===  state.currentMdivId)
-            targetMdiv.querySelector('section').prepend(newMeasure)
-            newMeasure.setAttribute('n', 1)
-            console.log("line 522 ",  state.currentMdivId , " targetMdiv is ", targetMdiv, "new measure is")
+
+             if (state.newFirstMeasure !== "") {
+                state.newFirstMeasure.after(newMeasure)
+             }else{
+                state.newFirstMeasure = newMeasure
+                targetMdiv.querySelector('section').prepend(newMeasure)
+                newMeasure.setAttribute('n', 1)        
+             }
+            console.log("line 522 old mdiv ", [...xmlDoc.querySelectorAll('mdiv')].find(mdiv => mdiv.getAttribute('xml:id')))
+            targetMdiv = [...xmlDoc.querySelectorAll('mdiv')].find(mdiv => mdiv.getAttribute('xml:id') ===  state.currentMdivId)
+
+            console.log("line 522 ",  newMeasure, " targetMdiv is ", targetMdiv, " old mdivs measures ", state.oldMdivMeasures, " new first measure is  ", state.newFirstMeasure) 
 
             // keep track of all measures that have been incremented already, i.e. avoid to increment measures with multiple zones more than once
           } 

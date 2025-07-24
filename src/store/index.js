@@ -40,7 +40,8 @@ function getDefaultState() {
       canvases: [],                  // IIIF canvases (if loaded)
       importingImages: [],           // Array of images being imported (with status)
       currentMeasureId: null,        // xml:id of the currently selected measure
-      infoJson: []                   // Array of IIIF info.json URLs for canvases
+      infoJson: [],                   // Array of IIIF info.json URLs for canvases
+      newFirstMeasure: "",            // The first measure of the old mdiv for selecting a new mdiv
   }
 }
 
@@ -323,7 +324,6 @@ export default createStore({
       if (state.currentMeasureId !== null) {
         const xmlDoc = state.xmlDoc.cloneNode(true)
         moveContentToMdiv(xmlDoc, state.currentMeasureId, id, state)
-        console.log("line 326  index mdiv id is ", id, " and current measure id is ", state.currentMeasureId)
         state.currentMdivId = id
         state.xmlDoc = xmlDoc
       }
