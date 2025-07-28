@@ -510,9 +510,13 @@ if (targetMdiv === undefined) {
               const prevSibling =   targetMdiv.querySelector('measure[n="1"]') ? targetMdiv.querySelector('measure[n="1"]').previousElementSibling : null;
               console.log("line 513 case 7 ", measure, " id is ", measure.getAttribute("n"), " and taragetMdiv is ", targetMdiv,  " new first measure is  ", state.newFirstMeasure, " sb is ", targetMdiv.querySelector('measure[n="1"]').previousElementSibling.tagName)
               targetMdiv = [...xmlDoc.querySelectorAll('mdiv')].find(mdiv => mdiv.getAttribute('xml:id') ===  state.currentMdivId)
+              const firstMdiv = [...xmlDoc.querySelectorAll('mdiv')].find(mdiv => mdiv.getAttribute('n') ===  "1")
+              firstMdiv.remove()
               targetMdiv.querySelector('section').prepend(newMeasure)
               newMeasure.setAttribute('n', 1)    
               const section = targetMdiv.querySelector('section');    
+              const sb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'sb')
+              measure.after(sb)
 
             if ( prevSibling && (prevSibling.tagName === "sb" || prevSibling.tagName === "pb")) {
               section.prepend(prevSibling); // sb should be defined
@@ -561,7 +565,12 @@ if (targetMdiv === undefined) {
                 targetMdiv.querySelector('section').prepend(newMeasure)
                 newMeasure.setAttribute('n', 1)        
              }
-            targetMdiv = [...xmlDoc.querySelectorAll('mdiv')].find(mdiv => mdiv.getAttribute('xml:id') ===  state.currentMdivId)
+
+
+            const measures = Array.from(targetMdiv.querySelectorAll('measure'));  
+            measures.forEach((measure, idx) => {
+              console.log("line 568 the next measure is ", measure.nextElementSibling)
+            });
 
             console.log("line 522 ",  newMeasure, " targetMdiv is ", targetMdiv, " old mdiv", " old mdivs measures ", state.oldMdivMeasures, " new first measure is  ", state.newFirstMeasure) 
 
@@ -569,6 +578,7 @@ if (targetMdiv === undefined) {
           } 
           const measures = Array.from(targetMdiv.querySelectorAll('measure'));
           measures.forEach((measure, idx) => {
+            console.log("the measure ")
             measure.setAttribute('n', idx + 1);
           });
       }

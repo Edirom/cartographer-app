@@ -42,6 +42,7 @@ function getDefaultState() {
       currentMeasureId: null,        // xml:id of the currently selected measure
       infoJson: [],                   // Array of IIIF info.json URLs for canvases
       newFirstMeasure: "",            // The first measure of the old mdiv for selecting a new mdiv
+      oldMdiv : null
   }
 }
 
