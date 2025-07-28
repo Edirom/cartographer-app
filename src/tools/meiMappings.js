@@ -316,6 +316,8 @@ if (targetMdiv === undefined) {
   // function to compare newZone against existingZones
 
   const insertIntoRightSystem = (xmlDoc, surface, targetMdiv, newZone, newMeasure, zones, pageHeight, thresholdDistance, zonesToIncrement, lastGroup, state) => {
+    
+    console.log("line 320 the firsts mdiv was ", targetMdiv)
     const currentTop = zones[0].top
     const currentThreshold = currentTop + thresholdDistance
     // Looking for measures above ' + currentThreshold
@@ -506,6 +508,7 @@ if (targetMdiv === undefined) {
         }
      } else{
             if(measure.getAttribute("n") === "1"){
+              console.log("the measure line 509 ")
               state.newFirstMeasure = targetMdiv.querySelector('measure[n="1"]')  
               const prevSibling =   targetMdiv.querySelector('measure[n="1"]') ? targetMdiv.querySelector('measure[n="1"]').previousElementSibling : null;
               console.log("line 513 case 7 ", measure, " id is ", measure.getAttribute("n"), " and taragetMdiv is ", targetMdiv,  " new first measure is  ", state.newFirstMeasure, " sb is ", targetMdiv.querySelector('measure[n="1"]').previousElementSibling.tagName)
@@ -517,16 +520,30 @@ if (targetMdiv === undefined) {
               const section = targetMdiv.querySelector('section');    
               const sb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'sb')
               measure.after(sb)
+              // const measures = Array.from(targetMdiv.querySelectorAll('measure'));
+              // measures.forEach((measure, idx) => {
+              //   console.log("the measure ")
+              //   measure.setAttribute('n', idx + 1);
+              // });
+              
+            // if ( prevSibling && (prevSibling.tagName === "sb" || prevSibling.tagName === "pb")) {
+            //   section.prepend(prevSibling); // sb should be defined
+            //   prevSibling.after(newMeasure); // Insert newMeasure after sb
+            //   const measures = Array.from(targetMdiv.querySelectorAll('measure'));
+            //   measures.forEach((measure, idx) => {
+            //     console.log("line 326 the measure length  ", measures.length)
+            //     measure.setAttribute('n', idx + 1);
+            //   });
 
-            if ( prevSibling && (prevSibling.tagName === "sb" || prevSibling.tagName === "pb")) {
-              section.prepend(prevSibling); // sb should be defined
-              prevSibling.after(newMeasure); // Insert newMeasure after sb
-
-            }
-            else{
-              console.log("line 524 ", prevSibling)
-              section.prepend(newMeasure) // Insert newMeasure at the beginning of the section
-            }
+            // }
+            // else{
+            //   section.prepend(newMeasure) // Insert newMeasure at the beginning of the section
+            //   const measures = Array.from(targetMdiv.querySelectorAll('measure'));
+            //   measures.forEach((measure, idx) => {
+            //   console.log( "line 326 the measure ", measures.length)
+            //   measure.setAttribute('n', idx + 1);
+            // });
+            // }
             } 
 
      }} 
@@ -548,6 +565,7 @@ if (targetMdiv === undefined) {
           }else{
             const precedingZone = above[newIndex - 1].elem
             precedingZone.after(newZone)
+            console.log("line 568 old mdiv ", targetMdiv, " measure is ", measure, " new measure is ", newMeasure, " state.currentMdivId is ", state.currentMdivId)
 
             const precedingZoneId = above[newIndex - 1].id
             const precedingMeasure = xmlDoc.querySelector('measure[facs~="#' + precedingZoneId + '"]')
@@ -565,14 +583,15 @@ if (targetMdiv === undefined) {
                 targetMdiv.querySelector('section').prepend(newMeasure)
                 newMeasure.setAttribute('n', 1)        
              }
-
+            console.log("line 522 ",  newMeasure, " targetMdiv is ", targetMdiv, " old mdiv", " old mdivs measures ", state.oldMdivMeasures, " new first measure is  ", state.newFirstMeasure, " measure is ", measure, " and measure next sibling is ", measure.nextElementSibling) 
+            const sb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'sb')
+            measure.after(sb)
 
             const measures = Array.from(targetMdiv.querySelectorAll('measure'));  
             measures.forEach((measure, idx) => {
-              console.log("line 568 the next measure is ", measure.nextElementSibling)
+              console.log("line 568 the next measure is ", measure.previousElementSibling, " total number of measures are ", measures.length)
             });
 
-            console.log("line 522 ",  newMeasure, " targetMdiv is ", targetMdiv, " old mdiv", " old mdivs measures ", state.oldMdivMeasures, " new first measure is  ", state.newFirstMeasure) 
 
             // keep track of all measures that have been incremented already, i.e. avoid to increment measures with multiple zones more than once
           } 
@@ -685,6 +704,10 @@ export function getFollowingMeasuresByMeasure(measure) {
       })
       getFollowingByName(next, name)
     }
+
+ if(elem.tagName === 'sb'){
+      console.log("line 700 next is ", next, " and name is ", name, ' previious element is ', elem.previousElementSibling)
+    } 
   }
 
   const getNextSection = (measure) => {
