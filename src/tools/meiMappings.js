@@ -383,8 +383,38 @@ if (targetMdiv === undefined) {
             pb.setAttribute('facs', '#' + surface.getAttribute('xml:id'))
             pb.setAttribute('n', surface.getAttribute('n'))
             precedingMeasure.after(pb)
+
           } 
     else {
+           if(targetMdiv !== undefined && targetMdiv !== null && targetMdiv.querySelector('measure') !== null){
+
+             const section = targetMdiv.querySelector('section')
+
+
+            const body = xmlDoc.querySelector('body');
+            const mdivs = Array.from(body.querySelectorAll('mdiv'));
+            const currentMdivIndex = mdivs.findIndex(mdiv => mdiv === targetMdiv);
+
+            let previousMdiv = null;
+            if (currentMdivIndex > 0) {
+              previousMdiv = mdivs[currentMdivIndex - 1];
+              previousMdiv.remove();
+            }
+             const pb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'pb')
+              pb.setAttribute('facs', '#' + surface.getAttribute('xml:id'))
+              pb.setAttribute('n', surface.getAttribute('n'))
+
+            const firstMeasure = section.querySelector('measure');
+
+              if (firstMeasure) {
+                section.insertBefore(pb, firstMeasure);         // Insert pb before the first measure
+                section.insertBefore(newMeasure, firstMeasure); // Insert newMeasure before the first measure (after pb)
+              }
+            const measures = Array.from(targetMdiv.querySelectorAll('measure'));  
+            measures.forEach((measure, idx) => {
+              measure.setAttribute('n', idx + 1);
+            });
+           }else{
             // this is the first zone for the whole document
             if (relativeWhere === 'before' && relativeTo !== null) {
               newMeasure.setAttribute('n', 1)
@@ -419,6 +449,9 @@ if (targetMdiv === undefined) {
               }
             }
             }
+           }
+
+
 
           }
         } else {
@@ -520,30 +553,6 @@ if (targetMdiv === undefined) {
               const section = targetMdiv.querySelector('section');    
               const sb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'sb')
               measure.after(sb)
-              // const measures = Array.from(targetMdiv.querySelectorAll('measure'));
-              // measures.forEach((measure, idx) => {
-              //   console.log("the measure ")
-              //   measure.setAttribute('n', idx + 1);
-              // });
-              
-            // if ( prevSibling && (prevSibling.tagName === "sb" || prevSibling.tagName === "pb")) {
-            //   section.prepend(prevSibling); // sb should be defined
-            //   prevSibling.after(newMeasure); // Insert newMeasure after sb
-            //   const measures = Array.from(targetMdiv.querySelectorAll('measure'));
-            //   measures.forEach((measure, idx) => {
-            //     console.log("line 326 the measure length  ", measures.length)
-            //     measure.setAttribute('n', idx + 1);
-            //   });
-
-            // }
-            // else{
-            //   section.prepend(newMeasure) // Insert newMeasure at the beginning of the section
-            //   const measures = Array.from(targetMdiv.querySelectorAll('measure'));
-            //   measures.forEach((measure, idx) => {
-            //   console.log( "line 326 the measure ", measures.length)
-            //   measure.setAttribute('n', idx + 1);
-            // });
-            // }
             } 
 
      }} 
