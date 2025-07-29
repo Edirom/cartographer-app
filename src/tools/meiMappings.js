@@ -544,10 +544,10 @@ if (targetMdiv === undefined) {
               console.log("the measure line 509 ")
               state.newFirstMeasure = targetMdiv.querySelector('measure[n="1"]')  
               const prevSibling =   targetMdiv.querySelector('measure[n="1"]') ? targetMdiv.querySelector('measure[n="1"]').previousElementSibling : null;
-              console.log("line 513 case 7 ", measure, " id is ", measure.getAttribute("n"), " and taragetMdiv is ", targetMdiv,  " new first measure is  ", state.newFirstMeasure, " sb is ", targetMdiv.querySelector('measure[n="1"]').previousElementSibling.tagName)
               targetMdiv = [...xmlDoc.querySelectorAll('mdiv')].find(mdiv => mdiv.getAttribute('xml:id') ===  state.currentMdivId)
               const firstMdiv = [...xmlDoc.querySelectorAll('mdiv')].find(mdiv => mdiv.getAttribute('n') ===  "1")
-              firstMdiv.remove()
+              console.log("line 549 first mdiv is ", firstMdiv)
+              firstMdiv.querySelector('measure') === null ? firstMdiv.remove() : null 
               targetMdiv.querySelector('section').prepend(newMeasure)
               newMeasure.setAttribute('n', 1)    
               const section = targetMdiv.querySelector('section');    
