@@ -196,6 +196,55 @@ function decrementMeasureNum (num, diff) {
   return parseInt(num) - diff
 }
 
+export function updateMdiv(xmlDoc, measure, state, currentZone, pageIndex, targetMdiv) {
+  return new Promise((resolve, reject) => {
+    try {
+      const selectedId = state.selectedMdiv?.getAttribute("xml:id");
+
+      if (!selectedId) {
+        return reject(new Error("No selectedMdiv ID in state."));
+      }
+
+      // ✅ Always re-select from the live xmlDoc
+      const selectedMdiv = xmlDoc.querySelector(`mdiv[xml\\:id="${selectedId}"]`);
+      if (!selectedMdiv) {
+        return reject(new Error(`mdiv with xml:id="${selectedId}" not found in xmlDoc.`));
+      }
+
+      const section = selectedMdiv.querySelector("section");
+      if (!section) {
+        return reject(new Error("section not found in mdiv."));
+      }
+
+      // ✅ Clone before removing
+      const clonedMeasure = measure.cloneNode(true);
+
+      // ✅ Remove original
+      if (measure.parentNode) {
+        measure.parentNode.removeChild(measure);
+      }
+
+      // ✅ Assign next "n"
+      const measures = Array.from(section.querySelectorAll("measure"));
+      const lastMeasure = measures[measures.length - 1];
+      const lastN = parseInt(lastMeasure?.getAttribute("n") || "0", 10);
+      clonedMeasure.setAttribute("n", lastN + 1);
+
+      // ✅ Append to actual section in xmlDoc
+      section.appendChild(clonedMeasure);
+
+      // ✅ Update state
+      state.currentMeasure = clonedMeasure;
+      state.selectedMdiv = selectedMdiv; // make sure state stays in sync
+
+      resolve(clonedMeasure);
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
+
+
 /**
  * Inserts a measure into the MEI file
  * @param  {[type]} xmlDoc                    the MEI file as DOM
@@ -255,7 +304,6 @@ export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex, t
   const zones = [...surface.querySelectorAll('zone')]
 
   let mdiv  
-  console.log("targetMdiv is ", targetMdiv)
 
 if (targetMdiv === undefined) {
     const mdivArray = [...xmlDoc.querySelectorAll('mdiv')]
@@ -578,8 +626,28 @@ if (targetMdiv === undefined) {
 
             const precedingZoneId = above[newIndex - 1].id
             const precedingMeasure = xmlDoc.querySelector('measure[facs~="#' + precedingZoneId + '"]')
+            if(precedingMeasure){
             newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), 1))
+
             precedingMeasure.after(newMeasure)
+            }else{
+            const body = xmlDoc.querySelector('body');
+            const mdivs = Array.from(body.querySelectorAll('mdiv'));
+            const currentMdivIndex = mdivs.findIndex(mdiv => mdiv === targetMdiv);
+
+            let previousMdiv = null;
+            if (currentMdivIndex > 0) {
+              previousMdiv = mdivs[currentMdivIndex - 1];
+              previousMdiv.append(newMeasure)
+              const measures = Array.from(targetMdiv.querySelectorAll('measure'));
+              console.log("line 595 measures are ", measures)
+              measures.forEach((measure, idx) => {
+                
+                previousMdiv.append(measures[idx-1])
+              });
+              }
+            }
+
 
           }}else{
             console.log("line 522 old mdiv ", targetMdiv, " measure is ", measure, " new measure is ", newMeasure, " state.currentMdivId is ", state.currentMdivId)
@@ -590,8 +658,11 @@ if (targetMdiv === undefined) {
              }else{
                 state.newFirstMeasure = newMeasure
                 targetMdiv.querySelector('section').prepend(newMeasure)
-                newMeasure.setAttribute('n', 1)        
+                newMeasure.setAttribute('n', 1) 
+                console.log("line 614 target mdiv is ", targetMdiv, " and new first measure is ", state.newFirstMeasure)       
              }
+            
+             console.log("line 616 new first measure is ", state.newFirstMeasure, " targetMdiv is ", newMeasure, " old mdiv", " old mdivs measures ", state.oldMdivMeasures, " measure is ", measure, " and measure next sibling is ", measure.nextElementSibling)
             console.log("line 522 ",  newMeasure, " targetMdiv is ", targetMdiv, " old mdiv", " old mdivs measures ", state.oldMdivMeasures, " new first measure is  ", state.newFirstMeasure, " measure is ", measure, " and measure next sibling is ", measure.nextElementSibling) 
             const sb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'sb')
             measure.after(sb)
@@ -1141,14 +1212,17 @@ export function setMultiRest (measure, val) {
  * @param {string} targetMdivId - The xml:id of the target mdiv.
  * @param {Object} state - Application state (used for page lookup).
  */
-export function moveContentToMdiv (xmlDoc, firstMeasureId, targetMdivId, state) {
+export function moveContentToMdiv (xmlDoc, firstMeasureId, targetMdivId, state ) {
   const firstMeasure = [...xmlDoc.querySelectorAll('measure')].find(measure => measure.getAttribute('xml:id') === firstMeasureId)
   console.log("line 1040 first measure is ", firstMeasure, " target mdiv is ", [...xmlDoc.querySelectorAll('mdiv')].find(mdiv => mdiv.getAttribute('xml:id') === targetMdivId))
-
   const precedingSibling = firstMeasure.previousElementSibling
   let firstNode
   
-
+  if(state.selectedMdiv != null){
+    console.log("line 1175")
+    updateMdiv(xmlDoc, firstMeasure, state, "", "", state.selectedMdiv)
+    return 
+  }
   if (precedingSibling === null) {
     console.log("mdiv case 1")
     firstNode = firstMeasure

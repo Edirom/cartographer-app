@@ -67,6 +67,7 @@ export default {
       return this.$store.getters.currentMdiv
     },
     measure: function () {
+      console.log("line 70")
       return this.$store.getters.currentMeasure
     },
     /* visible: {

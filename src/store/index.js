@@ -14,6 +14,9 @@ function getDefaultState() {
       directories: [],               // List of directories in the selected repo
       repos: null,                   // List of available repositories
       xmlDoc: null,                  // The loaded MEI XML document (DOM)
+      currentMdiv: null,            // The currently selected movement (mdiv)
+      nextMdiv: null,                // The next mdiv to be created (if applicable)  
+      previousMdiv: null,            // The previous mdiv (if applicable)
       pages: [],                     // Array of page objects (from MEI or IIIF)
       currentPage: -1,               // Index of the currently selected page
       showLoadXMLModal: false,       // Show/hide modal for loading XML files
@@ -42,7 +45,11 @@ function getDefaultState() {
       currentMeasureId: null,        // xml:id of the currently selected measure
       infoJson: [],                   // Array of IIIF info.json URLs for canvases
       newFirstMeasure: "",            // The first measure of the old mdiv for selecting a new mdiv
-      oldMdiv : null
+      oldMdiv : null,
+      selectedMdiv: null,             // The mdiv that is selected in the mdiv modal
+      currentMdiv: null,
+      insertMdivup: false,
+      currentMeasure: null,
   }
 }
 
@@ -92,6 +99,9 @@ export default createStore({
  * - FAILED_IMAGE_IMPORT: Mark an image import as failed.
  * - ACCEPT_IMAGE_IMPORTS: Add all successfully imported images as pages to the MEI document.
  * - CANCEL_IMAGE_IMPORTS: Cancel all pending image imports and hide the import modal.
+ * - CURRENT_MDIV: Set the current mdiv object.
+ * - NEXT_MDIV: Set the next mdiv object.
+ * - PREVIOUS_MDIV: Set the previous mdiv object.
  */
   mutations: {
     RESET_STATE(state) {
@@ -321,11 +331,35 @@ export default createStore({
       moveContentToMdiv(xmlDoc, state.currentMeasureId, state.currentMdivId, state)
       state.xmlDoc = xmlDoc
     },
-    SELECT_MDIV(state, id) {
-      if (state.currentMeasureId !== null) {
+    SELECT_MDIV(state, selectedMdiv) {
+      // const xmlDoc = state.xmlDoc.cloneNode(true)
+      // state.currentMdiv = xmlDoc.querySelector('mdiv[xml\\:id="' +  currentMdiv + '"]')
+      // state.selectedMdiv = xmlDoc.querySelector('mdiv[xml\\:id="' + selectedMdiv + '"]')
+
+      // if (state.selectedMdiv && state.currentMdiv) {
+      //   const selectedN = parseInt(state.selectedMdiv.getAttribute('n'))
+      //   const currentN = parseInt(state.currentMdiv.getAttribute('n'))
+      //   console.log("line 341 elected ",selectedN, " currentN ", currentN)
+
+      //   if (!isNaN(selectedN) && !isNaN(currentN) && selectedN > currentN) {
+      //    console.log("")
+      //    state.insertMdivup = true
+      //   }
+      // } else {
+      //   console.warn("Could not find selectedMdiv or currentMdiv in XML.")
+      // }
         const xmlDoc = state.xmlDoc.cloneNode(true)
-        moveContentToMdiv(xmlDoc, state.currentMeasureId, id, state)
-        state.currentMdivId = id
+        const mdivs = [...state.xmlDoc.querySelectorAll('mdiv')]
+        state.currentMdiv = mdivs.find(mdiv => {
+        const measures = Array.from(mdiv.getElementsByTagName('measure'));
+        return measures.find(measure => measure.getAttribute('xml:id') === state.currentMeasureId);
+      });
+       state.selectedMdiv = mdivs.find(mdiv =>mdiv.getAttribute("xml:id") === selectedMdiv)
+
+      
+      if (state.currentMeasureId !== null) {
+        moveContentToMdiv(xmlDoc, state.currentMeasureId, selectedMdiv, state)
+        state.currentMdivId = selectedMdiv
         state.xmlDoc = xmlDoc
       }
     },
@@ -360,6 +394,15 @@ export default createStore({
       state.showPagesImportModal = false
       console.log('cancel imports')
     },
+    CURRENT_MDIV(state, mdiv) {
+      state.currentMdiv = mdiv
+    },
+    NEXT_MDIV(state, mdiv) {
+      state.nextMdiv = mdiv
+    },
+    PREVIOUS_MDIV(state, mdiv) {
+      state.previousMdiv = mdiv
+    }
   },
   /**
  * Vuex actions for asynchronous operations and complex state updates.
@@ -713,8 +756,8 @@ export default createStore({
     createNewMdiv({ commit }) {
       commit('CREATE_NEW_MDIV')
     },
-    selectMdiv({ commit }, id) {
-      commit('SELECT_MDIV', id)
+    selectMdiv({ commit }, selectedMdiv ) {
+     commit('SELECT_MDIV', selectedMdiv);
     },
     registerImageImports({ commit }, urls) {
       const arr = urls.replace(/\s+/g, ' ').trim().split(' ')
@@ -738,6 +781,15 @@ export default createStore({
     },
     cancelImageImports({ commit }) {
       commit('CANCEL_IMAGE_IMPORTS')
+    },
+    currentMdiv({ commit }, mdiv) {
+      commit('CURRENT_MDIV', mdiv)
+    },
+    nextMdiv({ commit }, mdiv) {
+      commit('NEXT_MDIV', mdiv)
+    },
+    previousMdiv({ commit }, mdiv) {        
+      commit('PREVIOUS_MDIV', mdiv)
     }
   },
   /**
@@ -897,6 +949,7 @@ export default createStore({
       return arr
     },
     currentMdiv: state => {
+      console.log("this is current mdiv id ", state.currentMdivId)
       if (state.currentMdivId === null || state.xmlDoc === null) {
         return null
       }
@@ -921,15 +974,20 @@ export default createStore({
         return null
       }
 
+      console.log("current measuser from state is ",   state.currentMeasure)
       // const mdivs = [...state.xmlDoc.querySelectorAll('mdiv')]
       // const mdiv = mdivs.find(mdiv => mdiv.getAttribute('xml:id') === state.currentMdivId)
-      const measures = [...state.xmlDoc.querySelectorAll('measure')]
-      const measure = measures.find(measure => measure.getAttribute('xml:id') === state.currentMeasureId)
+      let measures = [...state.xmlDoc.querySelectorAll('measure')]
 
+      let measure = measures.find(measure => measure.getAttribute('xml:id') === state.currentMeasureId)
+
+      if(!measure){
+        measure = state.currentMeasure
+      }
       const mdiv = measure.closest('mdiv').getAttribute('xml:id')
+      console.log("current measure ", measure)
 
       const multiRestElem = measure.querySelector('multiRest')
-      console.log("this is multi rest ")
       const multiRest = (multiRestElem !== null) ? multiRestElem.getAttribute('num') : null
 
 
