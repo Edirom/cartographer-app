@@ -137,6 +137,7 @@ export default {
       this.$store.dispatch('toggleMeasureModal')
     },
 handleChange: function() {
+  console.log("line 146 measure modal handleChange")
   var select = document.getElementById("mdivSelect");
   var selectedValue = select.options[select.selectedIndex].value;
   if (selectedValue === "___newMdiv___") {

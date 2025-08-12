@@ -197,6 +197,7 @@ function decrementMeasureNum (num, diff) {
 }
 
 export function updateMdiv(xmlDoc, measure, state, currentZone, pageIndex, targetMdiv) {
+  const updatedElements = []
   return new Promise((resolve, reject) => {
     try {
       const selectedId = state.selectedMdiv?.getAttribute("xml:id");
@@ -215,20 +216,55 @@ export function updateMdiv(xmlDoc, measure, state, currentZone, pageIndex, targe
       if (!section) {
         return reject(new Error("section not found in mdiv."));
       }
+            const updatedElements = [];
 
+      // Walk from the measure through all next siblings (elements or text nodes)
+      let node = measure;
+     
       // ✅ Clone before removing
       const clonedMeasure = measure.cloneNode(true);
-
+      let followingMeasures = getFollowingMeasuresByMeasure(measure);
       // ✅ Remove original
-      if (measure.parentNode) {
-        measure.parentNode.removeChild(measure);
-      }
+
+     console.log("line 227 cloned measuer is appended to section ",  " current mdiv ", parseInt(state.currentMdiv.getAttribute("n")), " ",   " selected mdiv ", parseInt(state.selectedMdiv.getAttribute("n")))
 
       // ✅ Assign next "n"
+      if (parseInt(state.currentMdiv.getAttribute("n")) > parseInt(state.selectedMdiv.getAttribute("n"))) {
+
       const measures = Array.from(section.querySelectorAll("measure"));
-      const lastMeasure = measures[measures.length - 1];
-      const lastN = parseInt(lastMeasure?.getAttribute("n") || "0", 10);
-      clonedMeasure.setAttribute("n", lastN + 1);
+      let lastMeasure = measures[measures.length - 1];
+      let lastN = parseInt(lastMeasure?.getAttribute("n") || "0", 10);
+            while (node) {
+             console.log("line 238 updated elements are ", node.nodeType)
+            if (node.nodeType === 1) {
+            const clonedElement =node.cloneNode(true);
+            if (clonedElement.tagName === 'measure') {
+              lastN = lastN + 1
+              clonedElement.setAttribute("n", parseInt(lastN));
+              state.selectedMdiv.querySelector('section').append(clonedElement);    
+              console.log("line 239 cloned measure n is ", state.selectedMdiv)
+              state.currentMeasure = clonedElement;            
+            }
+            node = node.previousSibling;
+          }
+          console.log("line 243 updated elements are ", updatedElements)
+
+        }
+          
+        console.log("line 231 cloned measuer is appended to section ",  parseInt(state.currentMdiv.getAttribute("n")), " ",   parseInt(state.selectedMdiv.getAttribute("n")))
+      }else if (parseInt(state.currentMdiv.getAttribute("n")) < parseInt(state.selectedMdiv.getAttribute("n"))) {
+        clonedMeasure.setAttribute("n", 1);
+
+        section.prepend(clonedMeasure);
+              followingMeasures = getFollowingMeasuresByMeasure(clonedMeasure)
+        followingMeasures.forEach(measure => {
+          measure.setAttribute('n', incrementMeasureNum(measure.getAttribute('n'), 1))
+        })
+      }
+      // const measures = Array.from(section.querySelectorAll("measure"));
+      // const lastMeasure = measures[measures.length - 1];
+      // const lastN = parseInt(lastMeasure?.getAttribute("n") || "0", 10);
+      // clonedMeasure.setAttribute("n", lastN + 1);
 
       // ✅ Append to actual section in xmlDoc
       section.appendChild(clonedMeasure);
