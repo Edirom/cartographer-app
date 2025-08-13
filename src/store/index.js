@@ -326,9 +326,15 @@ export default createStore({
       }
     },
     CREATE_NEW_MDIV(state) {
+      console.log("new case 1 creating new mdiv")
       const xmlDoc = state.xmlDoc.cloneNode(true)
+            console.log("new case 2 creating new mdiv")
       state.currentMdivId = createNewMdiv(xmlDoc, state.currentMdivId)
+            console.log("new case 3 creating new mdiv")
+
       moveContentToMdiv(xmlDoc, state.currentMeasureId, state.currentMdivId, state)
+            console.log("new case 4 creating new mdiv")
+
       state.xmlDoc = xmlDoc
     },
     SELECT_MDIV(state, selectedMdiv) {
