@@ -291,11 +291,16 @@ export function updateMdiv(xmlDoc, nodeToMove, state, currentZone, pageIndex, ta
         }
 
         // source-side: renumber following measures starting from 1
-        let idx = 1;
+        let idx = 0;
         for (const m of followingMeasures) {
-          if (m.parentNode && sourceSection.contains(m)) m.setAttribute("n", String(idx++));
+          if (idx === 0){
+            m.setAttribute("n", 1);
+            idx++;
+          }else{
+            m.setAttribute("n", idx + 1);
+            idx++
+          }
         }
-
         // fix pb/sb after move
         fixBreaks("earlier", sourceSection, destSection);
 
