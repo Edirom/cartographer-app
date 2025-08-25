@@ -196,6 +196,215 @@ function decrementMeasureNum (num, diff) {
   return parseInt(num) - diff
 }
 
+export function updateMdiv(xmlDoc, nodeToMove, state, currentZone, pageIndex, targetMdiv) {
+  return new Promise((resolve, reject) => {
+    try {
+      const selectedId = state.selectedMdiv?.getAttribute("xml:id");
+      if (!selectedId) return reject(new Error("No selectedMdiv ID in state."));
+
+      // dest (selected movement) + its section
+      const selectedMdiv = xmlDoc.querySelector(`mdiv[xml\\:id="${selectedId}"]`);
+      if (!selectedMdiv) return reject(new Error(`mdiv with xml:id="${selectedId}" not found in xmlDoc.`));
+      const destSection = selectedMdiv.querySelector("section");
+      if (!destSection) return reject(new Error("section not found in selected mdiv."));
+
+      // source (current movement we're moving out of) + its section
+      const sourceMdiv = state.currentMdiv;
+      let sourceSection = sourceMdiv?.querySelector("section");
+      if (!sourceSection) return reject(new Error("section not found in current mdiv."));
+
+      const fromN = parseInt(sourceMdiv.getAttribute("n"), 10);
+      const toN   = parseInt(selectedMdiv.getAttribute("n"), 10);
+
+      // ---- tiny helpers (scoped inside the function, as requested) ----
+      const isEl      = n => n && n.nodeType === 1;
+      const isMeasure = el => isEl(el) && el.localName === "measure";
+      const isBreak   = el => isEl(el) && (el.localName === "pb" || el.localName === "sb");
+      const nextEl    = n => { for (let p = n?.nextSibling; p; p = p.nextSibling) if (isEl(p)) return p; return null; };
+      const prevEl    = n => { for (let p = n?.previousSibling; p; p = p.previousSibling) if (isEl(p)) return p; return null; };
+      const firstMeasureIn = sec => Array.from(sec?.children || []).find(isMeasure) || null;
+      const lastChildEl    = sec => { const kids = Array.from(sec?.children || []); return kids[kids.length-1] || null; };
+      const safeRemove = (el) => { if (!el) return; if (typeof el.remove === "function") el.remove(); else el.parentNode?.removeChild(el); };
+
+      // renumber measures that follow nodeToMove in the SOURCE to start at 1
+      const followingMeasures = Array.from(
+        (typeof getFollowingMeasuresByMeasure === "function" ? (getFollowingMeasuresByMeasure(nodeToMove) || []) : [])
+      ).filter(m => m !== nodeToMove && isMeasure(m));
+
+      // fix pb/sb orphans inside a section depending on direction
+      const fixBreaks = (direction, srcSection, dstSection) => {
+        if (!srcSection) return;
+
+        // orphans at END (… pb/sb … pb/sb [NO measure after])
+        const endOrphans = [];
+        for (let n = lastChildEl(srcSection); n && isBreak(n); n = prevEl(n)) endOrphans.push(n);
+        endOrphans.reverse();
+
+        // orphans at START (pb/sb … pb/sb that are NOT immediately followed by a measure)
+        const startOrphans = [];
+        {
+          let n = srcSection.firstElementChild;
+          while (isBreak(n) && !isMeasure(nextEl(n))) { startOrphans.push(n); n = nextEl(n); }
+        }
+
+        if (direction === "later") {
+          // prefer moving orphans to the TOP of destination (so they precede its first measure)
+          const head = firstMeasureIn(dstSection);
+          if (head) {
+            for (const br of [...startOrphans, ...endOrphans]) {
+              if (br.parentNode !== dstSection) dstSection.insertBefore(br, head);
+            }
+          } else {
+            // destination has no measures -> nothing meaningful to precede; drop them
+            [...startOrphans, ...endOrphans].forEach(safeRemove);
+          }
+        } else { // "earlier" direction
+          // we appended at END; trailing or leading orphans in source are meaningless -> drop them
+          [...startOrphans, ...endOrphans].forEach(safeRemove);
+        }
+      };
+
+      // -------------------- MOVES --------------------
+      if (fromN > toN) {
+        // ===== EARLIER movement: append block to END of dest =====
+        // prev elements (any), node itself, plus any contiguous trailing pb/sb after node
+        const prevEls = [];
+        for (let p = nodeToMove.previousSibling; p; p = p.previousSibling) if (isEl(p)) prevEls.push(p);
+        prevEls.reverse();
+
+        const trailingBreaks = [];
+        for (let q = nodeToMove.nextSibling; isBreak(q); q = q.nextSibling) trailingBreaks.push(q);
+
+        const nodesToMove = [...prevEls, nodeToMove, ...trailingBreaks];
+
+        // continue numbering after dest last measure
+        const destMeasures = Array.from(destSection.querySelectorAll("measure"));
+        let lastN = parseInt(destMeasures[destMeasures.length - 1]?.getAttribute("n") || "0", 10);
+
+        for (const el of nodesToMove) {
+          if (isMeasure(el)) {
+            lastN += 1;
+            el.setAttribute("n", String(lastN));
+            state.currentMeasure = el;
+          }
+          destSection.appendChild(el); // reparent (removes from source)
+        }
+
+        // source-side: renumber following measures starting from 1
+        let idx = 0;
+        for (const m of followingMeasures) {
+          if (idx === 0){
+            m.setAttribute("n", 1);
+            idx++;
+          }else{
+            m.setAttribute("n", idx + 1);
+            idx++
+          }
+        }
+        // fix pb/sb after move
+        fixBreaks("earlier", sourceSection, destSection);
+
+        // remove the exact source section if it has no measures left
+        if (!sourceSection.querySelector("measure")) {
+          safeRemove(sourceSection);
+          sourceSection = null;
+        }
+        // if the mdiv has no measures anywhere, remove it and renumber sibling mdivs
+        if (sourceMdiv && !sourceMdiv.querySelector("measure")) {
+          const parent = sourceMdiv.parentNode;
+          safeRemove(sourceMdiv);
+          if (parent) {
+            const siblings = Array.from(parent.children).filter(n => n.localName === "mdiv");
+            siblings.forEach((m,i) => m.setAttribute("n", String(i+1)));
+          }
+        }
+
+      } else if (fromN < toN) {
+        // ===== LATER movement: prepend block to TOP of dest =====
+        // leading pb/sb immediately BEFORE node, node itself, and all following element siblings
+        const leadingBreaks = [];
+        for (let p = nodeToMove.previousSibling; isBreak(p); p = p.previousSibling) leadingBreaks.push(p);
+        leadingBreaks.reverse();
+
+        const tail = [];
+        for (let n = nodeToMove; n; n = n.nextSibling) if (isEl(n)) tail.push(n);
+
+        const nodesToMove = [...leadingBreaks, ...tail];
+
+        // move entire block to TOP (reverse order when inserting before firstChild)
+        for (const el of nodesToMove.slice().reverse()) destSection.insertBefore(el, destSection.firstChild);
+
+        // renumber destination: moved block 1..k, then shift existing by +k
+        const movedMeasures = nodesToMove.filter(isMeasure);
+        const k = movedMeasures.length;
+
+        let i = 1;
+        for (const m of movedMeasures) m.setAttribute("n", String(i++));
+        const allDestMeasures = Array.from(destSection.querySelectorAll("measure"));
+        for (let idx = k; idx < allDestMeasures.length; idx++) {
+          const m = allDestMeasures[idx];
+          const cur = parseInt(m.getAttribute("n") || "0", 10);
+          m.setAttribute("n", String(cur + k));
+        }
+        if (movedMeasures.length) state.currentMeasure = movedMeasures[0];
+
+        // fix pb/sb after move
+        fixBreaks("later", sourceSection, destSection);
+
+        // remove the exact source section if it has no measures left
+        if (sourceSection && !sourceSection.querySelector("measure")) {
+          safeRemove(sourceSection);
+          sourceSection = null;
+        }
+        // if the mdiv has no measures anywhere, remove it and renumber sibling mdivs
+        if (sourceMdiv && !sourceMdiv.querySelector("measure")) {
+          const parent = sourceMdiv.parentNode;
+          safeRemove(sourceMdiv);
+          if (parent) {
+            const siblings = Array.from(parent.children).filter(n => n.localName === "mdiv");
+            siblings.forEach((m,i) => m.setAttribute("n", String(i+1)));
+          }
+        }
+
+      } else {
+        // same movement: nothing to move
+      }
+
+      // -------------------- GLOBAL CLEANUP (in this function, as requested) --------------------
+      // 1) remove ANY empty sections across the doc, and their mdivs if those end up measureless
+      const allSections = Array.from(xmlDoc.querySelectorAll("section"));
+      for (const sec of allSections) {
+        if (!sec.querySelector("measure")) {
+          const mdiv = sec.closest("mdiv");
+          safeRemove(sec);
+          if (mdiv && !mdiv.querySelector("measure")) safeRemove(mdiv);
+        }
+      }
+
+      // 2) ensure no stray mdivs remain without measures
+      const allMdivs = Array.from(xmlDoc.querySelectorAll("mdiv"));
+      for (const mdiv of allMdivs) {
+        if (!mdiv.querySelector("measure")) safeRemove(mdiv);
+      }
+
+      // 3) renumber remaining mdivs n=1..N (document order)
+      const remainingMdivs = Array.from(xmlDoc.querySelectorAll("mdiv"));
+      remainingMdivs.forEach((m, i) => m.setAttribute("n", String(i + 1)));
+
+      // keep state consistent
+      state.selectedMdiv = selectedMdiv;
+
+      resolve(state.currentMeasure || nodeToMove);
+    } catch (err) {
+      reject(err);
+    }
+     state.selectedMdiv = null
+  });
+ 
+}
+
+
+
 /**
  * Inserts a measure into the MEI file
  * @param  {[type]} xmlDoc                    the MEI file as DOM
@@ -582,6 +791,10 @@ export function getFollowingMeasuresByMeasure(measure) {
       })
       getFollowingByName(next, name)
     }
+
+ if(elem.tagName === 'sb'){
+      console.log("line 700 next is ", next, " and name is ", name, ' previious element is ', elem.previousElementSibling)
+    } 
   }
 
   const getNextSection = (measure) => {
@@ -1006,19 +1219,30 @@ export function setMultiRest (measure, val) {
  * @param {string} targetMdivId - The xml:id of the target mdiv.
  * @param {Object} state - Application state (used for page lookup).
  */
-export function moveContentToMdiv (xmlDoc, firstMeasureId, targetMdivId, state) {
+export function moveContentToMdiv (xmlDoc, firstMeasureId, targetMdivId, state ) {
   const firstMeasure = [...xmlDoc.querySelectorAll('measure')].find(measure => measure.getAttribute('xml:id') === firstMeasureId)
+  console.log("line 1040 first measure is ", firstMeasure, " target mdiv is ", [...xmlDoc.querySelectorAll('mdiv')].find(mdiv => mdiv.getAttribute('xml:id') === targetMdivId))
   const precedingSibling = firstMeasure.previousElementSibling
   let firstNode
-
+  
+  if(state.selectedMdiv != null){
+    console.log("line 1175 ", state.selectedMdiv)
+    updateMdiv(xmlDoc, firstMeasure, state, "", "", state.selectedMdiv)
+    return 
+  }
   if (precedingSibling === null) {
+    console.log("mdiv case 1")
     firstNode = firstMeasure
   } else if (precedingSibling.localName === 'pb') {
-    firstNode = precedingSibling
+    firstNode = firstMeasure
+    console.log("mdiv case 2")
+
   } else if (precedingSibling.localName === 'sb') {
-    firstNode = precedingSibling
+    firstNode = firstMeasure
+    console.log("mdiv case 3")
   } else {
     firstNode = firstMeasure
+    console.log("mdiv case 4")
   }
 
   const elements = [firstNode]
@@ -1028,12 +1252,14 @@ export function moveContentToMdiv (xmlDoc, firstMeasureId, targetMdivId, state) 
     elements.push(nextSibling)
     nextSibling = nextSibling.nextElementSibling
   }
+  console.log("line 1046 selected mdiv is ", targetMdivId)
 
   const mdiv = [...xmlDoc.querySelectorAll('mdiv')].find(mdiv => mdiv.getAttribute('xml:id') === targetMdivId)
-
   const existingMeasures = [...mdiv.querySelectorAll('measure')]
+  console.log("line 1050 new mdiv is  ", mdiv)
 
   if (existingMeasures.length === 0) {
+    console.log("mdiv case 5")
     // TODO: We need to identify if that position is correct
     const section = [...mdiv.querySelectorAll('section')].at(-1)
 
@@ -1053,14 +1279,25 @@ export function moveContentToMdiv (xmlDoc, firstMeasureId, targetMdivId, state) 
       section.appendChild(element)
     })
   } else {
+    console.log("mdiv case 6")
+
     const followingMeasures = getFollowingMeasuresByMeasure(firstMeasure)
 
     const zones = getZonesFromMeasure(xmlDoc, firstMeasure)
     const surfaceId = zones[0].closest('surface').getAttribute('xml:id')
     const pageIndex = state.pages.findIndex(page => page.id === surfaceId)
+    console.log("zones are ", zones)
+    console.log("pageIndex is ", pageIndex)
+    console.log("surdace id is ", surfaceId)
+    console.log("following measures ", followingMeasures)
+
+    
 
     insertMeasure(xmlDoc, firstMeasure, state, zones[0], pageIndex, mdiv)
+
     followingMeasures.forEach(measure => {
+      console.log("line 1143 inserting measure ", measure)
+
       const zones = getZonesFromMeasure(xmlDoc, measure)
       const surfaceId = zones[0].closest('surface').getAttribute('xml:id')
       const pageIndex = state.pages.findIndex(page => page.id === surfaceId)
