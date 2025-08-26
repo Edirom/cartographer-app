@@ -1,0 +1,1 @@
+const s="/assets/footer-D2YwHuOA.png";export{s as _};
