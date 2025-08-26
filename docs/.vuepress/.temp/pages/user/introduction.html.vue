@@ -8,15 +8,15 @@ The primary use case is the identification of bounding boxes of measures in musi
 <ul>
 <li>
 <p><strong>Vectre</strong>: a VueJS version of Spectre CSS<br>
-👉 <a href="https://vectrejs.github.io/docs/#/pages/getting-started" target="_blank" rel="noopener noreferrer">Vectre Documentation</a></p>
+<a href="https://vectrejs.github.io/docs/#/pages/getting-started" target="_blank" rel="noopener noreferrer">Vectre Documentation</a></p>
 </li>
 <li>
 <p><strong>OpenSeadragon</strong><br>
-👉 <a href="http://openseadragon.github.io/" target="_blank" rel="noopener noreferrer">OpenSeadragon Site</a></p>
+<a href="http://openseadragon.github.io/" target="_blank" rel="noopener noreferrer">OpenSeadragon Site</a></p>
 </li>
 <li>
 <p><strong>Annotorious OpenSeadragon Plugin</strong><br>
-👉 <a href="https://recogito.github.io/annotorious/getting-started/osd-plugin/" target="_blank" rel="noopener noreferrer">Annotorious OSD Plugin</a></p>
+<a href="https://recogito.github.io/annotorious/getting-started/osd-plugin/" target="_blank" rel="noopener noreferrer">Annotorious OSD Plugin</a></p>
 </li>
 </ul>
 </div></template>

@@ -2,6 +2,14 @@ export const redirects = JSON.parse("{}")
 
 export const routes = Object.fromEntries([
   ["/", { loader: () => import(/* webpackChunkName: "index.html" */"/Users/hizkielalemayehu/Documents/GitHub/Edirom/cartographer-app/docs/.vuepress/.temp/pages/index.html.js"), meta: {"title":"Cartographer App User Documentation"} }],
+  ["/user/ImportingImages.html", { loader: () => import(/* webpackChunkName: "user_ImportingImages.html" */"/Users/hizkielalemayehu/Documents/GitHub/Edirom/cartographer-app/docs/.vuepress/.temp/pages/user/ImportingImages.html.js"), meta: {"title":"Importing Images"} }],
+  ["/user/", { loader: () => import(/* webpackChunkName: "user_index.html" */"/Users/hizkielalemayehu/Documents/GitHub/Edirom/cartographer-app/docs/.vuepress/.temp/pages/user/index.html.js"), meta: {"title":"Cartographer App User Documentation"} }],
+  ["/user/UserInterface.html", { loader: () => import(/* webpackChunkName: "user_UserInterface.html" */"/Users/hizkielalemayehu/Documents/GitHub/Edirom/cartographer-app/docs/.vuepress/.temp/pages/user/UserInterface.html.js"), meta: {"title":"User Interface"} }],
+  ["/user/actions.html", { loader: () => import(/* webpackChunkName: "user_actions.html" */"/Users/hizkielalemayehu/Documents/GitHub/Edirom/cartographer-app/docs/.vuepress/.temp/pages/user/actions.html.js"), meta: {"title":"Actions"} }],
+  ["/user/footer.html", { loader: () => import(/* webpackChunkName: "user_footer.html" */"/Users/hizkielalemayehu/Documents/GitHub/Edirom/cartographer-app/docs/.vuepress/.temp/pages/user/footer.html.js"), meta: {"title":"Footer"} }],
+  ["/user/header.html", { loader: () => import(/* webpackChunkName: "user_header.html" */"/Users/hizkielalemayehu/Documents/GitHub/Edirom/cartographer-app/docs/.vuepress/.temp/pages/user/header.html.js"), meta: {"title":"Header"} }],
+  ["/user/installation.html", { loader: () => import(/* webpackChunkName: "user_installation.html" */"/Users/hizkielalemayehu/Documents/GitHub/Edirom/cartographer-app/docs/.vuepress/.temp/pages/user/installation.html.js"), meta: {"title":"Setup Guide"} }],
+  ["/user/introduction.html", { loader: () => import(/* webpackChunkName: "user_introduction.html" */"/Users/hizkielalemayehu/Documents/GitHub/Edirom/cartographer-app/docs/.vuepress/.temp/pages/user/introduction.html.js"), meta: {"title":"Introduction"} }],
   ["/technical/AppFooterComponent.html", { loader: () => import(/* webpackChunkName: "technical_AppFooterComponent.html" */"/Users/hizkielalemayehu/Documents/GitHub/Edirom/cartographer-app/docs/.vuepress/.temp/pages/technical/AppFooterComponent.html.js"), meta: {"title":"AppFooter Component"} }],
   ["/technical/AppHeaderComponent.html", { loader: () => import(/* webpackChunkName: "technical_AppHeaderComponent.html" */"/Users/hizkielalemayehu/Documents/GitHub/Edirom/cartographer-app/docs/.vuepress/.temp/pages/technical/AppHeaderComponent.html.js"), meta: {"title":"AppHeader Component"} }],
   ["/technical/AppSidebarComponent.html", { loader: () => import(/* webpackChunkName: "technical_AppSidebarComponent.html" */"/Users/hizkielalemayehu/Documents/GitHub/Edirom/cartographer-app/docs/.vuepress/.temp/pages/technical/AppSidebarComponent.html.js"), meta: {"title":"AppSidebar Component"} }],
@@ -25,13 +33,22 @@ export const routes = Object.fromEntries([
   ["/technical/store.html", { loader: () => import(/* webpackChunkName: "technical_store.html" */"/Users/hizkielalemayehu/Documents/GitHub/Edirom/cartographer-app/docs/.vuepress/.temp/pages/technical/store.html.js"), meta: {"title":"Store Directory"} }],
   ["/technical/storeIndex.html", { loader: () => import(/* webpackChunkName: "technical_storeIndex.html" */"/Users/hizkielalemayehu/Documents/GitHub/Edirom/cartographer-app/docs/.vuepress/.temp/pages/technical/storeIndex.html.js"), meta: {"title":"Vuex Store (src/store/index.js)"} }],
   ["/technical/tools.html", { loader: () => import(/* webpackChunkName: "technical_tools.html" */"/Users/hizkielalemayehu/Documents/GitHub/Edirom/cartographer-app/docs/.vuepress/.temp/pages/technical/tools.html.js"), meta: {"title":"Tools Directory"} }],
-  ["/user/ImportingImages.html", { loader: () => import(/* webpackChunkName: "user_ImportingImages.html" */"/Users/hizkielalemayehu/Documents/GitHub/Edirom/cartographer-app/docs/.vuepress/.temp/pages/user/ImportingImages.html.js"), meta: {"title":"Importing Images"} }],
-  ["/user/", { loader: () => import(/* webpackChunkName: "user_index.html" */"/Users/hizkielalemayehu/Documents/GitHub/Edirom/cartographer-app/docs/.vuepress/.temp/pages/user/index.html.js"), meta: {"title":"Cartographer App User Documentation"} }],
-  ["/user/UserInterface.html", { loader: () => import(/* webpackChunkName: "user_UserInterface.html" */"/Users/hizkielalemayehu/Documents/GitHub/Edirom/cartographer-app/docs/.vuepress/.temp/pages/user/UserInterface.html.js"), meta: {"title":"User Interface"} }],
-  ["/user/actions.html", { loader: () => import(/* webpackChunkName: "user_actions.html" */"/Users/hizkielalemayehu/Documents/GitHub/Edirom/cartographer-app/docs/.vuepress/.temp/pages/user/actions.html.js"), meta: {"title":"Actions"} }],
-  ["/user/footer.html", { loader: () => import(/* webpackChunkName: "user_footer.html" */"/Users/hizkielalemayehu/Documents/GitHub/Edirom/cartographer-app/docs/.vuepress/.temp/pages/user/footer.html.js"), meta: {"title":"Footer"} }],
-  ["/user/header.html", { loader: () => import(/* webpackChunkName: "user_header.html" */"/Users/hizkielalemayehu/Documents/GitHub/Edirom/cartographer-app/docs/.vuepress/.temp/pages/user/header.html.js"), meta: {"title":"Header"} }],
-  ["/user/installation.html", { loader: () => import(/* webpackChunkName: "user_installation.html" */"/Users/hizkielalemayehu/Documents/GitHub/Edirom/cartographer-app/docs/.vuepress/.temp/pages/user/installation.html.js"), meta: {"title":"Setup Guide"} }],
-  ["/user/introduction.html", { loader: () => import(/* webpackChunkName: "user_introduction.html" */"/Users/hizkielalemayehu/Documents/GitHub/Edirom/cartographer-app/docs/.vuepress/.temp/pages/user/introduction.html.js"), meta: {"title":"Introduction"} }],
   ["/404.html", { loader: () => import(/* webpackChunkName: "404.html" */"/Users/hizkielalemayehu/Documents/GitHub/Edirom/cartographer-app/docs/.vuepress/.temp/pages/404.html.js"), meta: {"title":""} }],
 ]);
+
+if (import.meta.webpackHot) {
+  import.meta.webpackHot.accept()
+  if (__VUE_HMR_RUNTIME__.updateRoutes) {
+    __VUE_HMR_RUNTIME__.updateRoutes(routes)
+  }
+  if (__VUE_HMR_RUNTIME__.updateRedirects) {
+    __VUE_HMR_RUNTIME__.updateRedirects(redirects)
+  }
+}
+
+if (import.meta.hot) {
+  import.meta.hot.accept(({ routes, redirects }) => {
+    __VUE_HMR_RUNTIME__.updateRoutes(routes)
+    __VUE_HMR_RUNTIME__.updateRedirects(redirects)
+  })
+}
