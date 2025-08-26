@@ -4,19 +4,6 @@ Centralized state management for the Cartographer app using Vuex.
 
 ---
 
-## Overview
-
-This Vuex store manages all application state, including:
-- Current MEI/XML document and page data
-- Modal visibility (for loading, editing, importing, etc.)
-- Current selection (page, measure, mdiv, zone)
-- GitHub integration (repositories, directories, branches)
-- IIIF manifest and image import
-- Annotation and zone management
-- UI modes and processing/loading states
-
----
-
 ## State
 
 | Key                   | Description                                      |
@@ -75,7 +62,6 @@ This Vuex store manages all application state, including:
   - Zones on the current page
   - Downloadable MEI file as a string
   - Import status and readiness
-  - GitHub and IIIF data
 
 ---
 

@@ -1,0 +1,3 @@
+import comp from "/Users/hizkielalemayehu/Documents/GitHub/Edirom/cartographer-app/docs/.vuepress/.temp/pages/PagesListEntry.html.vue"
+const data = JSON.parse("{\"path\":\"/PagesListEntry.html\",\"title\":\"PagesListEntry Component\",\"lang\":\"en-US\",\"frontmatter\":{},\"git\":{\"updatedTime\":1747234892000,\"contributors\":[{\"name\":\"Hizkiel\",\"username\":\"Hizkiel\",\"email\":\"hizclick@gmail.com\",\"commits\":1,\"url\":\"https://github.com/Hizkiel\"}],\"changelog\":[{\"hash\":\"addcf634062a696867cd389eb76f27f467f4a69a\",\"time\":1747234892000,\"email\":\"hizclick@gmail.com\",\"author\":\"Hizkiel\",\"message\":\"Correcting the impits based on the pr comments\"}]},\"filePathRelative\":\"PagesListEntry.md\"}")
+export { comp, data }
