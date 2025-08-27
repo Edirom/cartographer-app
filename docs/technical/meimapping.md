@@ -1,152 +1,294 @@
-# MEI Mappings Tools (`src/tools/meiMappings.js`)
+# MEI Mapping Tools (`src/tools/meimapping.js`)
 
-Utility functions for mapping between MEI zones/measures and Annotorious annotations, as well as manipulating MEI documents.
-
----
-
-## Overview
-
-This module provides functions to:
-- Convert MEI zones to Annotorious annotation objects and vice versa
-- Create, insert, and delete measures and zones in MEI
-- Move content between mdivs
-- Add imported pages to MEI
-- Manage multi-rests and additional zones
+Helper functions to convert between MEI zones, Annotorious annotations, detected rectangles, and to manipulate measures/mdivs.  
+This includes both **exported functions** (public API) and **internal helpers** (not exported but important for maintainers).
 
 ---
 
-## Functions
 
 ### `meiZone2annotorious(mei, zoneInput, pageUri)`
+Converts an MEI `<zone>` into an Annotorious annotation object.  
 
-Converts an MEI `<zone>` element to an Annotorious annotation object.
+```js
+export function meiZone2annotorious (mei, zoneInput, pageUri) { ... }
+```
 
-- **Parameters:**
-  - `mei`: The MEI XML document
-  - `zoneInput`: The zone element or its ID
-  - `pageUri`: The image/page URI
+**Parameters**  
+- `mei {Document}` – MEI XML document  
+- `zoneInput {Element|string}` – `<zone>` element or its xml:id  
+- `pageUri {string}` – Page image URI  
+
+**Returns**  
+- `{Object}` – Annotorious-compatible annotation  
 
 ---
 
 ### `annotorious2meiZone(annot)`
+Converts an Annotorious annotation into an MEI `<zone>`.
 
-Converts an Annotorious annotation object to an MEI `<zone>` element.
+```js
+export function annotorious2meiZone (annot) { ... }
+```
 
-- **Parameters:**
-  - `annot`: The Annotorious annotation object
+**Parameters**  
+- `annot {Object}` – Annotorious annotation  
+
+**Returns**  
+- `{Element}` – MEI `<zone>`  
 
 ---
 
 ### `measureDetector2meiZone(rect)`
+Converts a detected rectangle into an MEI `<zone>`.
 
-Creates a new MEI `<zone>` element from a rectangle (e.g., from a detector).
+```js
+export function measureDetector2meiZone (rect) { ... }
+```
 
-- **Parameters:**
-  - `rect`: Object with `ulx`, `uly`, `lrx`, `lry` properties
+**Parameters**  
+- `rect {Object}` – Rectangle `{ ulx, uly, lrx, lry }`  
+
+**Returns**  
+- `{Element}` – MEI `<zone>`  
 
 ---
 
 ### `generateMeasure()`
+Creates a new MEI `<measure>`.
 
-Creates and returns a new MEI `<measure>` element with a unique ID.
+```js
+export function generateMeasure () { ... }
+```
+
+**Returns**  
+- `{Element}` – `<measure>` with unique xml:id  
 
 ---
 
 ### `insertMeasure(xmlDoc, measure, state, currentZone, pageIndex, targetMdiv)`
+Inserts a `<measure>` into the MEI.
 
-Inserts a measure into the MEI file at the correct position, adjusting measure numbers and page breaks as needed.
+```js
+export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex, targetMdiv) { ... }
+```
 
-- **Parameters:**
-  - `xmlDoc`: The MEI XML document
-  - `measure`: The measure element to insert
-  - `state`: Vuex state
-  - `currentZone`: The zone associated with the measure
-  - `pageIndex`: Index of the page (zero-based)
-  - `targetMdiv`: The mdiv to insert into
+**Parameters**  
+- `xmlDoc {Document}` – MEI file  
+- `measure {Element}` – New measure  
+- `state {Object}` – Vuex state  
+- `currentZone {Element}` – Zone for this measure  
+- `pageIndex {number}` – Page index  
+- `targetMdiv {Element}` – Target movement  
 
 ---
 
 ### `getFollowingMeasuresByMeasure(measure)`
+Get all measures following a given one.
 
-Returns an array of all measures following the given measure.
+```js
+export function getFollowingMeasuresByMeasure (measure) { ... }
+```
+
+**Parameters**  
+- `measure {Element}` – Current measure  
+
+**Returns**  
+- `{Array<Element>}` – List of following measures  
 
 ---
 
 ### `addZoneToLastMeasure(xmlDoc, zoneId)`
+Adds a zone to the last `<measure>` in the MEI.
 
-Adds a zone reference to the last measure in the MEI document.
+```js
+export function addZoneToLastMeasure (xmlDoc, zoneId) { ... }
+```
 
 ---
 
-### `createNewMdiv(xmlDoc, afterMdivId)`
+### `createNewMdiv(xmlDoc, state, afterMdivId)`
+Creates a new `<mdiv>` (movement).
 
-Creates a new `<mdiv>` in the MEI document, optionally after a given mdiv.
+```js
+export function createNewMdiv (xmlDoc, state, afterMdivId) { ... }
+```
 
-- **Parameters:**
-  - `xmlDoc`: The MEI XML document
-  - `afterMdivId`: (Optional) ID of the mdiv after which to insert
+**Parameters**  
+- `xmlDoc {Document}` – MEI document  
+- `state {Object}` – Vuex state  
+- `afterMdivId {string?}` – Optional target to insert after  
+
+**Returns**  
+- `{string}` – New mdiv xml:id  
 
 ---
 
 ### `deleteZone(xmlDoc, id, state)`
+Deletes a zone and updates measures accordingly.
 
-Deletes a zone and its associated measures from the MEI document.
-
-- **Parameters:**
-  - `xmlDoc`: The MEI XML document
-  - `id`: The zone ID
-  - `state`: Vuex state
+```js
+export function deleteZone (xmlDoc, id, state) { ... }
+```
 
 ---
 
 ### `toggleAdditionalZone(xmlDoc, id, state)`
+Toggle zone between new measure and merged measure.
 
-Toggles an additional zone for a measure, updating facsimile references and measure structure.
+```js
+export function toggleAdditionalZone (xmlDoc, id, state) { ... }
+```
 
 ---
 
 ### `setMultiRest(measure, val)`
+Sets, updates, or removes a `<multiRest>`.
 
-Sets or removes a multi-rest on a measure, updating following measure numbers as needed.
-
-- **Parameters:**
-  - `measure`: The measure element
-  - `val`: The multi-rest value (number or null)
+```js
+export function setMultiRest (measure, val) { ... }
+```
 
 ---
 
 ### `moveContentToMdiv(xmlDoc, firstMeasureId, targetMdivId, state)`
+Moves a sequence of measures into a target mdiv.
 
-Moves a sequence of measures (and related elements) to a different mdiv.
+```js
+export function moveContentToMdiv (xmlDoc, firstMeasureId, targetMdivId, state) { ... }
+```
 
 ---
 
 ### `addImportedPage(xmlDoc, index, url, width, height)`
+Adds a new `<surface>` page.
 
-Adds a new page (surface and graphic) to the MEI document for an imported image.
+```js
+export function addImportedPage (xmlDoc, index, url, width, height) { ... }
+```
 
-- **Parameters:**
-  - `xmlDoc`: The MEI XML document
-  - `index`: Page index
-  - `url`: Image URL
-  - `width`: Image width
-  - `height`: Image height
+---
+
+## Internal Helpers
+
+### `incrementMeasureNum(num, diff)`
+```js
+function incrementMeasureNum (num, diff) {
+  return parseInt(num) + diff
+}
+```
+
+**Parameters**  
+- `num {string|number}` – Current measure number  
+- `diff {number}` – Amount to add  
+
+**Returns**  
+- `{number}` – New measure number  
+
+---
+
+### `getLastMeasure(xmlDoc)`
+```js
+function getLastMeasure (xmlDoc) {
+  const measure = [...xmlDoc.querySelectorAll('measure')].slice(-1)[0]
+  return measure
+}
+```
+
+**Parameters**  
+- `xmlDoc {Document}` – MEI DOM  
+
+**Returns**  
+- `{Element|undefined}` – Last measure or undefined  
+
+---
+
+### `getPrecedingZone(xmlDoc, surface)`
+```js
+function getPrecedingZone (xmlDoc, surface) { ... }
+```
+
+**Parameters**  
+- `xmlDoc {Document}` – MEI DOM  
+- `surface {Element}` – Current page  
+
+**Returns**  
+- `{Element|null}` – Last zone on a previous page  
+
+---
+
+### `getPrecedingZoneNoMatterWhere(xmlDoc, zone)`
+```js
+function getPrecedingZoneNoMatterWhere (xmlDoc, zone) { ... }
+```
+
+**Parameters**  
+- `xmlDoc {Document}` – MEI DOM  
+- `zone {Element}` – Reference zone  
+
+**Returns**  
+- `{Element|null}` – Nearest preceding zone  
+
+---
+
+### `getMeasuresFromZone(xmlDoc, zone)`
+```js
+function getMeasuresFromZone (xmlDoc, zone) { ... }
+```
+
+**Parameters**  
+- `xmlDoc {Document}` – MEI DOM  
+- `zone {Element}` – Zone element  
+
+**Returns**  
+- `{Array<Element>}` – Measures referencing the zone  
+
+---
+
+### `getZonesFromMeasure(xmlDoc, measure)`
+```js
+function getZonesFromMeasure (xmlDoc, measure) { ... }
+```
+
+**Parameters**  
+- `xmlDoc {Document}` – MEI DOM  
+- `measure {Element}` – Measure element  
+
+**Returns**  
+- `{Array<Element>}` – Zones linked by @facs  
 
 ---
 
 ## Example Usage
 
 ```js
-import { meiZone2annotorious, annotorious2meiZone, insertMeasure, createNewMdiv } from '@/tools/meiMappings.js'
+import {
+  meiZone2annotorious,
+  annotorious2meiZone,
+  measureDetector2meiZone,
+  generateMeasure,
+  insertMeasure,
+  addZoneToLastMeasure,
+  createNewMdiv,
+  deleteZone,
+  toggleAdditionalZone,
+  setMultiRest,
+  moveContentToMdiv,
+  addImportedPage,
+  ...
+} from '@/tools/meimapping.js'
 
-// Convert a zone to an annotation
-const annotation = meiZone2annotorious(meiDoc, zoneElem, pageUri)
+// Convert zone → annotation
+const annot = meiZone2annotorious(meiDoc, 'zone123', pageUri)
 
-// Convert an annotation to a zone
-const zone = annotorious2meiZone(annotation)
+// Convert annotation → zone
+const zone = annotorious2meiZone(annot)
 
-// Insert a new measure
-insertMeasure(meiDoc, newMeasure, state, currentZone, pageIndex, targetMdiv)
+// Add zone to last measure
+addZoneToLastMeasure(meiDoc, 'zone123')
 
-// Create a new mdiv
-const mdivId = createNewMdiv(meiDoc)
+// Create new movement
+const mdivId = createNewMdiv(meiDoc, state)
+
+// Delete a zone
+deleteZone(meiDoc, 'zone456', state)
+```
