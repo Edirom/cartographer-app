@@ -1,0 +1,13 @@
+{
+  "name": "docs",
+  "private": true,
+  "scripts": {
+    "dev": "vuepress dev .",
+    "build": "vuepress build ."
+  },
+  "devDependencies": {
+    "vuepress": "2.0.0-rc.112",
+    "@vuepress/theme-default": "2.0.0-rc.112",
+    "@vuepress/bundler-vite": "2.0.0-rc.112"
+  }
+}
