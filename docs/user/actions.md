@@ -61,7 +61,7 @@ When you select **"Import IIIF Manifest"**, a dialog appears:
    - **"Get Test URI"** → use the sample manifest provided with Cartographer.  
    - **"Paste Your URI"** → enter your own IIIF manifest URI in the input field.  
 
-   ![Import IIIF Manifest](images/IIIF_import.png)  
+   ![Import IIIF Manifest](images/IIIF_Import.png)  
    *Image 2: Import IIIF Manifest dialog*  
 
 3. Click **"Import"** to load the images.  

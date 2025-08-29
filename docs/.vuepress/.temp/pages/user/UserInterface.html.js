@@ -1,5 +1,5 @@
-import comp from "/Users/hizkielalemayehu/Documents/GitHub/Edirom/cartographer-app/docs/.vuepress/.temp/pages/user/UserInterface.html.vue"
-const data = JSON.parse("{\"path\":\"/user/UserInterface.html\",\"title\":\"User Interface\",\"lang\":\"en-US\",\"frontmatter\":{},\"git\":{\"updatedTime\":1756211745000,\"contributors\":[{\"name\":\"Hizkiel\",\"username\":\"Hizkiel\",\"email\":\"hizclick@gmail.com\",\"commits\":1,\"url\":\"https://github.com/Hizkiel\"}],\"changelog\":[{\"hash\":\"f154f171982bcbf31ca935ebf59603fd9f7ba544\",\"time\":1756211745000,\"email\":\"hizclick@gmail.com\",\"author\":\"Hizkiel\",\"message\":\"Remove user documentation directory\"}]},\"filePathRelative\":\"user/UserInterface.md\"}")
+import comp from "/app/docs/.vuepress/.temp/pages/user/UserInterface.html.vue"
+const data = JSON.parse("{\"path\":\"/user/UserInterface.html\",\"title\":\"User Interface\",\"lang\":\"en-US\",\"frontmatter\":{},\"git\":{},\"filePathRelative\":\"user/UserInterface.md\"}")
 export { comp, data }
 
 if (import.meta.webpackHot) {

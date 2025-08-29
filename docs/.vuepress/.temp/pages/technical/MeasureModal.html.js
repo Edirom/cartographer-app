@@ -1,5 +1,5 @@
-import comp from "/Users/hizkielalemayehu/Documents/GitHub/Edirom/cartographer-app/docs/.vuepress/.temp/pages/technical/MeasureModal.html.vue"
-const data = JSON.parse("{\"path\":\"/technical/MeasureModal.html\",\"title\":\"MeasureModal Component\",\"lang\":\"en-US\",\"frontmatter\":{},\"git\":{\"updatedTime\":1756211745000,\"contributors\":[{\"name\":\"Hizkiel\",\"username\":\"Hizkiel\",\"email\":\"hizclick@gmail.com\",\"commits\":2,\"url\":\"https://github.com/Hizkiel\"}],\"changelog\":[{\"hash\":\"f154f171982bcbf31ca935ebf59603fd9f7ba544\",\"time\":1756211745000,\"email\":\"hizclick@gmail.com\",\"author\":\"Hizkiel\",\"message\":\"Remove user documentation directory\"},{\"hash\":\"addcf634062a696867cd389eb76f27f467f4a69a\",\"time\":1747234892000,\"email\":\"hizclick@gmail.com\",\"author\":\"Hizkiel\",\"message\":\"Correcting the impits based on the pr comments\"}]},\"filePathRelative\":\"technical/MeasureModal.md\"}")
+import comp from "/app/docs/.vuepress/.temp/pages/technical/MeasureModal.html.vue"
+const data = JSON.parse("{\"path\":\"/technical/MeasureModal.html\",\"title\":\"MeasureModal Component\",\"lang\":\"en-US\",\"frontmatter\":{},\"git\":{},\"filePathRelative\":\"technical/MeasureModal.md\"}")
 export { comp, data }
 
 if (import.meta.webpackHot) {

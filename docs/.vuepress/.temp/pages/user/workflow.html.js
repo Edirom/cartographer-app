@@ -1,4 +1,4 @@
-import comp from "/Users/hizkielalemayehu/Documents/GitHub/Edirom/cartographer-app/docs/.vuepress/.temp/pages/user/workflow.html.vue"
+import comp from "/app/docs/.vuepress/.temp/pages/user/workflow.html.vue"
 const data = JSON.parse("{\"path\":\"/user/workflow.html\",\"title\":\"Workflow\",\"lang\":\"en-US\",\"frontmatter\":{},\"git\":{},\"filePathRelative\":\"user/workflow.md\"}")
 export { comp, data }
 
