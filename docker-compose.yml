@@ -4,16 +4,19 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.docs
+    # RW so the named volume is populated from the built image
     volumes:
-      - docs_html:/usr/share/nginx/html:ro   # share built site (populated from image)
+      - docs_html:/usr/share/nginx/html
 
   front:
-    build: nginx-ghcred
+    build:
+      context: .    # or "." if your Dockerfile is at repo root
+      dockerfile: Dockerfile
     ports:
-      - 8082:8082
+      - "8082:8082"
     volumes:
-      - ./docker-nginx.conf/docker-nginx.conf:/etc/nginx/conf.d/default.conf
-      - docs_html:/usr/share/nginx/docs:ro   # mount same files under /docs
+      - ./docker-nginx.conf/docker-nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - docs_html:/usr/share/nginx/docs:ro
     environment:
       - CLIENT_ID=${CLIENT_ID}
       - CLIENT_SECRET=${CLIENT_SECRET}
@@ -22,13 +25,14 @@ services:
       - docs
 
   webpack:
-    build: node-ghcred 
+    build:
+      context: ./node-ghcred       # if this is a directory with a Dockerfile
     volumes:
       - ./:/usr/app/
     environment:
       - CLIENT_ID=${CLIENT_ID}
     working_dir: /usr/app/
-    command: "npm run serve -- --port 8082"
+    command: npm run serve -- --port 8082
 
 volumes:
   docs_html:
