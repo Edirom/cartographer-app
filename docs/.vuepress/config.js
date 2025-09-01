@@ -69,9 +69,10 @@ const prefixDe = (items) =>
   JSON.parse(JSON.stringify(items).replaceAll('"/', '"/de/'))
 
 export default defineUserConfig({
+  base: '/docs/',                // <<— set base here (important)
   bundler: viteBundler(),
 
-  // 1) Site locales: controls lang, title (shown in header), description
+  // 1) Site locales
   locales: {
     '/': {
       lang: 'en-US',
@@ -85,7 +86,7 @@ export default defineUserConfig({
     },
   },
 
-  // 2) Theme locales: controls navbar/sidebar per locale
+  // 2) Theme locales
   theme: defaultTheme({
     locales: {
       '/': {
