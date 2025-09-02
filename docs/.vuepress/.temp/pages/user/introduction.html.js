@@ -1,5 +1,5 @@
-import comp from "/app/docs/.vuepress/.temp/pages/user/introduction.html.vue"
-const data = JSON.parse("{\"path\":\"/user/introduction.html\",\"title\":\"Introduction\",\"lang\":\"en-US\",\"frontmatter\":{},\"git\":{},\"filePathRelative\":\"user/introduction.md\"}")
+import comp from "/Users/hizkielalemayehu/Documents/GitHub/Edirom/cartographer-app/docs/.vuepress/.temp/pages/user/introduction.html.vue"
+const data = JSON.parse("{\"path\":\"/user/introduction.html\",\"title\":\"Introduction\",\"lang\":\"en-US\",\"frontmatter\":{},\"git\":{\"updatedTime\":1756211745000,\"contributors\":[{\"name\":\"Hizkiel\",\"username\":\"Hizkiel\",\"email\":\"hizclick@gmail.com\",\"commits\":1,\"url\":\"https://github.com/Hizkiel\"}],\"changelog\":[{\"hash\":\"f154f171982bcbf31ca935ebf59603fd9f7ba544\",\"time\":1756211745000,\"email\":\"hizclick@gmail.com\",\"author\":\"Hizkiel\",\"message\":\"Remove user documentation directory\"}]},\"filePathRelative\":\"user/introduction.md\"}")
 export { comp, data }
 
 if (import.meta.webpackHot) {

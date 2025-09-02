@@ -1,16 +1,38 @@
-FROM node:latest as builder
+# ---- 1) Base build stage ----
+FROM node:20-alpine AS base
+WORKDIR /app
 
-WORKDIR /usr/app
+# Install deps first (better cache)
+COPY package.json package-lock.json* ./
+RUN if [ -f package-lock.json ]; then \
+      npm ci --legacy-peer-deps; \
+    else \
+      npm install --legacy-peer-deps; \
+    fi
+
 COPY . .
-# RUN echo "VUE_APP_CLIENT_ID=$CLIENT_ID" >.env.development.local
-# RUN echo "VUE_APP_CLIENT_SECRET=$CLIENT_SECRET" >.env.development.local
-# RUN echo "VUE_APP_CALL_BACK=$CALL_BACK" >.env.development.local
-RUN npm install --legacy-peer-deps --force && npm run build
 
+# ---- 2) Build frontend ----
+FROM base AS build-app
+RUN npm run build
 
+# ---- 3) Build VuePress docs ----
+FROM base AS build-docs
+RUN npm run docs:build
+
+# ---- 4) Runtime nginx ----
 FROM nginx:alpine
-ENV VUE_APP_PUBLIC_PATH="/"
-WORKDIR /etc/nginx
-COPY 40-create-ghcred.sh /docker-entrypoint.d
-COPY /docker-nginx.conf/docker-nginx.conf /etc/nginx/conf.d/default.conf
-COPY --from=builder /usr/app/dist/ /usr/share/nginx/html
+
+# Create startup script for injecting CLIENT_ID/SECRET into config
+COPY 40-create-ghcred.sh /docker-entrypoint.d/
+RUN chmod +x /docker-entrypoint.d/40-create-ghcred.sh
+
+# Copy built assets
+COPY --from=build-app  /app/dist/                /usr/share/nginx/html/
+COPY --from=build-docs /app/docs/.vuepress/dist /usr/share/nginx/docs/
+
+# Copy external nginx config (you maintain this in repo)
+COPY docker-nginx.conf/docker-nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 8082
+CMD ["nginx", "-g", "daemon off;"]

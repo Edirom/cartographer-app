@@ -1,24 +1,34 @@
 #!/bin/sh
+set -eu
 
-# Set default value for VUE_APP_PUBLIC_PATH if not provided
-# Remove leading and trailing whitespace and slashes from VUE_APP_PUBLIC_PATH
-VUE_APP_PUBLIC_PATH=$(echo $VUE_APP_PUBLIC_PATH | sed 's/^\s*\///;s/\/\s*$//')
+# --- Always create both include files ---
+: > /GH_OAUTH_CLIENT.conf
+: > /APP_PUBLIC_PATH.conf
 
-# Add leading slash only if string is not empty
-if [ "$VUE_APP_PUBLIC_PATH" != "/" ] && [ "$VUE_APP_PUBLIC_PATH" != "" ]; then
-    VUE_APP_PUBLIC_PATH="/$VUE_APP_PUBLIC_PATH"
+# --- OAuth vars for nginx (safe if envs are empty) ---
+cat > /GH_OAUTH_CLIENT.conf <<EOF
+set \$CLIENT_ID "${CLIENT_ID:-}";
+set \$CLIENT_SECRET "${CLIENT_SECRET:-}";
+set \$CALL_BACK "${CALL_BACK:-}";
+EOF
+
+# --- Optional runtime subpath (VUE_APP_PUBLIC_PATH) ---
+RAW="${VUE_APP_PUBLIC_PATH:-}"
+# strip leading/trailing slashes adn spaces
+CLEAN=$(printf '%s' "$RAW" | sed 's#^[[:space:]]*/\{0,1\}##; s#/\{0,1\}[[:space:]]*$##')
+
+if [ -n "$CLEAN" ]; then
+  PUB="/$CLEAN"
+  cat > /APP_PUBLIC_PATH.conf <<EOF
+# Redirect bare path to trailing slash
+location = ${PUB} { return 301 ${PUB}/; }
+
+# Mount at ${PUB}/ but serve from the build base (/myAppPlaceholder/)
+location ^~ ${PUB}/ {
+  rewrite ^${PUB}/(.*)$ /myAppPlaceholder/\$1 break;
+  try_files \$uri \$uri/ /myAppPlaceholder/index.html;
+}
+EOF
+else
+  : > /APP_PUBLIC_PATH.conf
 fi
-
-# Link the Vue.js app to the public path
-ln -s /usr/share/nginx/html /usr/share/nginx/html/"$VUE_APP_PUBLIC_PATH"
-sed -i "s+/myAppPlaceholder+$VUE_APP_PUBLIC_PATH+g" /usr/share/nginx/html/index.html
-sed -i "s+/myAppPlaceholder+$VUE_APP_PUBLIC_PATH+g" /usr/share/nginx/html/js/app.*.js
-
-# Create NGINX configuration from environment variables
-# The @ character is used to prevent envsubst from interpreting NGINX variables
-cat <<EOT | envsubst | tr '@' '$' >/GH_OAUTH_CLIENT.conf
-# Handle CLIENT_ID, CLIENT_SECRET, and CALL_BACK - they can be empty
-set @CLIENT_ID "${CLIENT_ID:-}";
-set @CLIENT_SECRET "${CLIENT_SECRET:-}";
-set @CALL_BACK "${CALL_BACK:-}";
-EOT
