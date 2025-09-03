@@ -1,6 +1,6 @@
 import { createStore } from 'vuex'
 import { iiifManifest2mei, checkIiifManifest, getPageArray } from '@/tools/iiif.js'
-import { meiZone2annotorious, annotorious2meiZone, measureDetector2meiZone, generateMeasure, insertMeasure, addZoneToLastMeasure, deleteZone, setMultiRest, createNewMdiv, moveContentToMdiv, toggleAdditionalZone, addImportedPage } from '@/tools/meiMappings.js'
+import { meiZone2annotorious, annotorious2meiZone, measureDetector2meiZone, generateMeasure, insertMeasure, addZoneToLastMeasure, deleteZone, setMultiRest, createNewMdiv, moveContentToMdiv, toggleAdditionalZone, addImportedPage,getPreviousMeasure } from '@/tools/meiMappings.js'
 
 import { mode as allowedModes } from '@/store/constants.js'
 
@@ -195,6 +195,7 @@ export default createStore({
 
             // add extra zone to last measure that already has one
           } else if (state.mode === allowedModes.additionalZone) {
+            console.log("previous measure is ", getPreviousMeasure(state.currentMeasure)
             const lastMeasureWithZone = [...xmlDoc.querySelectorAll('music measure[facs]')].at(-1)
             if (lastMeasureWithZone !== null) {
               state.currentMdivId = lastMeasureWithZone.closest('mdiv').getAttribute('xml:id')

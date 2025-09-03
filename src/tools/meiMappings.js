@@ -1342,3 +1342,8 @@ export function addImportedPage (xmlDoc, index, url, width, height) {
     newFacs.append(surface)
   }
 }
+
+export function getPreviousMeasure(currentMeasure, xmlDoc){
+
+
+}
