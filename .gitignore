@@ -23,9 +23,9 @@ pnpm-debug.log*
 *.sw?
 
 # VuePress default directories
-.vuepress/.temp
-.vuepress/.cache
-.vuepress/dist
+docs/.vuepress/.temp
+docs/.vuepress/.cache
+docs/.vuepress/dist
 
 #Electron-builder output
 /dist_electron
