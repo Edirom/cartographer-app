@@ -415,7 +415,7 @@ export function updateMdiv(xmlDoc, nodeToMove, state, currentZone, pageIndex, ta
  * @param  {[type]} targetMdiv                the mdiv in which this is supposed to be inserted
  * @return {[type]}             [description]
  */
-export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex, targetMdiv) {
+export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex, targetMdiv,additionalZone) {
   const surfaceIDs = []
   xmlDoc.querySelectorAll('surface').forEach(surface => {
     surfaceIDs.push(surface.getAttribute('xml:id'))
@@ -536,6 +536,7 @@ if (targetMdiv === undefined) {
         below.push(zone)
       }
     })
+
 
     const newIsAbove = above.findIndex(zone => zone.new) !== -1
 
@@ -870,7 +871,7 @@ function getPrecedingZone (xmlDoc, surface) {
  * @param  {[type]} zone                 [description]
  * @return {[type]}        [description]
  */
-function getPrecedingZoneNoMatterWhere (xmlDoc, zone) {
+export function getPrecedingZoneNoMatterWhere (xmlDoc, zone) {
   let precedingZone = null
   let precedingSibling = zone.previousElementSibling
 
@@ -1344,6 +1345,84 @@ export function addImportedPage (xmlDoc, index, url, width, height) {
 }
 
 export function getPreviousMeasure(currentMeasure, xmlDoc){
+  let precedingMeasure = null
+  let precedingSibling = currentMeasure.previousElementSibling
 
+  while (precedingSibling !== null && precedingMeasure === null) {
+    if (precedingMeasure.localName === 'measure') {
+      precedingMeasure = precedingSibling
+    } 
+  }
+  return precedingMeasure
 
+}
+
+/**
+ * Finds the insertion position for a new <zone> element (not yet in MEI) on the given surface.
+ * Returns the preceding and following zone elements by vertical position.
+ *
+ * @param {Document} xmlDoc - The MEI XML document.
+ * @param {Element} newZone - The <zone> element to be inserted.
+ * @param {number} pageIndex - Index of the current page (zero-based).
+ * @returns {Object} - Info about where the zone would be inserted.
+ */
+export function findZoneInsertionPositionForXmlZone(xmlDoc, newZone, pageIndex) {
+
+  const surface = xmlDoc.querySelectorAll('surface')[pageIndex];
+
+  if (!surface) return null;
+
+  const newUly = parseInt(newZone.getAttribute('uly'), 10);
+
+  // Get all zones on this surface, sorted by 'uly'
+  const zones = Array.from(surface.querySelectorAll('zone')).map(zone => ({
+    elem: zone,
+    uly: parseInt(zone.getAttribute('uly'), 10)
+  })).sort((a, b) => a.uly - b.uly);
+
+  let preceding = null, following = null;
+  for (let i = 0; i < zones.length; i++) {
+    if (zones[i].uly > newUly) {
+      following = zones[i].elem;
+      preceding = i > 0 ? zones[i - 2].elem : null;
+      break;
+    }
+  }
+  if (!following && zones.length > 0) {
+    preceding = zones[zones.length - 2].elem;
+  }
+  console.log("line 1392 preceding is ", preceding, " following is ", following)
+  return {
+    precedingZone: preceding,
+    followingZone: following
+  };
+}
+
+export function createAdditionalZone(xmlDoc, state, zone, precedingZone) {
+  // Find the preceding measure by facs reference
+
+  const precedingZoneId = precedingZone.getAttribute('xml:id');
+  const precedingMeasure = [...xmlDoc.querySelectorAll('measure')].find(measure =>
+    measure.hasAttribute('facs') &&
+    measure.getAttribute('facs').split(' ').includes('#' + precedingZoneId)
+);
+  console.log("line 1423 preceding measure is ", precedingMeasure);
+  if (!precedingMeasure) return;
+
+  // Create the new measure
+  const measure = generateMeasure();
+  measure.setAttribute('facs', '#' + precedingMeasure.getAttribute('facs'));
+  measure.setAttribute('n', precedingMeasure.getAttribute('n'));
+  zone.setAttribute('xml:id', precedingMeasure.getAttribute('facs'));
+
+  
+
+  // Find the section to insert into
+  const section = precedingMeasure.closest('section');
+  if (!section) return;
+
+  // Insert the new measure after the preceding measure
+  section.insertBefore(measure, precedingMeasure);
+
+  console.log("line 1430 created additional zone ", xmlDoc, " and measure ", measure);
 }

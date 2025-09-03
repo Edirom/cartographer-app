@@ -1,6 +1,6 @@
 import { createStore } from 'vuex'
 import { iiifManifest2mei, checkIiifManifest, getPageArray } from '@/tools/iiif.js'
-import { meiZone2annotorious, annotorious2meiZone, measureDetector2meiZone, generateMeasure, insertMeasure, addZoneToLastMeasure, deleteZone, setMultiRest, createNewMdiv, moveContentToMdiv, toggleAdditionalZone, addImportedPage,getPreviousMeasure } from '@/tools/meiMappings.js'
+import { meiZone2annotorious, annotorious2meiZone, measureDetector2meiZone, generateMeasure, insertMeasure, deleteZone, setMultiRest, createNewMdiv, moveContentToMdiv, toggleAdditionalZone, addImportedPage, findZoneInsertionPositionForXmlZone, createAdditionalZone } from '@/tools/meiMappings.js'
 
 import { mode as allowedModes } from '@/store/constants.js'
 
@@ -183,38 +183,46 @@ export default createStore({
 
         const zone = annotorious2meiZone(annot)
         surface.appendChild(zone)
-
+        const measure = generateMeasure()
+        measure.setAttribute('facs', '#' + zone.getAttribute('xml:id'))
         if (state.existingMusicMode) {
+
           // standard mode -> add zone to first measure without zone
           if (state.mode === allowedModes.manualRect) {
-            const lastMeasureWithoutZone = xmlDoc.querySelector('music measure:not([facs])')
-            if (lastMeasureWithoutZone !== null) {
-              state.currentMdivId = lastMeasureWithoutZone.closest('mdiv').getAttribute('xml:id')
-              lastMeasureWithoutZone.setAttribute('facs', '#' + zone.getAttribute('xml:id'))
-            }
+            // const lastMeasureWithoutZone = xmlDoc.querySelector('music measure:not([facs])')
+            // if (lastMeasureWithoutZone !== null) {
+            //   state.currentMdivId = lastMeasureWithoutZone.closest('mdiv').getAttribute('xml:id')
+            //   lastMeasureWithoutZone.setAttribute('facs', '#' + zone.getAttribute('xml:id'))
+            // }
 
             // add extra zone to last measure that already has one
-          } else if (state.mode === allowedModes.additionalZone) {
-            console.log("previous measure is ", getPreviousMeasure(state.currentMeasure)
-            const lastMeasureWithZone = [...xmlDoc.querySelectorAll('music measure[facs]')].at(-1)
-            if (lastMeasureWithZone !== null) {
-              state.currentMdivId = lastMeasureWithZone.closest('mdiv').getAttribute('xml:id')
-              lastMeasureWithZone.setAttribute('facs', lastMeasureWithZone.getAttribute('facs') + ' #' + zone.getAttribute('xml:id'))
-            }
+          // } else if (state.mode === allowedModes.additionalZone) {
+          //   console.log("line 198 previous measure is ", getPreviousMeasure(state.currentMeasure, state.xmlDoc))
+          //   const lastMeasureWithZone = [...xmlDoc.querySelectorAll('music measure[facs]')].at(-1)
+          //   if (lastMeasureWithZone !== null) {
+          //     state.currentMdivId = lastMeasureWithZone.closest('mdiv').getAttribute('xml:id')
+          //     lastMeasureWithZone.setAttribute('facs', lastMeasureWithZone.getAttribute('facs') + ' #' + zone.getAttribute('xml:id'))
+          //   }
           }
         } else {
           // standard mode -> create new measure for zone
           if (state.mode === allowedModes.manualRect) {
-            const measure = generateMeasure()
-            measure.setAttribute('facs', '#' + zone.getAttribute('xml:id'))
-            console.log("zone is ", zone)
+           
             insertMeasure(xmlDoc, measure, state, zone, state.currentPage)
 
 
             // add zone to last existing measure in file
           } else if (state.mode === allowedModes.additionalZone && state.selectedZoneId === null) {
-            addZoneToLastMeasure(xmlDoc, zone.getAttribute('xml:id'))
-          }
+            const precedingZone = findZoneInsertionPositionForXmlZone(xmlDoc, zone, state.currentPage).precedingZone
+            console.log("line 221 preceding zone is ", precedingZone)
+            createAdditionalZone(xmlDoc, state, zone, precedingZone)
+
+          //   const lastMeasureWithZone = [...xmlDoc.querySelectorAll('music measure[facs]')].at(-1)
+          //   if (lastMeasureWithZone !== null) {
+          //     state.currentMdivId = lastMeasureWithZone.closest('mdiv').getAttribute('xml:id')
+          //     lastMeasureWithZone.setAttribute('facs', lastMeasureWithZone.getAttribute('facs') + ' #' + zone.getAttribute('xml:id'))
+          //   }
+           }
         }
 
         state.xmlDoc = xmlDoc
