@@ -1,0 +1,98 @@
+<template><div><h1 id="loadgitmodal-component" tabindex="-1"><a class="header-anchor" href="#loadgitmodal-component"><span>LoadGitModal Component</span></a></h1>
+<p>Displays a modal dialog for importing a Git repository path.</p>
+<hr>
+<h2 id="overview" tabindex="-1"><a class="header-anchor" href="#overview"><span>Overview</span></a></h2>
+<p>The <code v-pre>LoadGitModal</code> component:</p>
+<ul>
+<li>Shows a modal dialog for the user to input a Git repository path.</li>
+<li>Allows the user to trigger import actions or cancel the dialog.</li>
+<li>Uses Vuex store for state management and actions.</li>
+<li>(Some directory/branch selection UI is commented out for future use.)</li>
+</ul>
+<hr>
+<h2 id="layout" tabindex="-1"><a class="header-anchor" href="#layout"><span>Layout</span></a></h2>
+<ul>
+<li><strong>Header</strong>: Modal title and close button.</li>
+<li><strong>Body</strong>: Input field for the Git repository path.</li>
+<li><strong>Footer</strong>: Cancel and Import buttons.</li>
+</ul>
+<hr>
+<h2 id="props" tabindex="-1"><a class="header-anchor" href="#props"><span>Props</span></a></h2>
+<p><em>None</em></p>
+<hr>
+<h2 id="data" tabindex="-1"><a class="header-anchor" href="#data"><span>Data</span></a></h2>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>selectedDirectory</td>
+<td>String</td>
+<td>Selected directory (future use)</td>
+</tr>
+<tr>
+<td>inputValue</td>
+<td>String</td>
+<td>Input value (future use)</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="computed-properties" tabindex="-1"><a class="header-anchor" href="#computed-properties"><span>Computed Properties</span></a></h2>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>getRepositorys</td>
+<td>Returns available Git repositories from the store</td>
+</tr>
+<tr>
+<td>getRepository</td>
+<td>Returns the selected Git repository from the store</td>
+</tr>
+<tr>
+<td>gerBranches</td>
+<td>Returns available Git branches from the store</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="methods" tabindex="-1"><a class="header-anchor" href="#methods"><span>Methods</span></a></h2>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>useTestUri</td>
+<td>Sets the input field to a test URI (not used)</td>
+</tr>
+<tr>
+<td>main</td>
+<td>Triggers import action with the given path</td>
+</tr>
+<tr>
+<td>closeModal</td>
+<td>Closes the modal dialog</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="example" tabindex="-1"><a class="header-anchor" href="#example"><span>Example</span></a></h2>
+<div class="language-vue line-numbers-mode" data-highlighter="prismjs" data-ext="vue"><pre v-pre><code><span class="line"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>LoadGitModal</span> <span class="token punctuation">/></span></span></span></code></pre>
+<div class="line-numbers" aria-hidden="true" style="counter-reset:line-number 0"></div></div></div></template>
+
+

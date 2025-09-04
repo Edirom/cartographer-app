@@ -50,6 +50,7 @@ function getDefaultState() {
       currentMdiv: null,
       insertMdivup: false,
       currentMeasure: null,
+      additionMeasure: false,
   }
 }
 
@@ -184,7 +185,6 @@ export default createStore({
         const zone = annotorious2meiZone(annot)
         surface.appendChild(zone)
         const measure = generateMeasure()
-        measure.setAttribute('facs', '#' + zone.getAttribute('xml:id'))
         if (state.existingMusicMode) {
 
           // standard mode -> add zone to first measure without zone
@@ -207,15 +207,13 @@ export default createStore({
         } else {
           // standard mode -> create new measure for zone
           if (state.mode === allowedModes.manualRect) {
-           
+            measure.setAttribute('facs', '#' + zone.getAttribute('xml:id'))
             insertMeasure(xmlDoc, measure, state, zone, state.currentPage)
-
-
             // add zone to last existing measure in file
           } else if (state.mode === allowedModes.additionalZone && state.selectedZoneId === null) {
-            const precedingZone = findZoneInsertionPositionForXmlZone(xmlDoc, zone, state.currentPage).precedingZone
-            console.log("line 221 preceding zone is ", precedingZone)
-            createAdditionalZone(xmlDoc, state, zone, precedingZone)
+            state.additionMeasure = true
+            insertMeasure(xmlDoc, measure, state, zone, state.currentPage)
+            state.additionMeasure = false
 
           //   const lastMeasureWithZone = [...xmlDoc.querySelectorAll('music measure[facs]')].at(-1)
           //   if (lastMeasureWithZone !== null) {
