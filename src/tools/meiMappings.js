@@ -569,13 +569,7 @@ if (targetMdiv === undefined) {
             surface.prepend(newZone)
             const precedingMeasure = getMeasuresFromZone(xmlDoc, precedingZone)[0]
             if(state.additionMeasure === true){
-              console.log("multi measure line 659")
-                const oldFacs = (precedingMeasure.getAttribute('facs') || '').trim();
-                const zoneRef = '#' + newZone.getAttribute('xml:id');
-
-              if (!oldFacs.split(/\s+/).includes(zoneRef)) {
-                precedingMeasure.setAttribute('facs', (oldFacs ? oldFacs + ' ' : '') + zoneRef);
-              }                
+               addZoneToMeasureIfMissing(precedingMeasure, newZone)              
               return
               }else{
                 newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), 1))
@@ -662,12 +656,7 @@ if (targetMdiv === undefined) {
 
                   var multiRest =  previousMultiRests[0].getAttribute('num')
                   if(state.additionMeasure === true){
-                      console.log("multi measure line 659 insertMeasure called with state ", state.additionMeasure)
-                      const oldFacs = (precedingMeasure.getAttribute('facs') || '').trim();
-                      const zoneRef = '#' + newZone.getAttribute('xml:id');
-                      if (!oldFacs.split(/\s+/).includes(zoneRef)) {
-                        precedingMeasure.setAttribute('facs', (oldFacs ? oldFacs + ' ' : '') + zoneRef);
-                      } 
+                      addZoneToMeasureIfMissing(precedingMeasure, newZone)
                       return
                   }else{
                       newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), 1))
@@ -680,11 +669,7 @@ if (targetMdiv === undefined) {
         
                 }else{
                   if(state.additionMeasure === true){
-                    console.log("multi measure line 675")
-                      const oldFacs = (precedingMeasure.getAttribute('facs') || '').trim();
-                          if (!oldFacs.split(/\s+/).includes(zoneRef)) {
-                          precedingMeasure.setAttribute('facs', (oldFacs ? oldFacs + ' ' : '') + zoneRef);
-                        } 
+                      addZoneToMeasureIfMissing(precedingMeasure, newZone)
                       return                  
                   }else{
                       newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), 1))
@@ -707,12 +692,7 @@ if (targetMdiv === undefined) {
             targetMdiv = [...xmlDoc.querySelectorAll('mdiv')].find(mdiv => mdiv.getAttribute('xml:id') === state.currentMdivId)
             const precedingMeasure = targetMdiv.querySelector('measure[facs~="#' + precedingZoneId + '"]')
             if(state.additionMeasure === true){
-             const oldFacs = (precedingMeasure.getAttribute('facs') || '').trim();
-             const zoneRef = '#' + newZone.getAttribute('xml:id');
-
-              if (!oldFacs.split(/\s+/).includes(zoneRef)) {
-                precedingMeasure.setAttribute('facs', (oldFacs ? oldFacs + ' ' : '') + zoneRef);
-              } 
+               addZoneToMeasureIfMissing(precedingMeasure, newZone)
                       return
                   }
                             precedingMeasure.after(newMeasure)
@@ -733,12 +713,8 @@ if (targetMdiv === undefined) {
     
             }else{
                   if(state.additionMeasure === true){
-                    console.log("multi measure line 722")
-                    const oldFacs = (precedingMeasure.getAttribute('facs') || '').trim();
-                    const zoneRef = '#' + newZone.getAttribute('xml:id');
-                    if (!oldFacs.split(/\s+/).includes(zoneRef)) {
-                      precedingMeasure.setAttribute('facs', (oldFacs ? oldFacs + ' ' : '') + zoneRef);
-                    } 
+
+                    addZoneToMeasureIfMissing(precedingMeasure, newZone)
                       return
                   }
                               precedingMeasure.after(newMeasure)
@@ -761,13 +737,7 @@ if (targetMdiv === undefined) {
         const precedingZoneId = above[newIndex - 1].id
         const precedingMeasure = xmlDoc.querySelector('measure[facs~="#' + precedingZoneId + '"]')
                   if(state.additionMeasure === true){
-                    console.log("multi measure line 748")
-                      const oldFacs = (precedingMeasure.getAttribute('facs') || '').trim();
-                      const zoneRef = '#' + newZone.getAttribute('xml:id');
-
-                      if (!oldFacs.split(/\s+/).includes(zoneRef)) {
-                        precedingMeasure.setAttribute('facs', (oldFacs ? oldFacs + ' ' : '') + zoneRef);
-                      } 
+                    addZoneToMeasureIfMissing(precedingMeasure, newZone)
                       return
                   }else if(state.additionMeasure === false){
                       newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), 1))
@@ -1435,4 +1405,19 @@ function addZoneToAllMeasuresWithSameN(xmlDoc, referenceMeasure, zone) {
         m.setAttribute('facs', tokens.join(' '));
       }
     });
+}
+
+export function addZoneToMeasureIfMissing(precedingMeasure, newZone) {
+  if (!precedingMeasure || !newZone) return false;
+
+  const oldFacs = (precedingMeasure.getAttribute('facs') || '').trim();
+  const zoneId = newZone.getAttribute('xml:id');
+  if (!zoneId) return false;
+
+  const zoneRef = '#' + zoneId;
+  if (!oldFacs.split(/\s+/).includes(zoneRef)) {
+    precedingMeasure.setAttribute('facs', (oldFacs ? oldFacs + ' ' : '') + zoneRef);
+    return true; // added
+  }
+  return false; // already present
 }
