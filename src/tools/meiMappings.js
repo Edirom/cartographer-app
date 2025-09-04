@@ -1344,7 +1344,13 @@ export function addImportedPage (xmlDoc, index, url, width, height) {
     newFacs.append(surface)
   }
 }
-
+/**
+ * Returns the value of the 'num' attribute from a <multiRest> element inside a measure.
+ * If no <multiRest> exists or 'num' is not a positive number, returns null.
+ *
+ * @param {Element} precedingMeasure - The <measure> element to check.
+ * @returns {number|null} - The multiRest number or null.
+ */
 function addMultRest(precedingMeasure) {
   const el = precedingMeasure.querySelector('multiRest');
   if (!el) return null;
