@@ -63,22 +63,23 @@ const EN_SIDEBAR = [
   }
 ];
 
+
 export default defineUserConfig({
+  base: '/docs/', // <-- IMPORTANT
   bundler: viteBundler(),
-    locales: {
+  locales: {
     '/': {
       lang: 'en-US',
-      title: 'Cartographer User and Thechnical Documentation',
+      title: 'Cartographer User and Technical Documentation', // fixed typo
       description: 'User and Technical Documentation',
     },
   },
-
   theme: defaultTheme({
     locales: {
       '/': {
         navbar: [
-          { text: 'Home', link: '/' },
-          { text: 'User Docs', link: '/user/' },
+          { text: 'Home', link: '/' },                 // becomes /docs/ at build time
+          { text: 'User Docs', link: '/user/' },       // becomes /docs/user/
           { text: 'Technical Docs', link: '/technical/README.md' },
         ],
         sidebar: EN_SIDEBAR,
