@@ -1,14 +1,7 @@
-#  Cartographer App User Documentation
+#  Cartographer App Documentation
 
 
 ---
 
-The **User Documentation** is designed for people using the Cartographer App to create musica measures.  
-
-It includes step-by-step guides, screenshots, and explanations of the main features, such as:  
-- Installing and configuring the app  
-- Navigating the user interface  
-- Importing and managing pages or images  
-- Using tools such as measurement, mapping, and movements  
-
-Whether you are a new user or an advanced operator, this section will help you get the most out of the Cartographer App.  
+This page provides both user and technical documentation for the Cartographer App.
+It includes instructions on how to use the app, as well as technical documentation for developers who want to extend and customize it.

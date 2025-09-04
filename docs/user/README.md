@@ -4,7 +4,7 @@
 
 ---
 
-The **User Documentation** is designed for people using the Cartographer App to create musica measures.  
+The **User Documentation** is designed for people using the Cartographer App to create musical measures.  
 
 It includes step-by-step guides, screenshots, and explanations of the main features, such as:  
 - Installing and configuring the app  
