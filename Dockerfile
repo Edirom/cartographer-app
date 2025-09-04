@@ -34,5 +34,5 @@ COPY --from=build-docs /app/docs/.vuepress/dist /usr/share/nginx/docs/
 # Copy external nginx config (you maintain this in repo)
 COPY docker-nginx.conf/docker-nginx.conf /etc/nginx/conf.d/default.conf
 
-EXPOSE 8080
+EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]

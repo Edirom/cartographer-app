@@ -4,7 +4,7 @@
     <div class="modal-container">
       <div class="modal-header">
         <a href="#close" class="btn btn-clear float-right" aria-label="Close" @click="closeModal"></a>
-        <div class="modal-title h5">Lode XML</div>
+        <div class="modal-title h5">Load XML</div>
       </div>
       <div class="modal-body">
         <div class="content">

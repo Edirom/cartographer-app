@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: Dockerfile        # your existing nginx front Dockerfile
     ports:
-      - "8080:8080"
+      - "8080:80"
     volumes:
       - ./docker-nginx.conf/docker-nginx.conf:/etc/nginx/conf.d/default.conf:ro
     environment:
@@ -12,13 +12,6 @@ services:
       - CLIENT_SECRET=${CLIENT_SECRET}
     depends_on:
       - webpack
-      - docs
-
-  docs:
-    build:
-      context: .
-    expose:
-      - "80"                        # internal only
 
   webpack:
     build:

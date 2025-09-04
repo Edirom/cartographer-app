@@ -14,7 +14,7 @@
           aria-label="Close"
           @click="closeModal"
         ></a>
-        <div class="modal-title h5">Lode IIIF</div>
+        <div class="modal-title h5">Load IIIF</div>
       </div>
       <div class="modal-body">
         <div class="content">
