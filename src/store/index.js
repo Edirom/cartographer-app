@@ -45,12 +45,12 @@ function getDefaultState() {
       currentMeasureId: null,        // xml:id of the currently selected measure
       infoJson: [],                   // Array of IIIF info.json URLs for canvases
       newFirstMeasure: "",            // The first measure of the old mdiv for selecting a new mdiv
-      oldMdiv : null,
+      oldMdiv : null,                 // The old mdiv that is being moved from  
       selectedMdiv: null,             // The mdiv that is selected in the mdiv modal
-      currentMdiv: null,
-      insertMdivup: false,
-      currentMeasure: null,
-      additionMeasure: false,
+      currentMdiv: null,              // The current mdiv that contains the current measure
+      insertMdivup: false,            // True if the new mdiv is to be inserted before the current mdiv
+      currentMeasure: null,           // The current measure object 
+      additionMeasure: false,         // True if an additional measure is being added (to prevent recursion)
   }
 }
 

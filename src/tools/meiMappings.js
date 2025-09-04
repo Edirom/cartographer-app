@@ -1388,25 +1388,13 @@ export function getPreviousMeasure(currentMeasure, xmlDoc){
   return precedingMeasure
 
 }
-function addZoneToAllMeasuresWithSameN(xmlDoc, referenceMeasure, zone) {
-  const n = referenceMeasure?.getAttribute('n');
-  const zoneId = zone?.getAttribute('xml:id');
-  if (!n || !zoneId) return;
-
-  const zoneRef = '#' + zoneId;
-
-  [...xmlDoc.querySelectorAll('measure')]
-    .filter(m => m.getAttribute('n') === n)
-    .forEach(m => {
-      const facs = (m.getAttribute('facs') || '').trim();
-      const tokens = facs ? facs.split(/\s+/) : [];
-      if (!tokens.includes(zoneRef)) {
-        tokens.push(zoneRef);
-        m.setAttribute('facs', tokens.join(' '));
-      }
-    });
-}
-
+/**
+ * Adds a zone reference to the facs attribute of an existing measure if not already present.
+ * 
+ * @param {Element} precedingMeasure - The <measure> element to update.
+ * @param {Element} newZone - The <zone> element to reference.
+ * @returns {boolean} - True if the zone was added, false if it was already present or invalid input.
+ */
 export function addZoneToExisingMeasure(precedingMeasure, newZone) {
   if (!precedingMeasure || !newZone) return false;
 
