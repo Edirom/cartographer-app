@@ -569,7 +569,7 @@ if (targetMdiv === undefined) {
             surface.prepend(newZone)
             const precedingMeasure = getMeasuresFromZone(xmlDoc, precedingZone)[0]
             if(state.additionMeasure === true){
-               addZoneToMeasureIfMissing(precedingMeasure, newZone)              
+               addZoneToExisingMeasure(precedingMeasure, newZone)              
               return
               }else{
                 newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), 1))
@@ -656,7 +656,7 @@ if (targetMdiv === undefined) {
 
                   var multiRest =  previousMultiRests[0].getAttribute('num')
                   if(state.additionMeasure === true){
-                      addZoneToMeasureIfMissing(precedingMeasure, newZone)
+                      addZoneToExisingMeasure(precedingMeasure, newZone)
                       return
                   }else{
                       newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), 1))
@@ -669,7 +669,7 @@ if (targetMdiv === undefined) {
         
                 }else{
                   if(state.additionMeasure === true){
-                      addZoneToMeasureIfMissing(precedingMeasure, newZone)
+                      addZoneToExisingMeasure(precedingMeasure, newZone)
                       return                  
                   }else{
                       newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), 1))
@@ -692,7 +692,7 @@ if (targetMdiv === undefined) {
             targetMdiv = [...xmlDoc.querySelectorAll('mdiv')].find(mdiv => mdiv.getAttribute('xml:id') === state.currentMdivId)
             const precedingMeasure = targetMdiv.querySelector('measure[facs~="#' + precedingZoneId + '"]')
             if(state.additionMeasure === true){
-               addZoneToMeasureIfMissing(precedingMeasure, newZone)
+               addZoneToExisingMeasure(precedingMeasure, newZone)
                       return
                   }
                             precedingMeasure.after(newMeasure)
@@ -714,7 +714,7 @@ if (targetMdiv === undefined) {
             }else{
                   if(state.additionMeasure === true){
 
-                    addZoneToMeasureIfMissing(precedingMeasure, newZone)
+                    addZoneToExisingMeasure(precedingMeasure, newZone)
                       return
                   }
                               precedingMeasure.after(newMeasure)
@@ -737,7 +737,7 @@ if (targetMdiv === undefined) {
         const precedingZoneId = above[newIndex - 1].id
         const precedingMeasure = xmlDoc.querySelector('measure[facs~="#' + precedingZoneId + '"]')
                   if(state.additionMeasure === true){
-                    addZoneToMeasureIfMissing(precedingMeasure, newZone)
+                    addZoneToExisingMeasure(precedingMeasure, newZone)
                       return
                   }else if(state.additionMeasure === false){
                       newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), 1))
@@ -1407,7 +1407,7 @@ function addZoneToAllMeasuresWithSameN(xmlDoc, referenceMeasure, zone) {
     });
 }
 
-export function addZoneToMeasureIfMissing(precedingMeasure, newZone) {
+export function addZoneToExisingMeasure(precedingMeasure, newZone) {
   if (!precedingMeasure || !newZone) return false;
 
   const oldFacs = (precedingMeasure.getAttribute('facs') || '').trim();
