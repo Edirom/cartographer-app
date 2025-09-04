@@ -280,32 +280,27 @@ export default createStore({
       }
     },
     SET_CURRENT_MEASURE_LABEL(state, val) {
-      if (state.currentMeasureId !== null) {
-        const xmlDoc = state.xmlDoc.cloneNode(true)
-        const mdivs = [...xmlDoc.querySelectorAll('mdiv')]
-        const mdiv = mdivs.find(mdiv => mdiv.getAttribute('xml:id') === state.currentMdivId)
-        const measures = [...mdiv.querySelectorAll('measure')]
-        const measure = measures.find(measure => measure.getAttribute('xml:id') === state.currentMeasureId)
+      if (!state.currentMeasureId) return;
 
-        if (val === null) {
-          measure.removeAttribute('label')
-        } else {
-          measure.setAttribute('label', val)
-        }
-        state.xmlDoc = xmlDoc
+      const xmlDoc = state.xmlDoc.cloneNode(true);
+      const measure = xmlDoc.querySelector(`measure[xml\\:id="${state.currentMeasureId}"]`);
+      if (!measure) return;
+
+      if (val == null || val === '') {
+        measure.removeAttribute('label');
+      } else {
+        measure.setAttribute('label', String(val));
       }
+
+      state.xmlDoc = xmlDoc; // commit the modified clone
     },
     SET_CURRENT_MEASURE_MULTI_REST(state, val) {
       if (state.currentMeasureId !== null) {
-        const xmlDoc = state.xmlDoc.cloneNode(true)
-        const mdivs = [...xmlDoc.querySelectorAll('mdiv')]
-        const mdiv = mdivs.find(mdiv => mdiv.getAttribute('xml:id') === state.currentMdivId)
-        const measures = [...mdiv.querySelectorAll('measure')]
-        const measure = measures.find(measure => measure.getAttribute('xml:id') === state.currentMeasureId)
-
-        setMultiRest(measure, val)
-
-        state.xmlDoc = xmlDoc
+        const xmlDoc = state.xmlDoc.cloneNode(true);
+        const measure = [...xmlDoc.querySelectorAll('measure')]
+          .find(m => m.getAttribute('xml:id') === state.currentMeasureId);
+        if (measure) setMultiRest(measure, val);
+        state.xmlDoc = xmlDoc; // replace state with the modified clone
       }
     },
     SET_PAGE_LABEL(state, { index, val }) {
