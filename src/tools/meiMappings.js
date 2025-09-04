@@ -566,8 +566,10 @@ if (targetMdiv === undefined) {
             // there are zones that can be continued
             surface.prepend(newZone)
             const precedingMeasure = getMeasuresFromZone(xmlDoc, precedingZone)[0]
+            
 
-            newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), 1))
+            newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), addMultRest(precedingMeasure) ?? 1));
+            console.log("multirest test 572")
             precedingMeasure.after(newMeasure)
             const facsId = surface.getAttribute('xml:id');
             const pageNum = surface.getAttribute('n');
@@ -656,7 +658,8 @@ if (targetMdiv === undefined) {
                   precedingMeasure.after(sb)
         
                 }else{
-                  newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), 1))
+                  newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), addMultRest(precedingMeasure) ?? 1));
+                  console.log("multirest test 661")
                   precedingMeasure.after(newMeasure)
                   // create sb, insert after preceding measure
                   const sb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'sb')
@@ -674,25 +677,23 @@ if (targetMdiv === undefined) {
             state.currentMdivId =  mdivArray[mdivArray.length-1].getAttribute("xml:id")
             targetMdiv = [...xmlDoc.querySelectorAll('mdiv')].find(mdiv => mdiv.getAttribute('xml:id') === state.currentMdivId)
             const precedingMeasure = targetMdiv.querySelector('measure[facs~="#' + precedingZoneId + '"]')
-            newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), 1))
+            newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), addMultRest(precedingMeasure) ?? 1));
+            console.log("multirest test 680")
             precedingMeasure.after(newMeasure)
             // create sb, insert after preceding measure
             const sb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'sb')
             precedingMeasure.after(sb)
             if(precedingMeasure.childNodes.length > 0){
-              const previousMultiRests = precedingMeasure.querySelectorAll('multiRest')
-
-              var multiRest =  previousMultiRests[0].getAttribute('num')
-
-             
-              newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), parseInt(multiRest)))
+             newMeasure.setAttribute('n',
+              incrementMeasureNum(precedingMeasure.getAttribute('n'), addMultRest(precedingMeasure) ?? 1));
               precedingMeasure.after(newMeasure)
               // create sb, insert after preceding measure
               const sb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'sb')
               precedingMeasure.after(sb)
     
             }else{
-              newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), 1))
+              newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), addMultRest(precedingMeasure) ?? 1));
+              console.log("multirest test 695")
               precedingMeasure.after(newMeasure)
               // create sb, insert after preceding measure
               const sb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'sb')
@@ -712,7 +713,8 @@ if (targetMdiv === undefined) {
 
         const precedingZoneId = above[newIndex - 1].id
         const precedingMeasure = xmlDoc.querySelector('measure[facs~="#' + precedingZoneId + '"]')
-        newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), 1))
+        newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), addMultRest(precedingMeasure) ?? 1));
+        console.log("multirest test 716 ", addMultRest(precedingMeasure) )
         precedingMeasure.after(newMeasure)
       }
 
@@ -1341,4 +1343,11 @@ export function addImportedPage (xmlDoc, index, url, width, height) {
     xmlDoc.querySelector('music').prepend(newFacs)
     newFacs.append(surface)
   }
+}
+
+function addMultRest(precedingMeasure) {
+  const el = precedingMeasure.querySelector('multiRest');
+  if (!el) return null;
+  const num = parseInt(el.getAttribute('num'), 10);
+  return Number.isFinite(num) && num > 0 ? num : null;
 }
