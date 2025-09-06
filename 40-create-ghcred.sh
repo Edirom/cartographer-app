@@ -1,34 +1,57 @@
+
 #!/bin/sh
-set -eu
+set -e
 
-# --- Always create both include files ---
-: > /GH_OAUTH_CLIENT.conf
-: > /APP_PUBLIC_PATH.conf
+# Accept empty = root
+VUE_APP_PUBLIC_PATH="${VUE_APP_PUBLIC_PATH:-}"
 
-# --- OAuth vars for nginx (safe if envs are empty) ---
-cat > /GH_OAUTH_CLIENT.conf <<EOF
-set \$CLIENT_ID "${CLIENT_ID:-}";
-set \$CLIENT_SECRET "${CLIENT_SECRET:-}";
-set \$CALL_BACK "${CALL_BACK:-}";
-EOF
+# Normalize: allow "", "/" (root) or "/subpath"
+case "$VUE_APP_PUBLIC_PATH" in
+  ""|"/") NORMALIZED_PATH="" ;;   # empty or "/" means root
+  /*)     NORMALIZED_PATH="$VUE_APP_PUBLIC_PATH" ;;  # already starts with /
+  *)      NORMALIZED_PATH="/$VUE_APP_PUBLIC_PATH" ;; # prepend /
+esac
 
-# --- Optional runtime subpath (VUE_APP_PUBLIC_PATH) ---
-RAW="${VUE_APP_PUBLIC_PATH:-}"
-# strip leading/trailing slashes adn spaces
-CLEAN=$(printf '%s' "$RAW" | sed 's#^[[:space:]]*/\{0,1\}##; s#/\{0,1\}[[:space:]]*$##')
+echo "Using VUE_APP_PUBLIC_PATH='${VUE_APP_PUBLIC_PATH}' (normalized='${NORMALIZED_PATH}')"
 
-if [ -n "$CLEAN" ]; then
-  PUB="/$CLEAN"
-  cat > /APP_PUBLIC_PATH.conf <<EOF
-# Redirect bare path to trailing slash
-location = ${PUB} { return 301 ${PUB}/; }
+# Runtime value for replacing placeholders in built files
+RUNTIME_PUBLIC_PATH="${NORMALIZED_PATH:-/}"
 
-# Mount at ${PUB}/ but serve from the build base (/myAppPlaceholder/)
-location ^~ ${PUB}/ {
-  rewrite ^${PUB}/(.*)$ /myAppPlaceholder/\$1 break;
-  try_files \$uri \$uri/ /myAppPlaceholder/index.html;
-}
-EOF
-else
-  : > /APP_PUBLIC_PATH.conf
+# Create symlink for subpath so /demo works by pointing to /
+if [ -n "$NORMALIZED_PATH" ]; then
+  ln -snf /usr/share/nginx/html "/usr/share/nginx/html$NORMALIZED_PATH"
 fi
+
+# Flag for nginx logic
+HAS_SUBPATH=0
+[ -n "$NORMALIZED_PATH" ] && HAS_SUBPATH=1
+
+# ---- Write Nginx variables to config ----
+PP="$NORMALIZED_PATH"
+if [ -z "$PP" ]; then
+  PP='""'  # explicit empty for nginx set
+fi
+
+cat > /GH_OAUTH_CLIENT.conf <<EOT
+set \$PUBLIC_PATH $PP;
+set \$HAS_SUBPATH $HAS_SUBPATH;
+EOT
+
+# ---- Replace placeholders in built files ----
+PLACEHOLDER="/myAppPlaceholder"
+RP="${RUNTIME_PUBLIC_PATH}"   # "/" or "/subpath"
+RP_DIR="${RP%/}/"             # ensures single trailing slash
+
+find /usr/share/nginx/html \
+  -type f \( -name "*.html" -o -name "*.js" -o -name "*.css" \) -print0 \
+| while IFS= read -r -d '' f; do
+  # Replace "/myAppPlaceholder/" first
+  sed -i "s|${PLACEHOLDER}/|${RP_DIR}|g" "$f"
+  # Replace remaining "/myAppPlaceholder"
+  sed -i "s|${PLACEHOLDER}|${RP}|g" "$f"
+  # Fix accidental double slashes
+  sed -i 's|src="//|src="/|g'   "$f"
+  sed -i 's|href="//|href="/|g' "$f"
+  sed -i 's|url(//|url(/|g'     "$f"
+done
+

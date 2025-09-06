@@ -1,25 +1,22 @@
-#  Setup Guide
+# Cartographer App
 
----
+The Cartographer App is used to provide placement information of zones of interest
+in (historical) documents. The first and foremost use case is the identification
+of bounding boxes of measures in music documents. It is a successor of the
+*Vertaktoid*, but other than that uses web technology and is thus platform
+independent. It optionally uses the *Measure Detector* for automatic recognition
+of measure positions, but allows manual correction of these results.
 
-## Important Tools and Their Documentation
 
-- **Vectre**: a VueJS version of Spectre CSS  
-  👉 [Vectre Documentation](https://vectrejs.github.io/docs/#/pages/getting-started)
+## Important Tools and their Documentation
 
-- **OpenSeadragon**  
-  👉 [OpenSeadragon Site](http://openseadragon.github.io/)
+* Vectre, which is a VueJS version of Spectre CSS. See https://vectrejs.github.io/docs/#/pages/getting-started
+* OpenSeadragon. See http://openseadragon.github.io/
+* Annotorious OpenSeadragon Plugin. See https://recogito.github.io/annotorious/getting-started/osd-plugin/
 
-- **Annotorious OpenSeadragon Plugin**  
-  👉 [Annotorious OSD Plugin](https://recogito.github.io/annotorious/getting-started/osd-plugin/)
 
----
-
-## Project Setup
-
-Install dependencies:
-
-```bash
+## Project setup
+```
 npm install
 ```
 
@@ -51,21 +48,19 @@ npm run test:lint
 ### Customize configuration
 See [Configuration Reference](https://cli.vuejs.org/config/).
 
-
-### Deploying to a subdirectory
-In compile stage 
+### Biuld your image 
+Replace **`cartographer`** with your preferred image name.
 ```
-docker build \
-dockercontainer
+docker build -t cartographer .
+
 ```
 
 ### Run 
+
+Replace **demo** with your desired subpath.
+
+Replace **cartographer** with the image name you used when building.
 ```
- docker run \
--e CLIENT_ID="your client id" \
--e CLIENT_SECRET= "your client secret"\
--e CALL_BACK= "your call back" \
--e VUE_APP_CALL_BACK=$CALL_BACK \
--e VUE_APP_PUBLIC_PATH="your subpath"
-dockercontainer
+docker run --rm -p 8080:80 -e VUE_APP_PUBLIC_PATH=/demo cartographer
 ```
+

@@ -1,8 +1,8 @@
-// .vuepress/config.js
 import { defineUserConfig } from "vuepress";
 import { viteBundler } from "@vuepress/bundler-vite";
 import { defaultTheme } from "@vuepress/theme-default";
 
+// Sidebar configuration
 const EN_SIDEBAR = [
   {
     text: "User Documentation",
@@ -63,22 +63,24 @@ const EN_SIDEBAR = [
   }
 ];
 
-
 export default defineUserConfig({
-  base: '/docs/', // <-- IMPORTANT
+  base: '/myAppPlaceholder/docs/',
+
   bundler: viteBundler(),
+
   locales: {
     '/': {
       lang: 'en-US',
-      title: 'Cartographer User and Technical Documentation', // fixed typo
+      title: 'Cartographer User and Technical Documentation',
       description: 'User and Technical Documentation',
     },
   },
+
   theme: defaultTheme({
     locales: {
       '/': {
         navbar: [
-          { text: 'Home', link: '/' },                 // becomes /docs/ at build time
+          { text: 'Home', link: '/' },                 // becomes /docs/ at build time, then replaced dynamically
           { text: 'User Docs', link: '/user/' },       // becomes /docs/user/
           { text: 'Technical Docs', link: '/technical/README.md' },
         ],

@@ -48,23 +48,20 @@ npm run test:lint
 ### Customize configuration
 See [Configuration Reference](https://cli.vuejs.org/config/).
 
-
-### Deploying to a subdirectory
-In compile stage 
+### Biuld your image 
+Replace **`cartographer`** with your preferred image name.
 ```
-docker build \
-dockercontainer
+docker build -t cartographer .
+
 ```
 
 ### Run 
+
+Replace **demo** with your desired subpath.
+
+Replace **cartographer** with the image name you used when building.
 ```
- docker run \
--e CLIENT_ID="your client id" \
--e CLIENT_SECRET= "your client secret"\
--e CALL_BACK= "your call back" \
--e VUE_APP_CALL_BACK=$CALL_BACK \
--e VUE_APP_PUBLIC_PATH="your subpath"
-dockercontainer
+docker run --rm -p 8080:80 -e VUE_APP_PUBLIC_PATH=/demo cartographer
 ```
 
 
