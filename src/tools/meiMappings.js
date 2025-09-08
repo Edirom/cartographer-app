@@ -594,7 +594,6 @@ if (targetMdiv === undefined) {
     else {
             // this is the first zone for the whole document
             if (relativeWhere === 'before' && relativeTo !== null) {
-              console.log("the first zone of the whole document ", state.additionMeasure)
               newMeasure.setAttribute('n', 1)
               const pb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'pb')
               pb.setAttribute('facs', '#' + surface.getAttribute('xml:id'))
@@ -1319,7 +1318,6 @@ export function moveContentToMdiv (xmlDoc, firstMeasureId, targetMdivId, state )
     const zones = getZonesFromMeasure(xmlDoc, firstMeasure)
     const surfaceId = zones[0].closest('surface').getAttribute('xml:id')
     const pageIndex = state.pages.findIndex(page => page.id === surfaceId)
-    console.log("zones are ", zones)
     console.log("pageIndex is ", pageIndex)
     console.log("surdace id is ", surfaceId)
     console.log("following measures ", followingMeasures)
