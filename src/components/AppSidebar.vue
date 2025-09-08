@@ -183,17 +183,19 @@ export default {
     },
     activateMode: function (mode) {
       if (mode in allowedModes) {
-        if (mode === allowedModes.additionalZone && mode === this.mode) {
-          this.$store.dispatch('setMode', allowedModes.manualRect)
-        } else {
-          this.$store.dispatch('setMode', mode)
-        }
-        if (mode === allowedModes.deletion) {
-          this.$store.dispatch('setMode', mode)
-        }
-        if (mode === allowedModes.login) {
-          this.$store.dispatch('setMode', mode)
-        }
+        this.$store.dispatch('setMode', mode)
+        // if (mode === allowedModes.additionalZone && mode === this.mode) {
+        //   // console.log("Additional zone")
+        //   // this.$store.dispatch('setMode', allowedModes.manualRect)
+        // } else {
+        //   this.$store.dispatch('setMode', mode)
+        // }
+        // if (mode === allowedModes.deletion) {
+        //   this.$store.dispatch('setMode', mode)
+        // }
+        // if (mode === allowedModes.login) {
+        //   this.$store.dispatch('setMode', mode)
+        // }
       } else {
         console.error('mode ' + mode + ' is not known. Please check AppSidebar.vue and @/store/index.js.')
       }

@@ -1,6 +1,6 @@
 import { createStore } from 'vuex'
 import { iiifManifest2mei, checkIiifManifest, getPageArray } from '@/tools/iiif.js'
-import { meiZone2annotorious, annotorious2meiZone, measureDetector2meiZone, generateMeasure, insertMeasure, addZoneToLastMeasure, deleteZone, setMultiRest, createNewMdiv, moveContentToMdiv, toggleAdditionalZone, addImportedPage } from '@/tools/meiMappings.js'
+import { meiZone2annotorious, annotorious2meiZone, measureDetector2meiZone, generateMeasure, insertMeasure, deleteZone, setMultiRest, createNewMdiv, moveContentToMdiv, toggleAdditionalZone, addImportedPage, findZoneInsertionPositionForXmlZone, createAdditionalZone } from '@/tools/meiMappings.js'
 
 import { mode as allowedModes } from '@/store/constants.js'
 
@@ -45,11 +45,12 @@ function getDefaultState() {
       currentMeasureId: null,        // xml:id of the currently selected measure
       infoJson: [],                   // Array of IIIF info.json URLs for canvases
       newFirstMeasure: "",            // The first measure of the old mdiv for selecting a new mdiv
-      oldMdiv : null,
+      oldMdiv : null,                 // The old mdiv that is being moved from  
       selectedMdiv: null,             // The mdiv that is selected in the mdiv modal
-      currentMdiv: null,
-      insertMdivup: false,
-      currentMeasure: null,
+      currentMdiv: null,              // The current mdiv that contains the current measure
+      insertMdivup: false,            // True if the new mdiv is to be inserted before the current mdiv
+      currentMeasure: null,           // The current measure object 
+      additionMeasure: false,         // True if an additional measure is being added (to prevent recursion)
   }
 }
 
@@ -183,8 +184,9 @@ export default createStore({
 
         const zone = annotorious2meiZone(annot)
         surface.appendChild(zone)
-
+        const measure = generateMeasure()
         if (state.existingMusicMode) {
+
           // standard mode -> add zone to first measure without zone
           if (state.mode === allowedModes.manualRect) {
             const lastMeasureWithoutZone = xmlDoc.querySelector('music measure:not([facs])')
@@ -192,32 +194,26 @@ export default createStore({
               state.currentMdivId = lastMeasureWithoutZone.closest('mdiv').getAttribute('xml:id')
               lastMeasureWithoutZone.setAttribute('facs', '#' + zone.getAttribute('xml:id'))
             }
-
-            // add extra zone to last measure that already has one
           } else if (state.mode === allowedModes.additionalZone) {
-            const lastMeasureWithZone = [...xmlDoc.querySelectorAll('music measure[facs]')].at(-1)
-            if (lastMeasureWithZone !== null) {
-              state.currentMdivId = lastMeasureWithZone.closest('mdiv').getAttribute('xml:id')
-              lastMeasureWithZone.setAttribute('facs', lastMeasureWithZone.getAttribute('facs') + ' #' + zone.getAttribute('xml:id'))
-            }
+            state.additionMeasure = true
+            insertMeasure(xmlDoc, measure, state, zone, state.currentPage)
+            state.additionMeasure = false
           }
         } else {
           // standard mode -> create new measure for zone
           if (state.mode === allowedModes.manualRect) {
-            const measure = generateMeasure()
             measure.setAttribute('facs', '#' + zone.getAttribute('xml:id'))
-            console.log("zone is ", zone)
             insertMeasure(xmlDoc, measure, state, zone, state.currentPage)
-
-
             // add zone to last existing measure in file
           } else if (state.mode === allowedModes.additionalZone && state.selectedZoneId === null) {
-            addZoneToLastMeasure(xmlDoc, zone.getAttribute('xml:id'))
-          }
+            state.additionMeasure = true
+            insertMeasure(xmlDoc, measure, state, zone, state.currentPage)
+            state.additionMeasure = false
+           }
         }
 
         state.xmlDoc = xmlDoc
-        // console.log(state.xmlDoc)
+        
       }
     },
     CREATE_ZONES_FROM_MEASURE_DETECTOR_ON_PAGE(state, { rects, pageIndex }) {
