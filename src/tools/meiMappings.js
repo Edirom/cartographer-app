@@ -569,7 +569,6 @@ if (targetMdiv === undefined) {
             
 
             newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), addMultRest(precedingMeasure) ?? 1));
-            console.log("multirest test 572")
             precedingMeasure.after(newMeasure)
             const facsId = surface.getAttribute('xml:id');
             const pageNum = surface.getAttribute('n');
@@ -659,7 +658,6 @@ if (targetMdiv === undefined) {
         
                 }else{
                   newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), addMultRest(precedingMeasure) ?? 1));
-                  console.log("multirest test 661")
                   precedingMeasure.after(newMeasure)
                   // create sb, insert after preceding measure
                   const sb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'sb')
@@ -678,7 +676,6 @@ if (targetMdiv === undefined) {
             targetMdiv = [...xmlDoc.querySelectorAll('mdiv')].find(mdiv => mdiv.getAttribute('xml:id') === state.currentMdivId)
             const precedingMeasure = targetMdiv.querySelector('measure[facs~="#' + precedingZoneId + '"]')
             newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), addMultRest(precedingMeasure) ?? 1));
-            console.log("multirest test 680")
             precedingMeasure.after(newMeasure)
             // create sb, insert after preceding measure
             const sb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'sb')
@@ -693,7 +690,6 @@ if (targetMdiv === undefined) {
     
             }else{
               newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), addMultRest(precedingMeasure) ?? 1));
-              console.log("multirest test 695")
               precedingMeasure.after(newMeasure)
               // create sb, insert after preceding measure
               const sb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'sb')
@@ -714,7 +710,6 @@ if (targetMdiv === undefined) {
         const precedingZoneId = above[newIndex - 1].id
         const precedingMeasure = xmlDoc.querySelector('measure[facs~="#' + precedingZoneId + '"]')
         newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), addMultRest(precedingMeasure) ?? 1));
-        console.log("multirest test 716 ", addMultRest(precedingMeasure) )
         precedingMeasure.after(newMeasure)
       }
 
