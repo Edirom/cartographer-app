@@ -561,14 +561,13 @@ export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex, t
             // there are zones that can be continued
             surface.prepend(newZone)
             const precedingMeasure = getMeasuresFromZone(xmlDoc, precedingZone)[0]
-
-            // A) decision
+           
             if (state.additionMeasure === true) {
-              addZoneToExisingMeasure(precedingMeasure, newZone)
-              return
+              addZoneToExisingMeasure(precedingMeasure, newZone);
+              return;
             } else {
-              const step = addMultRest(precedingMeasure) ?? 1
-              newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), step))
+              const step = addMultRest(precedingMeasure) ?? 1;
+              newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), step));
             }
 
             precedingMeasure.after(newMeasure)
@@ -1299,7 +1298,6 @@ export function moveContentToMdiv (xmlDoc, firstMeasureId, targetMdivId, state )
     const zones = getZonesFromMeasure(xmlDoc, firstMeasure)
     const surfaceId = zones[0].closest('surface').getAttribute('xml:id')
     const pageIndex = state.pages.findIndex(page => page.id === surfaceId)
-
     insertMeasure(xmlDoc, firstMeasure, state, zones[0], pageIndex, mdiv)
 
     followingMeasures.forEach(measure => {
@@ -1348,9 +1346,6 @@ export function addImportedPage (xmlDoc, index, url, width, height) {
   }
 }
 
-/* =========================
-   Helpers to keep both behaviors
-   ========================= */
 
 export function getPreviousMeasure(currentMeasure, xmlDoc){
   let precedingMeasure = currentMeasure?.previousElementSibling || null
