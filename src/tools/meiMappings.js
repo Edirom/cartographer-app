@@ -560,8 +560,7 @@ export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex, t
           if (precedingZone !== null) {
             // there are zones that can be continued
             surface.prepend(newZone)
-            const precedingMeasure = getMeasuresFromZone(xmlDoc, precedingZone)[0]
-           
+            const precedingMeasure = getMeasuresFromZone(xmlDoc, precedingZone)[0]           
             if (state.additionMeasure === true) {
               addZoneToExisingMeasure(precedingMeasure, newZone);
               return;
@@ -569,7 +568,6 @@ export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex, t
               const step = addMultRest(precedingMeasure) ?? 1;
               newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), step));
             }
-
             precedingMeasure.after(newMeasure)
             const facsId = surface.getAttribute('xml:id');
             const pageNum = surface.getAttribute('n');
@@ -647,7 +645,6 @@ export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex, t
                   const step = addMultRest(precedingMeasure) ?? 1
                   newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), step))
                 }
-
                 precedingMeasure.after(newMeasure)
                 // create sb, insert after preceding measure
                 const sb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'sb')
@@ -678,8 +675,6 @@ export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex, t
             state.currentMdivId =  mdivArray[mdivArray.length-1].getAttribute("xml:id")
             targetMdiv = [...xmlDoc.querySelectorAll('mdiv')].find(mdiv => mdiv.getAttribute('xml:id') === state.currentMdivId)
             const precedingMeasure = targetMdiv.querySelector('measure[facs~="#' + precedingZoneId + '"]')
-
-            // C) decision
             if (state.additionMeasure === true) {
               addZoneToExisingMeasure(precedingMeasure, newZone)
               return
@@ -687,12 +682,10 @@ export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex, t
               const step = addMultRest(precedingMeasure) ?? 1
               newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), step))
             }
-
             precedingMeasure.after(newMeasure)
             // create sb, insert after preceding measure
             const sb = document.createElementNS('http://www.music-encoding.org/ns/mei', 'sb')
             precedingMeasure.after(sb)
-
             if (precedingMeasure.childNodes.length > 0) {
               const step = addMultRest(precedingMeasure) ?? 1
               newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), step))
@@ -726,8 +719,6 @@ export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex, t
 
         const precedingZoneId = above[newIndex - 1].id
         const precedingMeasure = xmlDoc.querySelector('measure[facs~="#' + precedingZoneId + '"]')
-
-        // D) decision
         if (state.additionMeasure === true) {
           addZoneToExisingMeasure(precedingMeasure, newZone)
           return
@@ -735,7 +726,6 @@ export function insertMeasure (xmlDoc, measure, state, currentZone, pageIndex, t
           const step = addMultRest(precedingMeasure) ?? 1
           newMeasure.setAttribute('n', incrementMeasureNum(precedingMeasure.getAttribute('n'), step))
         }
-
         precedingMeasure.after(newMeasure)
       }
 
@@ -1345,8 +1335,6 @@ export function addImportedPage (xmlDoc, index, url, width, height) {
     newFacs.append(surface)
   }
 }
-
-
 export function getPreviousMeasure(currentMeasure, xmlDoc){
   let precedingMeasure = currentMeasure?.previousElementSibling || null
   while (precedingMeasure) {
