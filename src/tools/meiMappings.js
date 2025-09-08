@@ -743,7 +743,6 @@ if (targetMdiv === undefined) {
       })
     } else {
       // Optionally handle the first-in-system case here, or do nothing
-      console.log('This measure is the first in the system; skipping insertIntoRightSystem.')
     }
 
 }
@@ -764,9 +763,6 @@ export function getFollowingMeasuresByMeasure(measure) {
     }
 
     const next = elem.nextElementSibling
-    console.log('looking for ' + name + ' after ', elem)
-    console.log('next is ', next)
-
     if (next === null) {
       if (name === 'measure') {
         const nextSection = getNextSection(elem)
@@ -790,7 +786,6 @@ export function getFollowingMeasuresByMeasure(measure) {
     }
 
  if(elem.tagName === 'sb'){
-      console.log("line 700 next is ", next, " and name is ", name, ' previious element is ', elem.previousElementSibling)
     } 
   }
 
@@ -1218,28 +1213,22 @@ export function setMultiRest (measure, val) {
  */
 export function moveContentToMdiv (xmlDoc, firstMeasureId, targetMdivId, state ) {
   const firstMeasure = [...xmlDoc.querySelectorAll('measure')].find(measure => measure.getAttribute('xml:id') === firstMeasureId)
-  console.log("line 1040 first measure is ", firstMeasure, " target mdiv is ", [...xmlDoc.querySelectorAll('mdiv')].find(mdiv => mdiv.getAttribute('xml:id') === targetMdivId))
   const precedingSibling = firstMeasure.previousElementSibling
   let firstNode
   
   if(state.selectedMdiv != null){
-    console.log("line 1175 ", state.selectedMdiv)
     updateMdiv(xmlDoc, firstMeasure, state, "", "", state.selectedMdiv)
     return 
   }
   if (precedingSibling === null) {
-    console.log("mdiv case 1")
     firstNode = firstMeasure
   } else if (precedingSibling.localName === 'pb') {
     firstNode = firstMeasure
-    console.log("mdiv case 2")
 
   } else if (precedingSibling.localName === 'sb') {
     firstNode = firstMeasure
-    console.log("mdiv case 3")
   } else {
     firstNode = firstMeasure
-    console.log("mdiv case 4")
   }
 
   const elements = [firstNode]
@@ -1249,14 +1238,11 @@ export function moveContentToMdiv (xmlDoc, firstMeasureId, targetMdivId, state )
     elements.push(nextSibling)
     nextSibling = nextSibling.nextElementSibling
   }
-  console.log("line 1046 selected mdiv is ", targetMdivId)
 
   const mdiv = [...xmlDoc.querySelectorAll('mdiv')].find(mdiv => mdiv.getAttribute('xml:id') === targetMdivId)
   const existingMeasures = [...mdiv.querySelectorAll('measure')]
-  console.log("line 1050 new mdiv is  ", mdiv)
 
   if (existingMeasures.length === 0) {
-    console.log("mdiv case 5")
     // TODO: We need to identify if that position is correct
     const section = [...mdiv.querySelectorAll('section')].at(-1)
 
@@ -1276,25 +1262,15 @@ export function moveContentToMdiv (xmlDoc, firstMeasureId, targetMdivId, state )
       section.appendChild(element)
     })
   } else {
-    console.log("mdiv case 6")
 
     const followingMeasures = getFollowingMeasuresByMeasure(firstMeasure)
 
     const zones = getZonesFromMeasure(xmlDoc, firstMeasure)
     const surfaceId = zones[0].closest('surface').getAttribute('xml:id')
     const pageIndex = state.pages.findIndex(page => page.id === surfaceId)
-    console.log("zones are ", zones)
-    console.log("pageIndex is ", pageIndex)
-    console.log("surdace id is ", surfaceId)
-    console.log("following measures ", followingMeasures)
-
-    
-
     insertMeasure(xmlDoc, firstMeasure, state, zones[0], pageIndex, mdiv)
 
     followingMeasures.forEach(measure => {
-      console.log("line 1143 inserting measure ", measure)
-
       const zones = getZonesFromMeasure(xmlDoc, measure)
       const surfaceId = zones[0].closest('surface').getAttribute('xml:id')
       const pageIndex = state.pages.findIndex(page => page.id === surfaceId)
