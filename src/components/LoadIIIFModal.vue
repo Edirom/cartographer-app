@@ -63,6 +63,7 @@ export default {
       if (input.validity.valid) {
         this.$store.dispatch('importIIIF', input.value)
         this.closeModal()
+        this.$store.dispatch('resetAll')
       }
     },
     closeModal: function () {
