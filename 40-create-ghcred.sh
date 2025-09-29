@@ -1,4 +1,3 @@
-
 #!/bin/sh
 set -e
 
@@ -26,11 +25,9 @@ fi
 HAS_SUBPATH=0
 [ -n "$NORMALIZED_PATH" ] && HAS_SUBPATH=1
 
-# ---- Write Nginx variables to config ----
+# Write variables for nginx to include
 PP="$NORMALIZED_PATH"
-if [ -z "$PP" ]; then
-  PP='""'  # explicit empty for nginx set
-fi
+[ -z "$PP" ] && PP='""'  # explicit empty for nginx set
 
 cat > /GH_OAUTH_CLIENT.conf <<EOT
 set \$PUBLIC_PATH $PP;
@@ -45,13 +42,9 @@ RP_DIR="${RP%/}/"             # ensures single trailing slash
 find /usr/share/nginx/html \
   -type f \( -name "*.html" -o -name "*.js" -o -name "*.css" \) -print0 \
 | while IFS= read -r -d '' f; do
-  # Replace "/myAppPlaceholder/" first
   sed -i "s|${PLACEHOLDER}/|${RP_DIR}|g" "$f"
-  # Replace remaining "/myAppPlaceholder"
   sed -i "s|${PLACEHOLDER}|${RP}|g" "$f"
-  # Fix accidental double slashes
   sed -i 's|src="//|src="/|g'   "$f"
   sed -i 's|href="//|href="/|g' "$f"
   sed -i 's|url(//|url(/|g'     "$f"
 done
-
