@@ -30,3 +30,6 @@ pnpm-debug.log*
 #Electron-builder output
 /dist_electron
 .env
+
+# Ignore processed config files
+docs/.vuepress/config.js.*
