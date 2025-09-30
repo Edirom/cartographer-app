@@ -38,7 +38,4 @@ RUN chmod +x /docker-entrypoint.d/40-create-ghcred.sh
 COPY --from=build-app  /app/dist/                 /usr/share/nginx/html/
 COPY --from=build-docs /app/docs/.vuepress/dist/  /usr/share/nginx/html/docs/
 
-# Healthcheck
-HEALTHCHECK --interval=30s --timeout=3s --retries=3 CMD wget -qO- http://127.0.0.1/ || exit 1
-
 EXPOSE 80
