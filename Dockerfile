@@ -1,16 +1,41 @@
-FROM node:latest as builder
+# ---- 1) Base build stage ----
+FROM node:20-alpine AS base
+WORKDIR /app
 
-WORKDIR /usr/app
+# Install deps first (cache-friendly)
+COPY package.json package-lock.json* ./
+RUN if [ -f package-lock.json ]; then \
+      npm ci --legacy-peer-deps; \
+    else \
+      npm install --legacy-peer-deps; \
+    fi
+
+# Bring in the full source (SPA + docs)
 COPY . .
-# RUN echo "VUE_APP_CLIENT_ID=$CLIENT_ID" >.env.development.local
-# RUN echo "VUE_APP_CLIENT_SECRET=$CLIENT_SECRET" >.env.development.local
-# RUN echo "VUE_APP_CALL_BACK=$CALL_BACK" >.env.development.local
-RUN npm install --legacy-peer-deps --force && npm run build
 
+# ---- 2) Build frontend (SPA) ----
+FROM base AS build-app
+RUN npm run build
 
+# ---- 3) Build VuePress docs ----
+FROM base AS build-docs
+RUN npm run docs:build
+
+# ---- 4) Runtime: Nginx ----
 FROM nginx:alpine
+
+# Default public path; can be overridden at runtime
 ENV VUE_APP_PUBLIC_PATH="/"
-WORKDIR /etc/nginx
-COPY 40-create-ghcred.sh /docker-entrypoint.d
-COPY ngnix.conf /etc/nginx/conf.d/default.conf
-COPY --from=builder /usr/app/dist/ /usr/share/nginx/html
+
+# Copy final single-file nginx.conf
+COPY nginx.conf /etc/nginx/nginx.conf
+
+# Add startup script to inject runtime config and symlink
+COPY 40-create-ghcred.sh /docker-entrypoint.d/40-create-ghcred.sh
+RUN chmod +x /docker-entrypoint.d/40-create-ghcred.sh
+
+# Copy built files into container
+COPY --from=build-app  /app/dist/                 /usr/share/nginx/html/
+COPY --from=build-docs /app/docs/.vuepress/dist/  /usr/share/nginx/html/docs/
+
+EXPOSE 80

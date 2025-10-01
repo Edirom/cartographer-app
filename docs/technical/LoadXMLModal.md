@@ -17,7 +17,7 @@ The `LoadXMLModal` component:
 
 ## Layout
 
-- **Header**: Modal title ("Lade IIIF") and close button.
+- **Header**: Modal title ("Load IIIF") and close button.
 - **Body**:
   - Input field for IIIF manifest URL.
   - Description of the import process.

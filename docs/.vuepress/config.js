@@ -1,53 +1,91 @@
-import { defineUserConfig } from 'vuepress'
-import { viteBundler } from '@vuepress/bundler-vite'
-import { defaultTheme } from '@vuepress/theme-default'
+import { defineUserConfig } from "vuepress";
+import { viteBundler } from "@vuepress/bundler-vite";
+import { defaultTheme } from "@vuepress/theme-default";
+
+// Sidebar configuration
+const EN_SIDEBAR = [
+  {
+    text: "User Documentation",
+    collapsible: true,
+    link: "/user/",
+    children: [
+      "/user/introduction.md",
+      "/user/installation.md",
+      "/user/UserInterface.md",
+      "/user/actions.md",
+      "/user/workflow.md"
+    ]
+  },
+  {
+    text: "Technical Documentation",
+    collapsible: true,
+    link: "/technical/README.md",
+    children: [
+      {
+        text: "Components",
+        collapsible: true,
+        children: [
+          "/technical/AppFooterComponent.md",
+          "/technical/AppHeaderComponent.md",
+          "/technical/AppSidebarComponent.md",
+          "/technical/ContentPreviewMdiv.md",
+          "/technical/ContentPreviewMeasure.md",
+          "/technical/ContentPreviewPane.md",
+          "/technical/ImageSelectionModal.md",
+          "/technical/LoadGitModal.md",
+          "/technical/LoadIIIFModal.md",
+          "/technical/LoadXMLModal.md",
+          "/technical/MainMenu.md",
+          "/technical/MeasureModal.md",
+          "/technical/MdivModal.md",
+          "/technical/OsdComponent.md",
+          "/technical/PageImportModal.md",
+          "/technical/PagesListEntry.md",
+          "/technical/PagesModal.md"
+        ]
+      },
+      {
+        text: "Store",
+        collapsible: true,
+        link: "/technical/store.md",
+        children: ["/technical/storeIndex.md"]
+      },
+      {
+        text: "Tools",
+        collapsible: true,
+        link: "/technical/tools.md",
+        children: [
+          "/technical/iiif.md",
+          "/technical/meimapping.md"
+        ]
+      }
+    ]
+  }
+];
 
 export default defineUserConfig({
+  base: '/myAppPlaceholder/docs/',
+
   bundler: viteBundler(),
 
+  locales: {
+    '/': {
+      lang: 'en-US',
+      title: 'Cartographer User and Technical Documentation',
+      description: 'User and Technical Documentation',
+    },
+  },
+
   theme: defaultTheme({
-    sidebar: [
-      {
-        text: 'Components',
-        collapsible: true,
-        link: '/README.md',
-        children: [
-          '/AppFooterComponent.md',
-          '/AppHeaderComponent.md',
-          '/AppSidebarComponent.md',
-          '/ContentPreviewMdiv.md',
-          '/ContentPreviewMeasure.md',
-          '/ContentPreviewPane.md',
-          '/ImageSelectionModal.md',
-          '/LoadGitModal.md',
-          '/LoadIIIFModal.md',
-          '/LoadXMLModal.md',
-          '/MainMenu.md',
-          '/MeasureModal.md',
-          '/MdivModal.md',
-          '/OsdComponent.md',
-          '/PageImportModal.md',
-          '/PagesListEntry.md',
-          '/PagesModal.md',
+    locales: {
+      '/': {
+        navbar: [
+          { text: 'Home', link: '/' },                 // becomes /docs/ at build time, then replaced dynamically
+          { text: 'User Docs', link: '/user/' },       // becomes /docs/user/
+          { text: 'Technical Docs', link: '/technical/README.md' },
         ],
+        sidebar: EN_SIDEBAR,
       },
-      {
-        text: 'Store',
-        collapsible: true,
-        link: '/store.md',
-        children: [
-          '/storeIndex.md',
-        ],
-      },
-     {
-        text: 'Tools',
-        collapsible: true,
-        link: '/tools.md',
-        children: [
-          '/iiif.md',
-          '/meimapping.md',
-        ],
-      },
-    ],
+    },
   }),
-})
+});
