@@ -13,7 +13,6 @@ const EN_SIDEBAR = [
       "/user/installation.md",
       "/user/UserInterface.md",
       "/user/actions.md",
-      "/user/workflow.md"
     ]
   },
   {
