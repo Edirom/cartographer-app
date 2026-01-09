@@ -1,3 +1,4 @@
+[![fair-software.eu](https://img.shields.io/badge/fair--software.eu-%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8B%20%20%E2%97%8F%20%20%E2%97%8B-orange)](https://fair-software.eu)
 # Cartographer App
 
 The Cartographer App is used to provide placement information of zones of interest
@@ -63,9 +64,4 @@ Replace **cartographer** with the image name you used when building.
 ```
 docker run --rm -p 8080:80 -e VUE_APP_PUBLIC_PATH=/demo cartographer
 ```
-
-
-
-
-[![fair-software.eu](https://img.shields.io/badge/fair--software.eu-%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8B%20%20%E2%97%8B%20%20%E2%97%8B-orange)](https://fair-software.eu)
 
