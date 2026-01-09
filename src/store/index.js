@@ -22,6 +22,7 @@ function getDefaultState() {
       showLoadXMLModal: false,       // Show/hide modal for loading XML files
       showLoadIIIFModal: false,      // Show/hide modal for loading IIIF manifests
       showLoadGitModal: false,       // Show/hide modal for loading from Git
+      showLoadLocalImageModal: false, // Show/hide modal for loading local images
       showMeasureModal: false,       // Show/hide modal for editing measure labels/numbers
       showMdivModal: false,          // Show/hide modal for movement (mdiv) management
       showPagesModal: false,         // Show/hide modal for page management
@@ -66,6 +67,7 @@ export default createStore({
  * - TOGGLE_LOADXML_MODAL: Toggle the visibility of the XML file load modal.
  * - TOGGLE_LOADIIIF_MODAL: Toggle the visibility of the IIIF manifest load modal.
  * - TOGGLE_LOADGIT_MODAL: Toggle the visibility of the GitHub load modal.
+ * - TOGGLE_LOADLOCALIMAGE_MODAL: Toggle the visibility of the local images load modal.
  * - TOGGLE_MEASURE_MODAL: Toggle the visibility of the measure label/number modal.
  * - TOGGLE_PAGES_MODAL: Toggle the visibility of the page management modal.
  * - TOGGLE_PAGE_IMPORT_MODAL: Toggle the visibility of the page/image import modal.
@@ -116,6 +118,9 @@ export default createStore({
     },
     TOGGLE_LOADGIT_MODAL(state) {
       state.showLoadGitModal = !state.showLoadGitModal
+    },
+    TOGGLE_LOADLOCALIMAGE_MODAL(state) {
+      state.showLoadLocalImageModal = !state.showLoadLocalImageModal
     },
     TOGGLE_MEASURE_MODAL(state) {
       state.showMeasureModal = !state.showMeasureModal
@@ -464,6 +469,88 @@ export default createStore({
     },
     toggleLoadIIIFModal({ commit }) {
       commit('TOGGLE_LOADIIIF_MODAL')
+    },
+    toggleLoadLocalImageModal({ commit }) {
+      commit('TOGGLE_LOADLOCALIMAGE_MODAL')
+    },
+    importLocalImages({ commit, dispatch, state }, files) {
+      // Convert File objects to blob URLs and get image dimensions
+      const filePromises = files.map((file, index) => {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = (e) => {
+            const blob = new Blob([e.target.result], { type: file.type })
+            const blobUrl = URL.createObjectURL(blob)
+            
+            const img = new Image()
+            img.onload = () => {
+              resolve({
+                name: file.name,
+                blobUrl: blobUrl,
+                type: file.type,
+                width: img.width,
+                height: img.height,
+                index: index
+              })
+            }
+            img.onerror = () => {
+              URL.revokeObjectURL(blobUrl)
+              reject(new Error(`Failed to load image: ${file.name}`))
+            }
+            img.src = blobUrl
+          }
+          reader.onerror = reject
+          reader.readAsArrayBuffer(file)
+        })
+      })
+
+      commit('SET_LOADING', true)
+      Promise.all(filePromises).then(imageData => {
+        console.log('Imported local images:', imageData)
+        
+        // Create a basic MEI document if one doesn't exist
+        if (!state.xmlDoc) {
+          const meiString = `<?xml version="1.0" encoding="UTF-8"?>
+<mei xmlns="http://www.music-encoding.org/ns/mei" meiversion="4.0.0">
+  <meiHead>
+    <fileDesc>
+      <titleStmt>
+        <title>Imported from Local Images</title>
+      </titleStmt>
+      <pubStmt/>
+    </fileDesc>
+  </meiHead>
+  <music>
+    <body>
+      <mdiv xml:id="mdiv_1" n="1">
+        <score>
+          <scoreDef/>
+          <section>
+            <measure xml:id="measure_1" n="1"/>
+          </section>
+        </score>
+      </mdiv>
+    </body>
+  </music>
+</mei>`
+          const parser = new DOMParser()
+          const xmlDoc = parser.parseFromString(meiString, 'text/xml')
+          commit('SET_XML_DOC', xmlDoc)
+        }
+        
+        // Add each image as a page
+        imageData.forEach(image => {
+          console.log('Adding imported page with blobUrl:', image.blobUrl, 'width:', image.width, 'height:', image.height)
+          addImportedPage(state.xmlDoc, image.index, image.blobUrl, image.width, image.height)
+        })
+        
+        // Update the display with the new pages
+        dispatch('setData', state.xmlDoc)
+        commit('SET_LOADING', false)
+      }).catch(error => {
+        console.error('Error importing local images:', error)
+        commit('SET_LOADING', false)
+      })
     },
     toggleMeasureModal({ commit }) {
       commit('TOGGLE_MEASURE_MODAL')
@@ -849,13 +936,14 @@ export default createStore({
     pages: state => {
       const arr = []
       state.pages.forEach(page => {
-        console.log("this is the page width and height at index", page.width, " " , page.height)
+        console.log("Processing page:", page)
         const obj = {
-          tileSource: page.uri,
+          tileSource: page.uri || page.tileSource, // Use uri if available, fallback to tileSource
           width: page.width,
           x: 0,
           y: 0
         }
+        console.log("Created page object:", obj)
         arr.push(obj)
       })
       return arr
@@ -1019,6 +1107,7 @@ export default createStore({
     showLoadIIIFModal: state => state.showLoadIIIFModal,
     showLoadGitModal: state => state.showLoadGitModal,
     showLoadXMLModal: state => state.showLoadXMLModal,
+    showLoadLocalImageModal: state => state.showLoadLocalImageModal,
     showMeasureModal: state => state.showMeasureModal,
     showPagesModal: state => state.showPagesModal,
     showPageImportModal: state => state.showPageImportModal,

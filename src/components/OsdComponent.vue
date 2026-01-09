@@ -264,7 +264,41 @@ export default {
 
     this.unwatchPages = this.$store.watch((state, getters) => getters.pages,
       (newArr, oldArr) => {
-        this.viewer.open(newArr)
+        console.log('Pages watch triggered, newArr:', newArr)
+        
+        if (!newArr || newArr.length === 0) {
+          console.log('No pages to load')
+          return
+        }
+        
+        // Clear existing images
+        this.viewer.world.removeAll()
+        
+        // Load each image with proper tile source configuration
+        newArr.forEach((page, index) => {
+          console.log(`Loading page ${index}:`, page)
+          
+          // Use tileSource property (not uri)
+          if (!page.tileSource) {
+            console.error(`Page ${index} has no tileSource:`, page)
+            return
+          }
+          
+          const tileSource = {
+            type: 'legacy-image',
+            url: page.tileSource,
+            buildPyramid: false,
+            width: page.width,
+            height: page.height
+          }
+          
+          console.log(`Adding tiled image for page ${index}:`, tileSource)
+          this.viewer.addTiledImage({
+            tileSource: tileSource,
+            index: index
+          })
+        })
+        
         this.$store.dispatch('setCurrentPage', 0)
       })
 
