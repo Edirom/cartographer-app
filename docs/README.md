@@ -1,5 +1,7 @@
-# Components
+#  Cartographer App Documentation
 
-Welcome to the technical documentation for the **Cartographer App** components.
 
-This section includes detailed information about each reusable UI element and functional module used in the application. Use this documentation to understand component responsibilities, props, usage patterns, and integration guidelines.
+---
+
+This page provides both user and technical documentation for the Cartographer App.
+It includes instructions on how to use the app, as well as technical documentation for developers who want to extend and customize it.

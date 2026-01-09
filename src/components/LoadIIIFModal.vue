@@ -14,7 +14,7 @@
           aria-label="Close"
           @click="closeModal"
         ></a>
-        <div class="modal-title h5">Lade IIIF</div>
+        <div class="modal-title h5">Load IIIF</div>
       </div>
       <div class="modal-body">
         <div class="content">
@@ -63,6 +63,7 @@ export default {
       if (input.validity.valid) {
         this.$store.dispatch('importIIIF', input.value)
         this.closeModal()
+        this.$store.dispatch('resetAll')
       }
     },
     closeModal: function () {
