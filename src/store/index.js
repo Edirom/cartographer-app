@@ -1,20 +1,22 @@
 import { createStore } from 'vuex'
 import { iiifManifest2mei, checkIiifManifest, getPageArray } from '@/tools/iiif.js'
-import { meiZone2annotorious, annotorious2meiZone, measureDetector2meiZone, generateMeasure, insertMeasure, addZoneToLastMeasure, deleteZone, setMultiRest, createNewMdiv, moveContentToMdiv, toggleAdditionalZone, addImportedPage } from '@/tools/meiMappings.js'
+import { meiZone2annotorious, annotorious2meiZone, measureDetector2meiZone, generateMeasure, insertMeasure, deleteZone, setMultiRest, createNewMdiv, moveContentToMdiv, toggleAdditionalZone, addImportedPage, findZoneInsertionPositionForXmlZone, createAdditionalZone } from '@/tools/meiMappings.js'
 
 import { mode as allowedModes } from '@/store/constants.js'
 
 const parser = new DOMParser()
 const serializer = new XMLSerializer()
-export default createStore({
-  modules: {
-  },
-    state: {
-      selectedRepo: null,            // Currently selected GitHub repository
+
+function getDefaultState() {
+  return {
+ selectedRepo: null,            // Currently selected GitHub repository
       selectedDirectory: null,       // Currently selected directory within the repo
       directories: [],               // List of directories in the selected repo
       repos: null,                   // List of available repositories
       xmlDoc: null,                  // The loaded MEI XML document (DOM)
+      currentMdiv: null,            // The currently selected movement (mdiv)
+      nextMdiv: null,                // The next mdiv to be created (if applicable)  
+      previousMdiv: null,            // The previous mdiv (if applicable)
       pages: [],                     // Array of page objects (from MEI or IIIF)
       currentPage: -1,               // Index of the currently selected page
       showLoadXMLModal: false,       // Show/hide modal for loading XML files
@@ -41,12 +43,26 @@ export default createStore({
       canvases: [],                  // IIIF canvases (if loaded)
       importingImages: [],           // Array of images being imported (with status)
       currentMeasureId: null,        // xml:id of the currently selected measure
-      infoJson: []                   // Array of IIIF info.json URLs for canvases
+      infoJson: [],                   // Array of IIIF info.json URLs for canvases
+      newFirstMeasure: "",            // The first measure of the old mdiv for selecting a new mdiv
+      oldMdiv : null,                 // The old mdiv that is being moved from  
+      selectedMdiv: null,             // The mdiv that is selected in the mdiv modal
+      currentMdiv: null,              // The current mdiv that contains the current measure
+      insertMdivup: false,            // True if the new mdiv is to be inserted before the current mdiv
+      currentMeasure: null,           // The current measure object 
+      additionMeasure: false,         // True if an additional measure is being added (to prevent recursion)
+  }
+}
+
+export default createStore({
+  modules: {
   },
+    state: getDefaultState(),
   /**
  * Vuex mutations for managing application state.
  * Each mutation updates a specific part of the state in response to actions or UI events.
  *
+ * - RESET_STATE: Resets the entire application state to its default values.
  * - TOGGLE_LOADXML_MODAL: Toggle the visibility of the XML file load modal.
  * - TOGGLE_LOADIIIF_MODAL: Toggle the visibility of the IIIF manifest load modal.
  * - TOGGLE_LOADGIT_MODAL: Toggle the visibility of the GitHub load modal.
@@ -84,8 +100,14 @@ export default createStore({
  * - FAILED_IMAGE_IMPORT: Mark an image import as failed.
  * - ACCEPT_IMAGE_IMPORTS: Add all successfully imported images as pages to the MEI document.
  * - CANCEL_IMAGE_IMPORTS: Cancel all pending image imports and hide the import modal.
+ * - CURRENT_MDIV: Set the current mdiv object.
+ * - NEXT_MDIV: Set the next mdiv object.
+ * - PREVIOUS_MDIV: Set the previous mdiv object.
  */
   mutations: {
+    RESET_STATE(state) {
+        Object.assign(state, getDefaultState())
+      },
     TOGGLE_LOADXML_MODAL(state) {
       state.showLoadXMLModal = !state.showLoadXMLModal
     },
@@ -162,8 +184,9 @@ export default createStore({
 
         const zone = annotorious2meiZone(annot)
         surface.appendChild(zone)
-
+        const measure = generateMeasure()
         if (state.existingMusicMode) {
+
           // standard mode -> add zone to first measure without zone
           if (state.mode === allowedModes.manualRect) {
             const lastMeasureWithoutZone = xmlDoc.querySelector('music measure:not([facs])')
@@ -171,32 +194,26 @@ export default createStore({
               state.currentMdivId = lastMeasureWithoutZone.closest('mdiv').getAttribute('xml:id')
               lastMeasureWithoutZone.setAttribute('facs', '#' + zone.getAttribute('xml:id'))
             }
-
-            // add extra zone to last measure that already has one
           } else if (state.mode === allowedModes.additionalZone) {
-            const lastMeasureWithZone = [...xmlDoc.querySelectorAll('music measure[facs]')].at(-1)
-            if (lastMeasureWithZone !== null) {
-              state.currentMdivId = lastMeasureWithZone.closest('mdiv').getAttribute('xml:id')
-              lastMeasureWithZone.setAttribute('facs', lastMeasureWithZone.getAttribute('facs') + ' #' + zone.getAttribute('xml:id'))
-            }
+            state.additionMeasure = true
+            insertMeasure(xmlDoc, measure, state, zone, state.currentPage)
+            state.additionMeasure = false
           }
         } else {
           // standard mode -> create new measure for zone
           if (state.mode === allowedModes.manualRect) {
-            const measure = generateMeasure()
             measure.setAttribute('facs', '#' + zone.getAttribute('xml:id'))
-            console.log("zone is ", zone)
             insertMeasure(xmlDoc, measure, state, zone, state.currentPage)
-
-
             // add zone to last existing measure in file
           } else if (state.mode === allowedModes.additionalZone && state.selectedZoneId === null) {
-            addZoneToLastMeasure(xmlDoc, zone.getAttribute('xml:id'))
-          }
+            state.additionMeasure = true
+            insertMeasure(xmlDoc, measure, state, zone, state.currentPage)
+            state.additionMeasure = false
+           }
         }
 
         state.xmlDoc = xmlDoc
-        // console.log(state.xmlDoc)
+        
       }
     },
     CREATE_ZONES_FROM_MEASURE_DETECTOR_ON_PAGE(state, { rects, pageIndex }) {
@@ -259,32 +276,27 @@ export default createStore({
       }
     },
     SET_CURRENT_MEASURE_LABEL(state, val) {
-      if (state.currentMeasureId !== null) {
-        const xmlDoc = state.xmlDoc.cloneNode(true)
-        const mdivs = [...xmlDoc.querySelectorAll('mdiv')]
-        const mdiv = mdivs.find(mdiv => mdiv.getAttribute('xml:id') === state.currentMdivId)
-        const measures = [...mdiv.querySelectorAll('measure')]
-        const measure = measures.find(measure => measure.getAttribute('xml:id') === state.currentMeasureId)
+      if (!state.currentMeasureId) return;
 
-        if (val === null) {
-          measure.removeAttribute('label')
-        } else {
-          measure.setAttribute('label', val)
-        }
-        state.xmlDoc = xmlDoc
+      const xmlDoc = state.xmlDoc.cloneNode(true);
+      const measure = xmlDoc.querySelector(`measure[xml\\:id="${state.currentMeasureId}"]`);
+      if (!measure) return;
+
+      if (val == null || val === '') {
+        measure.removeAttribute('label');
+      } else {
+        measure.setAttribute('label', String(val));
       }
+
+      state.xmlDoc = xmlDoc; // commit the modified clone
     },
     SET_CURRENT_MEASURE_MULTI_REST(state, val) {
       if (state.currentMeasureId !== null) {
-        const xmlDoc = state.xmlDoc.cloneNode(true)
-        const mdivs = [...xmlDoc.querySelectorAll('mdiv')]
-        const mdiv = mdivs.find(mdiv => mdiv.getAttribute('xml:id') === state.currentMdivId)
-        const measures = [...mdiv.querySelectorAll('measure')]
-        const measure = measures.find(measure => measure.getAttribute('xml:id') === state.currentMeasureId)
-
-        setMultiRest(measure, val)
-
-        state.xmlDoc = xmlDoc
+        const xmlDoc = state.xmlDoc.cloneNode(true);
+        const measure = [...xmlDoc.querySelectorAll('measure')]
+          .find(m => m.getAttribute('xml:id') === state.currentMeasureId);
+        if (measure) setMultiRest(measure, val);
+        state.xmlDoc = xmlDoc; // replace state with the modified clone
       }
     },
     SET_PAGE_LABEL(state, { index, val }) {
@@ -305,16 +317,46 @@ export default createStore({
       }
     },
     CREATE_NEW_MDIV(state) {
+      console.log("new case 1 creating new mdiv")
       const xmlDoc = state.xmlDoc.cloneNode(true)
+            console.log("new case 2 creating new mdiv")
       state.currentMdivId = createNewMdiv(xmlDoc, state.currentMdivId)
+            console.log("new case 3 creating new mdiv")
+
       moveContentToMdiv(xmlDoc, state.currentMeasureId, state.currentMdivId, state)
+            console.log("new case 4 creating new mdiv")
+
       state.xmlDoc = xmlDoc
     },
-    SELECT_MDIV(state, id) {
-      if (state.currentMeasureId !== null) {
+    SELECT_MDIV(state, selectedMdiv) {
+      // const xmlDoc = state.xmlDoc.cloneNode(true)
+      // state.currentMdiv = xmlDoc.querySelector('mdiv[xml\\:id="' +  currentMdiv + '"]')
+      // state.selectedMdiv = xmlDoc.querySelector('mdiv[xml\\:id="' + selectedMdiv + '"]')
+
+      // if (state.selectedMdiv && state.currentMdiv) {
+      //   const selectedN = parseInt(state.selectedMdiv.getAttribute('n'))
+      //   const currentN = parseInt(state.currentMdiv.getAttribute('n'))
+      //   console.log("line 341 elected ",selectedN, " currentN ", currentN)
+
+      //   if (!isNaN(selectedN) && !isNaN(currentN) && selectedN > currentN) {
+      //    console.log("")
+      //    state.insertMdivup = true
+      //   }
+      // } else {
+      //   console.warn("Could not find selectedMdiv or currentMdiv in XML.")
+      // }
         const xmlDoc = state.xmlDoc.cloneNode(true)
-        moveContentToMdiv(xmlDoc, state.currentMeasureId, id, state)
-        state.currentMdivId = id
+        const mdivs = [...state.xmlDoc.querySelectorAll('mdiv')]
+        state.currentMdiv = mdivs.find(mdiv => {
+        const measures = Array.from(mdiv.getElementsByTagName('measure'));
+        return measures.find(measure => measure.getAttribute('xml:id') === state.currentMeasureId);
+      });
+       state.selectedMdiv = mdivs.find(mdiv =>mdiv.getAttribute("xml:id") === selectedMdiv)
+
+      
+      if (state.currentMeasureId !== null) {
+        moveContentToMdiv(xmlDoc, state.currentMeasureId, selectedMdiv, state)
+        state.currentMdivId = selectedMdiv
         state.xmlDoc = xmlDoc
       }
     },
@@ -349,12 +391,22 @@ export default createStore({
       state.showPagesImportModal = false
       console.log('cancel imports')
     },
+    CURRENT_MDIV(state, mdiv) {
+      state.currentMdiv = mdiv
+    },
+    NEXT_MDIV(state, mdiv) {
+      state.nextMdiv = mdiv
+    },
+    PREVIOUS_MDIV(state, mdiv) {
+      state.previousMdiv = mdiv
+    }
   },
   /**
  * Vuex actions for asynchronous operations and complex state updates.
  * Actions can dispatch mutations, perform async tasks, and coordinate multiple state changes.
  *
  * - fetchDirectories: Fetches directory listings from a GitHub repository (example, not fully implemented).
+ * - resetAll: Resets the entire application state to its default values.
  * - toggleLoadXMLModal: Toggles the visibility of the XML file load modal.
  * - toggleLoadIIIFModal: Toggles the visibility of the IIIF manifest load modal.
  * - toggleMeasureModal: Toggles the visibility of the measure label/number modal.
@@ -404,6 +456,9 @@ export default createStore({
         console.error(error);
       }
     },
+    resetAll({ commit }) {
+      commit('RESET_STATE')
+    },
     toggleLoadXMLModal({ commit }) {
       commit('TOGGLE_LOADXML_MODAL')
     },
@@ -434,78 +489,7 @@ export default createStore({
     },
     importIIIF({ commit, dispatch, state }, url) {
       commit('SET_LOADING', true);
-    
-      // Fetch the IIIF manifest
-      fetch(url)
-        .then(res => res.json())
-        .then(json => {
-          commit('SET_LOADING', false);
-          commit('SET_PROCESSING', true);
-    
-          let canvases = json.sequences[0].canvases;
-    
-          // Process each canvas one by one, sequentially
-          const processCanvasesSequentially = async () => {
-            for (let i = 0; i < canvases.length; i++) {
-              try {
-                // Build the info.json URL for the current canvas
-                const infoUrl = canvases[i].images[0].resource.service['@id'];
-                
-                // Push the URL to the state.infoJson array
-                state.infoJson.push(infoUrl);
-                
-                // Fetch the info.json
-                const res = await fetch(infoUrl);
-                const result = await res.json();
-    
-                // Check if this is a proper IIIF Manifest, then convert to MEI
-                const isManifest = checkIiifManifest(json);
-                if (!isManifest) {
-                  throw new Error("Invalid IIIF manifest");
-                }
-    
-                // Extract the width and height from the result
-                const width = result.width;
-                const height = result.height;
-    
-                // Push the dimensions into the state.pageDimension array
-                state.pageDimension.push([width, height]);
-    
-              } catch (error) {
-                console.error(`Error processing canvas ${i}:`, error);
-                throw error; // This will stop the loop and be caught in the outer catch block
-              }
-            }
-          };
-    
-          // Call the sequential processing function
-          processCanvasesSequentially()
-            .then(() => {
-              // After processing all canvases, convert the manifest to MEI
-              return iiifManifest2mei(json, url, parser, state);
-            })
-            .then(mei => {
-              // Dispatch setData with the generated MEI
-              dispatch('setData', mei);
-            })
-            .catch(err => {
-              console.error('Error processing IIIF manifest or canvases:', err);
-              commit('SET_LOADING', false);
-              // Add any additional error messaging here
-            })
-            .finally(() => {
-              commit('SET_PROCESSING', false); // Ensure processing is set to false after completion
-            });
-        })
-        .catch(error => {
-          // Handle errors in the initial IIIF manifest fetch
-          console.error('Error fetching IIIF manifest:', error);
-          commit('SET_LOADING', false);
-        });
-    },
-    importIIIF({ commit, dispatch, state }, url) {
-      commit('SET_LOADING', true);
-    
+
       // Fetch the IIIF manifest
       fetch(url)
         .then(res => res.json())
@@ -769,8 +753,8 @@ export default createStore({
     createNewMdiv({ commit }) {
       commit('CREATE_NEW_MDIV')
     },
-    selectMdiv({ commit }, id) {
-      commit('SELECT_MDIV', id)
+    selectMdiv({ commit }, selectedMdiv ) {
+     commit('SELECT_MDIV', selectedMdiv);
     },
     registerImageImports({ commit }, urls) {
       const arr = urls.replace(/\s+/g, ' ').trim().split(' ')
@@ -794,6 +778,15 @@ export default createStore({
     },
     cancelImageImports({ commit }) {
       commit('CANCEL_IMAGE_IMPORTS')
+    },
+    currentMdiv({ commit }, mdiv) {
+      commit('CURRENT_MDIV', mdiv)
+    },
+    nextMdiv({ commit }, mdiv) {
+      commit('NEXT_MDIV', mdiv)
+    },
+    previousMdiv({ commit }, mdiv) {        
+      commit('PREVIOUS_MDIV', mdiv)
     }
   },
   /**
@@ -953,6 +946,7 @@ export default createStore({
       return arr
     },
     currentMdiv: state => {
+      console.log("this is current mdiv id ", state.currentMdivId)
       if (state.currentMdivId === null || state.xmlDoc === null) {
         return null
       }
@@ -977,15 +971,20 @@ export default createStore({
         return null
       }
 
+      console.log("current measuser from state is ",   state.currentMeasure)
       // const mdivs = [...state.xmlDoc.querySelectorAll('mdiv')]
       // const mdiv = mdivs.find(mdiv => mdiv.getAttribute('xml:id') === state.currentMdivId)
-      const measures = [...state.xmlDoc.querySelectorAll('measure')]
-      const measure = measures.find(measure => measure.getAttribute('xml:id') === state.currentMeasureId)
+      let measures = [...state.xmlDoc.querySelectorAll('measure')]
 
+      let measure = measures.find(measure => measure.getAttribute('xml:id') === state.currentMeasureId)
+
+      if(!measure){
+        measure = state.currentMeasure
+      }
       const mdiv = measure.closest('mdiv').getAttribute('xml:id')
+      console.log("current measure ", measure)
 
       const multiRestElem = measure.querySelector('multiRest')
-      console.log("this is multi rest ")
       const multiRest = (multiRestElem !== null) ? multiRestElem.getAttribute('num') : null
 
 
