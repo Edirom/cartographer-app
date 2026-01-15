@@ -110,13 +110,24 @@ export default {
           e.stopPropagation()
         })
         overlay.addEventListener('pointerdown', (e) => {
-          e.preventDefault();
-          overlay.click();
+          if (e.shiftKey || e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+          } else {
+            e.preventDefault();
+            overlay.click();
+          }
 
         })
         overlay.addEventListener('click', (e) => {
           console.log('clicked')
           this.$store.dispatch('clickZone', zoneId)
+          
+          if (e.ctrlKey || e.metaKey) {
+            this.$store.dispatch('selectZone', zoneId)
+          }
+          
           e.preventDefault()
           e.stopPropagation()
         })
@@ -215,15 +226,10 @@ export default {
     })
 
     this.anno.on('selectAnnotation', async (annotation) => {
-      // The users has selected an existing annotation
-      // console.log('selected annotation')
       // console.log(annotation)
-
     })
 
     this.anno.on('createAnnotation', (annotation) => {
-
-
      // const { x, y, width, height } = annotation.shapes[0].geometry;
 
       // Update the x and y coordinates of the rectangle
@@ -238,10 +244,7 @@ export default {
       this.$store.dispatch('selectZone', null)
       this.anno.clearAnnotations()
       this.renderZones()
-      console.log("anno is clicked ", annotation.target.selector)  
-
-  
-
+      console.log("anno is clicked ", annotation.target.selector)
     })
 
     this.anno.on('updateAnnotation', (annotation) => {
