@@ -22,6 +22,7 @@ function getDefaultState() {
       showLoadXMLModal: false,       // Show/hide modal for loading XML files
       showLoadIIIFModal: false,      // Show/hide modal for loading IIIF manifests
       showLoadGitModal: false,       // Show/hide modal for loading from Git
+      showLoadLocalImage: false,     // Show/hide modal for loading local images
       showMeasureModal: false,       // Show/hide modal for editing measure labels/numbers
       showMdivModal: false,          // Show/hide modal for movement (mdiv) management
       showPagesModal: false,         // Show/hide modal for page management
@@ -116,6 +117,9 @@ export default createStore({
     },
     TOGGLE_LOADGIT_MODAL(state) {
       state.showLoadGitModal = !state.showLoadGitModal
+    },
+    TOGGLE_LOADLOCALIMAGE_MODAL(state) {
+      state.showLoadLocalImage = !state.showLoadLocalImage
     },
     TOGGLE_MEASURE_MODAL(state) {
       state.showMeasureModal = !state.showMeasureModal
@@ -465,6 +469,9 @@ export default createStore({
     toggleLoadIIIFModal({ commit }) {
       commit('TOGGLE_LOADIIIF_MODAL')
     },
+    toggleLoadLocalImage({ commit }) {
+      commit('TOGGLE_LOADLOCALIMAGE_MODAL')
+    },
     toggleMeasureModal({ commit }) {
       commit('TOGGLE_MEASURE_MODAL')
     },
@@ -479,6 +486,59 @@ export default createStore({
     },
     toggleMeasureList({ commit }) {
       commit('TOGGLE_MEASURE_LIST')
+    },
+    addLocalImagePages({ commit }, pages) {
+      console.log('Adding local image pages:', pages)
+      
+      // Create a complete MEI document with proper facsimile structure for local images
+      // This ensures all drawing and annotation functionality works correctly
+      const surfaceElements = pages.map((page, index) => {
+        const id = `surface_${index + 1}`
+        // Include graphic element with dimensions for each surface
+        return `<surface n="${index + 1}" xml:id="${id}">
+      <graphic xml:id="graphic_${index + 1}" target="${page.imageUrl || ''}" width="${page.width}" height="${page.height}"/>
+    </surface>`
+      }).join('\n    ')
+      
+      const pbElements = pages.map((page, index) => {
+        const id = `surface_${index + 1}`
+        return `<pb xml:id="pb_${index + 1}" facs="#${id}" n="${index + 1}"/>`
+      }).join('\n          ')
+      
+      const meiTemplate = `<?xml version="1.0" encoding="UTF-8"?>
+<mei xmlns="http://www.music-encoding.org/ns/mei" meiversion="5.0">
+  <meiHead>
+    <fileDesc>
+      <titleStmt>
+        <title>Local Images</title>
+      </titleStmt>
+      <pubStmt/>
+    </fileDesc>
+  </meiHead>
+  <music>
+    <facsimile>
+      ${surfaceElements}
+    </facsimile>
+    <body>
+      <mdiv xml:id="mdiv_1" label="Local Images">
+        <score>
+          <scoreDef/>
+          <section>
+            ${pbElements}
+          </section>
+        </score>
+      </mdiv>
+    </body>
+  </music>
+</mei>`
+      
+      const parser = new DOMParser()
+      const xmlDoc = parser.parseFromString(meiTemplate, 'text/xml')
+      
+      commit('SET_XML_DOC', xmlDoc)
+      commit('SET_PAGES', pages)
+      commit('SET_CURRENT_PAGE', 0)
+      commit('SET_TOTAL_ZONES_COUNT', 0)
     },
     setCurrentPage({ commit }, i) {
       console.log('setting current page to ' + i)
@@ -850,8 +910,22 @@ export default createStore({
       const arr = []
       state.pages.forEach(page => {
         console.log("this is the page width and height at index", page.width, " " , page.height)
+        // Handle both IIIF pages (with uri) and local images (with imageUrl)
+        let tileSource
+        if (page.isLocalImage && page.imageUrl) {
+          // For local images, return a proper tile source object for direct images
+          tileSource = {
+            type: 'image',
+            url: page.imageUrl,
+            width: page.width,
+            height: page.height
+          }
+        } else {
+          // For IIIF pages, just use the uri
+          tileSource = page.uri
+        }
         const obj = {
-          tileSource: page.uri,
+          tileSource: tileSource,
           width: page.width,
           x: 0,
           y: 0
@@ -863,8 +937,22 @@ export default createStore({
     pagesDetailed: state => {
       const arr = []
       state.pages.forEach(page => {
+        // Handle both IIIF pages (with uri) and local images (with imageUrl)
+        let tileSource
+        if (page.isLocalImage && page.imageUrl) {
+          // For local images, return a proper tile source object for direct images
+          tileSource = {
+            type: 'image',
+            url: page.imageUrl,
+            width: page.width,
+            height: page.height
+          }
+        } else {
+          // For IIIF pages, just use the uri
+          tileSource = page.uri
+        }
         const obj = {
-          tileSource: page.uri,
+          tileSource: tileSource,
           dim: page.width + 'x' + page.height,
           n: page.n,
           label: page.label
@@ -1019,6 +1107,7 @@ export default createStore({
     showLoadIIIFModal: state => state.showLoadIIIFModal,
     showLoadGitModal: state => state.showLoadGitModal,
     showLoadXMLModal: state => state.showLoadXMLModal,
+    showLoadLocalImage: state => state.showLoadLocalImage,
     showMeasureModal: state => state.showMeasureModal,
     showPagesModal: state => state.showPagesModal,
     showPageImportModal: state => state.showPageImportModal,
