@@ -52,6 +52,7 @@ function getDefaultState() {
       insertMdivup: false,            // True if the new mdiv is to be inserted before the current mdiv
       currentMeasure: null,           // The current measure object 
       additionMeasure: false,         // True if an additional measure is being added (to prevent recursion)
+      localImagePages: [],            // Store references to local image pages to prevent garbage collection of blob URLs
   }
 }
 
@@ -154,6 +155,11 @@ export default createStore({
     SET_PAGES(state, pageArray) {
       state.pages = pageArray
       console.log("this is the length of pages ", state.pages)
+    },
+    SET_LOCAL_IMAGE_PAGES(state, pages) {
+      // Store references to local image pages to prevent blob URL garbage collection
+      state.localImagePages = pages
+      console.log("Stored local image page references:", pages.length)
     },
     SET_CURRENT_PAGE(state, i) {
       console.log("page is changed ", state.pages.length)
@@ -487,16 +493,23 @@ export default createStore({
     toggleMeasureList({ commit }) {
       commit('TOGGLE_MEASURE_LIST')
     },
-    addLocalImagePages({ commit }, pages) {
+    addLocalImagePages({ commit }, input) {
+      // Handle both old format (pages directly) and new format ({pages, originalMei})
+      const pages = input.pages || input
+      const originalMei = input.originalMei || null
+      
       console.log('Adding local image pages:', pages)
+      console.log('Original MEI provided:', !!originalMei)
       
       // Create a complete MEI document with proper facsimile structure for local images
       // This ensures all drawing and annotation functionality works correctly
       const surfaceElements = pages.map((page, index) => {
         const id = `surface_${index + 1}`
+        const imageUrl = page.imageUrl || page.uri || page.url || ''
+        console.log(`Surface ${index}: Using URL:`, imageUrl)
         // Include graphic element with dimensions for each surface
         return `<surface n="${index + 1}" xml:id="${id}">
-      <graphic xml:id="graphic_${index + 1}" target="${page.imageUrl || ''}" width="${page.width}" height="${page.height}"/>
+      <graphic xml:id="graphic_${index + 1}" target="${imageUrl}" width="${page.width}" height="${page.height}"/>
     </surface>`
       }).join('\n    ')
       
@@ -533,12 +546,61 @@ export default createStore({
 </mei>`
       
       const parser = new DOMParser()
-      const xmlDoc = parser.parseFromString(meiTemplate, 'text/xml')
+      let xmlDoc = parser.parseFromString(meiTemplate, 'text/xml')
+      
+      // If original MEI was provided, merge zones and measures from it
+      if (originalMei) {
+        console.log('Merging zones and measures from original MEI')
+        const originalSurfaces = originalMei.querySelectorAll('surface')
+        const newSurfaces = xmlDoc.querySelectorAll('surface')
+        
+        console.log(`Original MEI has ${originalSurfaces.length} surfaces`)
+        console.log(`New MEI has ${newSurfaces.length} surfaces`)
+        
+        originalSurfaces.forEach((origSurface, index) => {
+          if (index < newSurfaces.length) {
+            const newSurface = newSurfaces[index]
+            const zones = origSurface.querySelectorAll('zone')
+            console.log(`Surface ${index}: Found ${zones.length} zones to copy`)
+            console.log(`Original surface ID: ${origSurface.getAttribute('xml:id')}, New surface ID: ${newSurface.getAttribute('xml:id')}`)
+            
+            zones.forEach((zone, zoneIdx) => {
+              const clonedZone = xmlDoc.importNode(zone, true)
+              newSurface.appendChild(clonedZone)
+              console.log(`Copied zone ${zoneIdx}: ${zone.getAttribute('xml:id')}`)
+            })
+          }
+        })
+        
+        // Copy the entire music structure (mdiv, measures) to preserve measure labels and relationships
+        const originalMusic = originalMei.querySelector('music')
+        const newMusic = xmlDoc.querySelector('music')
+        if (originalMusic && newMusic) {
+          const originalBody = originalMusic.querySelector('body')
+          const newBody = newMusic.querySelector('body')
+          
+          if (originalBody && newBody) {
+            // Copy all mdivs from original
+            const originalMdivs = originalBody.querySelectorAll('mdiv')
+            console.log(`Original MEI has ${originalMdivs.length} mdivs`)
+            
+            originalMdivs.forEach(mdiv => {
+              const clonedMdiv = xmlDoc.importNode(mdiv, true)
+              newBody.appendChild(clonedMdiv)
+              console.log(`Copied mdiv: ${mdiv.getAttribute('xml:id')}`)
+            })
+          }
+        }
+        
+        // Verify zones and measures were copied
+        const verifyZones = xmlDoc.querySelectorAll('zone')
+        const verifyMeasures = xmlDoc.querySelectorAll('measure')
+        console.log(`Verification: New MEI now has ${verifyZones.length} total zones and ${verifyMeasures.length} measures`)
+      }
       
       commit('SET_XML_DOC', xmlDoc)
       commit('SET_PAGES', pages)
       commit('SET_CURRENT_PAGE', 0)
-      commit('SET_TOTAL_ZONES_COUNT', 0)
     },
     setCurrentPage({ commit }, i) {
       console.log('setting current page to ' + i)
@@ -719,11 +781,20 @@ export default createStore({
       }
     },
     setData({ commit }, mei) {
+      console.log('setData called')
+      console.log('MEI input:', mei)
+      const meiString = new XMLSerializer().serializeToString(mei)
+      console.log('MEI string (first 500 chars):', meiString.substring(0, 500))
+      
       const pageArray = getPageArray(mei)
       console.log("page array is ", pageArray)
+      console.log("page array length", pageArray.length)
+      if (pageArray.length > 0) {
+        console.log("first page", pageArray[0])
+      }
+      
       commit('SET_PAGES', pageArray)
       console.log("this is SET_PAGES ", mei)
-
 
       commit('SET_XML_DOC', mei)
       console.log("this is SET_XML_DOC ", mei)
@@ -736,7 +807,6 @@ export default createStore({
 
       commit('HIDE_MODALS')
       console.log("this is HIDE_MODALS ", mei)
-
     },
     selectZone({ commit }, id) {
       commit('SELECT_ZONE', id)

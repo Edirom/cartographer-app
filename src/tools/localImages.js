@@ -13,55 +13,50 @@
 
 /**
  * Convert local image files to OpenSeadragon-compatible format
- * Uses blob URLs instead of base64 to ensure OpenSeadragon compatibility
+ * Creates blob URLs that OpenSeadragon can load as simple images
  * @param {File[]} imageFiles - Array of image File objects
- * @returns {Promise<Array>} - Promise that resolves to an array of page objects
+ * @returns {Promise<Array>} - Promise that resolves to an array of tile sources compatible with OpenSeadragon
  */
 export async function convertLocalImagesToPages(imageFiles) {
   const pagePromises = imageFiles.map((file, index) => {
     return new Promise((resolve, reject) => {
-      const reader = new FileReader()
+      // Create blob URL directly from the file (File is a type of Blob)
+      const blobUrl = URL.createObjectURL(file)
       
-      reader.onload = (e) => {
-        const img = new Image()
-        
-        img.onload = () => {
-          // Create a blob URL from the file - OpenSeadragon can handle this
-          const blobUrl = URL.createObjectURL(file)
-          
-          // Local image format - separate from IIIF pages
-          // Uses a dedicated imageUrl property to avoid conflicts
-          const pageObject = {
-            // Use imageUrl for local images instead of uri
-            imageUrl: blobUrl,
-            // Keep uri as null to distinguish from IIIF pages
-            uri: null,
-            // Metadata for the application
-            width: img.width,
-            height: img.height,
-            n: (index + 1).toString(),
-            label: file.name,
-            fileName: file.name,
-            filePath: file.webkitRelativePath || file.name,
-            isLocalImage: true,  // Flag to identify this as a local image
-            hasSvg: false,
-            hasZones: false
-          }
-          resolve(pageObject)
+      const img = new Image()
+      
+      img.onload = () => {
+        // Create a tile source in OpenSeadragon's expected format
+        // Using a simple image tile source configuration
+        const pageObject = {
+          // OpenSeadragon tile source properties
+          type: 'image',
+          url: blobUrl,
+          // Metadata for the application
+          uri: blobUrl,
+          imageUrl: blobUrl,  // Required by addLocalImagePages action
+          width: img.width,
+          height: img.height,
+          n: (index + 1).toString(),
+          label: file.name,
+          fileName: file.name,
+          filePath: file.webkitRelativePath || file.name,
+          isLocalImage: true,
+          hasSvg: false,
+          hasZones: false,
+          // Keep references to prevent garbage collection
+          _file: file,
+          _blobUrl: blobUrl
         }
-        
-        img.onerror = () => {
-          reject(new Error(`Failed to load image: ${file.name}`))
-        }
-        
-        img.src = e.target.result
+        resolve(pageObject)
       }
       
-      reader.onerror = () => {
-        reject(new Error(`Failed to read file: ${file.name}`))
+      img.onerror = () => {
+        reject(new Error(`Failed to load image: ${file.name}`))
       }
       
-      reader.readAsDataURL(file)
+      // Load the image from the blob URL
+      img.src = blobUrl
     })
   })
   
