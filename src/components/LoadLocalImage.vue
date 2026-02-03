@@ -87,7 +87,15 @@ export default {
         convertLocalImagesToPages(sortedImages)
           .then(pages => {
             console.log('Converted pages:', pages)
-            this.$store.dispatch('addLocalImagePages', pages)
+            // Pass original MEI if it exists (to preserve zones/measures)
+            const originalMei = this.$store.state.xmlDoc
+            if (originalMei) {
+              console.log('Dispatching addLocalImagePages with original MEI')
+              this.$store.dispatch('addLocalImagePages', { pages, originalMei })
+            } else {
+              console.log('Dispatching addLocalImagePages without original MEI')
+              this.$store.dispatch('addLocalImagePages', pages)
+            }
             this.closeModal()
           })
           .catch(error => {
@@ -97,7 +105,7 @@ export default {
       }
     },
     closeModal: function () {
-      this.$store.dispatch('toggleLoadLocalImage')
+      this.$store.dispatch('toggleLoadLocalImageModal')
       this.selectedImages = []
       this.selectedFolderPath = ''
     }
