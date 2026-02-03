@@ -137,7 +137,7 @@ export default createStore({
     HIDE_MODALS(state) {
       state.showMeasureModal = false
       state.showMdivModal = false
-      state.showLoadLocalImageModal = false
+      state.showLoadLocalImage = false
     },
     TOGGLE_MEASURE_LIST(state) {
       state.showMeasureList = !state.showMeasureList
