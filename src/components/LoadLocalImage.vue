@@ -96,7 +96,7 @@ export default {
               console.log('Dispatching addLocalImagePages without original MEI')
               this.$store.dispatch('addLocalImagePages', pages)
             }
-            this.closeModal()
+            // Modal will close via HIDE_MODALS commit in addLocalImagePages action
           })
           .catch(error => {
             console.error('Error loading images:', error)

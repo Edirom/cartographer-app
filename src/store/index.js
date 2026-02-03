@@ -137,6 +137,7 @@ export default createStore({
     HIDE_MODALS(state) {
       state.showMeasureModal = false
       state.showMdivModal = false
+      state.showLoadLocalImageModal = false
     },
     TOGGLE_MEASURE_LIST(state) {
       state.showMeasureList = !state.showMeasureList
@@ -601,6 +602,7 @@ export default createStore({
       commit('SET_XML_DOC', xmlDoc)
       commit('SET_PAGES', pages)
       commit('SET_CURRENT_PAGE', 0)
+      commit('HIDE_MODALS')  // Close the modal when images are loaded
     },
     setCurrentPage({ commit }, i) {
       console.log('setting current page to ' + i)
