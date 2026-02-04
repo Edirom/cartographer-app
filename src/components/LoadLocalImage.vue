@@ -9,7 +9,7 @@
       <div class="modal-body">
         <div class="content">
           <div class="form-group">
-            <label class="form-label" for="folder-input"></label>
+            <label class="form-label" for="folder-input">Choose Folder</label>
             <input 
               type="file" 
               id="folder-input" 
@@ -105,7 +105,7 @@ export default {
       }
     },
     closeModal: function () {
-      this.$store.dispatch('toggleLoadLocalImageModal')
+      this.$store.commit('TOGGLE_LOADLOCALIMAGE_MODAL', false)
       this.selectedImages = []
       this.selectedFolderPath = ''
     }

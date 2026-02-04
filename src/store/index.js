@@ -119,8 +119,12 @@ export default createStore({
     TOGGLE_LOADGIT_MODAL(state) {
       state.showLoadGitModal = !state.showLoadGitModal
     },
-    TOGGLE_LOADLOCALIMAGE_MODAL(state) {
-      state.showLoadLocalImage = !state.showLoadLocalImage
+    TOGGLE_LOADLOCALIMAGE_MODAL(state, value) {
+      if (value !== undefined) {
+        state.showLoadLocalImage = value
+      } else {
+        state.showLoadLocalImage = !state.showLoadLocalImage
+      }
     },
     TOGGLE_MEASURE_MODAL(state) {
       state.showMeasureModal = !state.showMeasureModal

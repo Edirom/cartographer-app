@@ -31,7 +31,7 @@
       </li>
         <li class="menu-item">
         <button class="btn btn-action btn-sm" @click="importLocalImage" title="import Local Image">
-          <font-awesome-icon icon="fa-solid fa-circle-arrow-down"/> 
+          <font-awesome-icon icon="fa-solid fa-file-import"/> 
         </button>
         Import Local Image
       </li>
