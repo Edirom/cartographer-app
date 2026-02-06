@@ -4,8 +4,32 @@ import { meiZone2annotorious, annotorious2meiZone, measureDetector2meiZone, gene
 
 import { mode as allowedModes } from '@/store/constants.js'
 
+const MAX_HISTORY = 50  // Maximum number of undo states to keep
 const parser = new DOMParser()
 const serializer = new XMLSerializer()
+
+/**
+ * Helper function to save current xmlDoc state to history
+ * @param {Object} state - Vuex state
+ */
+function saveToHistory(state) {
+  if (state.xmlDoc === null) return
+  
+  // Remove any future states if we're not at the end of history
+  if (state.historyIndex < state.history.length - 1) {
+    state.history = state.history.slice(0, state.historyIndex + 1)
+  }
+  
+  // Save current state and move history pointer forward
+  state.history.push(state.xmlDoc.cloneNode(true))
+  state.historyIndex = state.history.length - 1
+  
+  // Limit history size to prevent memory bloat
+  if (state.history.length > MAX_HISTORY) {
+    state.history.shift()
+    state.historyIndex--
+  }
+}
 
 function getDefaultState() {
   return {
@@ -19,6 +43,8 @@ function getDefaultState() {
       previousMdiv: null,            // The previous mdiv (if applicable)
       pages: [],                     // Array of page objects (from MEI or IIIF)
       currentPage: -1,               // Index of the currently selected page
+      history: [],                   // Array of xmlDoc states for undo/redo
+      historyIndex: -1,              // Current position in history
       showLoadXMLModal: false,       // Show/hide modal for loading XML files
       showLoadIIIFModal: false,      // Show/hide modal for loading IIIF manifests
       showLoadGitModal: false,       // Show/hide modal for loading from Git
@@ -108,6 +134,18 @@ export default createStore({
     RESET_STATE(state) {
         Object.assign(state, getDefaultState())
       },
+    UNDO(state) {
+      if (state.historyIndex > 0) {
+        state.historyIndex--
+        state.xmlDoc = state.history[state.historyIndex].cloneNode(true)
+      }
+    },
+    REDO(state) {
+      if (state.historyIndex < state.history.length - 1) {
+        state.historyIndex++
+        state.xmlDoc = state.history[state.historyIndex].cloneNode(true)
+      }
+    },
     TOGGLE_LOADXML_MODAL(state) {
       state.showLoadXMLModal = !state.showLoadXMLModal
     },
@@ -146,6 +184,9 @@ export default createStore({
       console.log("this is the xml doc in set ", xmlDoc)
       state.xmlDoc = xmlDoc
       state.currentPage = 0
+      // Initialize history when loading new XML document
+      state.history = [xmlDoc.cloneNode(true)]
+      state.historyIndex = 0
     },
     SET_PAGES(state, pageArray) {
       state.pages = pageArray
@@ -176,7 +217,7 @@ export default createStore({
     CREATE_ZONE_FROM_ANNOTORIOUS(state, annot) {
 
       if (state.mode !== allowedModes.selection) {
-
+        saveToHistory(state)
         const xmlDoc = state.xmlDoc.cloneNode(true)
         // console.log('create ', annot)
         const index = state.currentPage + 1
@@ -217,6 +258,7 @@ export default createStore({
       }
     },
     CREATE_ZONES_FROM_MEASURE_DETECTOR_ON_PAGE(state, { rects, pageIndex }) {
+      saveToHistory(state)
       const xmlDoc = state.xmlDoc.cloneNode(true)
       const index = pageIndex + 1 // pageIndex is expected to be zero-based
       const surface = xmlDoc.querySelector('surface:nth-child(' + index + ')')
@@ -240,6 +282,7 @@ export default createStore({
       state.xmlDoc = xmlDoc
     },
     UPDATE_ZONE_FROM_ANNOTORIOUS(state, annot) {
+      saveToHistory(state)
       const xmlDoc = state.xmlDoc.cloneNode(true)
       const newZone = annotorious2meiZone(annot)
       console.log("annotation is ", annot)
@@ -278,6 +321,7 @@ export default createStore({
     SET_CURRENT_MEASURE_LABEL(state, val) {
       if (!state.currentMeasureId) return;
 
+      saveToHistory(state)
       const xmlDoc = state.xmlDoc.cloneNode(true);
       const measure = xmlDoc.querySelector(`measure[xml\\:id="${state.currentMeasureId}"]`);
       if (!measure) return;
@@ -292,6 +336,7 @@ export default createStore({
     },
     SET_CURRENT_MEASURE_MULTI_REST(state, val) {
       if (state.currentMeasureId !== null) {
+        saveToHistory(state)
         const xmlDoc = state.xmlDoc.cloneNode(true);
         const measure = [...xmlDoc.querySelectorAll('measure')]
           .find(m => m.getAttribute('xml:id') === state.currentMeasureId);
@@ -300,6 +345,7 @@ export default createStore({
       }
     },
     SET_PAGE_LABEL(state, { index, val }) {
+      saveToHistory(state)
       const xmlDoc = state.xmlDoc.cloneNode(true)
       const surface = xmlDoc.querySelectorAll('surface')[index]
       surface.setAttribute('label', val)
@@ -307,6 +353,7 @@ export default createStore({
     },
     SET_CURRENT_MDIV_LABEL(state, val) {
       if (state.currentMdivId !== null && state.xmlDoc !== null) {
+        saveToHistory(state)
         const xmlDoc = state.xmlDoc.cloneNode(true)
         const mdivs = [...xmlDoc.querySelectorAll('mdiv')]
         const mdiv = mdivs.find(mdiv => mdiv.getAttribute('xml:id') === state.currentMdivId)
@@ -318,6 +365,7 @@ export default createStore({
     },
     CREATE_NEW_MDIV(state) {
       console.log("new case 1 creating new mdiv")
+      saveToHistory(state)
       const xmlDoc = state.xmlDoc.cloneNode(true)
             console.log("new case 2 creating new mdiv")
       state.currentMdivId = createNewMdiv(xmlDoc, state.currentMdivId)
@@ -355,6 +403,7 @@ export default createStore({
 
       
       if (state.currentMeasureId !== null) {
+        saveToHistory(state)
         moveContentToMdiv(xmlDoc, state.currentMeasureId, selectedMdiv, state)
         state.currentMdivId = selectedMdiv
         state.xmlDoc = xmlDoc
@@ -375,6 +424,7 @@ export default createStore({
       state.importingImages[index].status = 'failed'
     },
     ACCEPT_IMAGE_IMPORTS(state) {
+      saveToHistory(state)
       const xmlDoc = state.xmlDoc.cloneNode(true)
       state.importingImages.forEach(page => {
         addImportedPage(xmlDoc, page.index, page.url, page.width, page.height)
@@ -384,6 +434,18 @@ export default createStore({
       state.pages = pageArray
       state.importingImages = []
       state.showPagesImportModal = false
+      state.xmlDoc = xmlDoc
+    },
+    DELETE_ZONE(state, id) {
+      saveToHistory(state)
+      const xmlDoc = state.xmlDoc.cloneNode(true)
+      deleteZone(xmlDoc, id, state)
+      state.xmlDoc = xmlDoc
+    },
+    TOGGLE_ADDITIONAL_ZONE(state, id) {
+      saveToHistory(state)
+      const xmlDoc = state.xmlDoc.cloneNode(true)
+      toggleAdditionalZone(xmlDoc, id, state)
       state.xmlDoc = xmlDoc
     },
     CANCEL_IMAGE_IMPORTS(state) {
@@ -458,6 +520,12 @@ export default createStore({
     },
     resetAll({ commit }) {
       commit('RESET_STATE')
+    },
+    undo({ commit }) {
+      commit('UNDO')
+    },
+    redo({ commit }) {
+      commit('REDO')
     },
     toggleLoadXMLModal({ commit }) {
       commit('TOGGLE_LOADXML_MODAL')
@@ -687,14 +755,10 @@ export default createStore({
 
       if (state.mode === allowedModes.deletion) {
         state.deleteZoneId = id
-        const xmlDoc = state.xmlDoc.cloneNode(true)
-        deleteZone(xmlDoc, id, state)
-        state.xmlDoc = xmlDoc
+        commit('DELETE_ZONE', id)
       } else if (state.mode === allowedModes.additionalZone) {
         console.log('clicked on existing zone')
-        const xmlDoc = state.xmlDoc.cloneNode(true)
-        toggleAdditionalZone(xmlDoc, id, state)
-        state.xmlDoc = xmlDoc
+        commit('TOGGLE_ADDITIONAL_ZONE', id)
       }
     },
     clickMeasureLabel({ commit }, id) {
@@ -1051,6 +1115,12 @@ export default createStore({
         return null
       }
       return measure.getAttribute('xml:id')
+    },
+    canUndo: state => {
+      return state.historyIndex > 0
+    },
+    canRedo: state => {
+      return state.historyIndex < state.history.length - 1
     },
   }
 })
