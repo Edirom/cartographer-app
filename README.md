@@ -8,7 +8,12 @@ of bounding boxes of measures in music documents. It is a successor of the
 independent. It optionally uses the *Measure Detector* for automatic recognition
 of measure positions, but allows manual correction of these results.
 
+## Documentation
 
+Comprehensive user and developer documentation for the Cartographer App is
+available at:
+
+https://cartographer-app.zenmem.de/docs/
 ## Important Tools and their Documentation
 
 * Vectre, which is a VueJS version of Spectre CSS. See https://vectrejs.github.io/docs/#/pages/getting-started
