@@ -47,6 +47,7 @@ Please make sure to provide meaningful and understandable commit messsages, that
 
 Releases are discussed and declared by the Edirom community. The planned scope of features and bug fixes of upcoming releases can be read from corresponding [milestones](https://github.com/Edirom/cartographer-app/issues?q=is%3Aissue%20state%3Aopen%20milestone), and eventually you can also see here  where contributions are most urgent needed. 
 
+The most recent 'stable' version of Cartographer is always found on the 'main' branch, where all releases are tagged from. The most recent 'work in progress' is found on the 'develop' branch. 
 
 ## Versioning
 
