@@ -33,6 +33,7 @@ The active contributors have agreed to organise their work along the so-called '
 * Make your changes, while you can commit to your branch as many times as you like.
 * After finishing your work, you can open a **pull request** to `Edirom/cartographer-app` and make sure, that you MUST address the `dev` branch.
 * Each pull request should implement ONE feature or bugfix. If you want to add or fix more than one thing, submit more than one pull request.
+* Update the user and technical documentation at [docs](https://github.com/Edirom/cartographer-app/tree/main/docs) based on your changes.
 * Your submission will be **reviewed** afterwards. If you are asked to make changes, you can push these changes to your original branch and the pull request will be automatically updated.
 * You may then delete your dedicated branch, after your pull request was merged into the `Edirom/cartographer-app` repository.
 
