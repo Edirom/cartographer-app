@@ -15,7 +15,15 @@ independent. It optionally uses the *Measure Detector* for automatic recognition
 of measure positions, but allows manual correction of these results.
 
 
-## Important Tools and their Documentation
+## Features
+
+### Image Import
+The Cartographer App supports importing images from multiple sources:
+* **Local Images**: Import images directly from your local file system
+* **IIIF**: Load images from IIIF servers for standardized access to cultural heritage materials
+* **Git Repositories**: Load MEI files with associated images from Git repositories
+
+### Important Tools and their Documentation
 
 * Vectre, which is a VueJS version of Spectre CSS. See https://vectrejs.github.io/docs/#/pages/getting-started
 * OpenSeadragon. See http://openseadragon.github.io/

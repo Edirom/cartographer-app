@@ -22,6 +22,7 @@ function getDefaultState() {
       showLoadXMLModal: false,       // Show/hide modal for loading XML files
       showLoadIIIFModal: false,      // Show/hide modal for loading IIIF manifests
       showLoadGitModal: false,       // Show/hide modal for loading from Git
+      showLoadLocalImage: false,     // Show/hide modal for loading local images
       showMeasureModal: false,       // Show/hide modal for editing measure labels/numbers
       showMdivModal: false,          // Show/hide modal for movement (mdiv) management
       showPagesModal: false,         // Show/hide modal for page management
@@ -51,6 +52,11 @@ function getDefaultState() {
       insertMdivup: false,            // True if the new mdiv is to be inserted before the current mdiv
       currentMeasure: null,           // The current measure object 
       additionMeasure: false,         // True if an additional measure is being added (to prevent recursion)
+      localImagePages: [],            // Store references to local image pages to prevent garbage collection of blob URLs
+      showImageMismatchModal: false,  // Show/hide modal for image mismatch warnings
+      missingImages: [],              // Array of image paths referenced in MEI but not found
+      unreferencedImages: [],         // Array of loaded images not referenced in MEI
+      originalMeiGraphicCount: 0,     // Store original MEI's graphic count for verification
   }
 }
 
@@ -117,6 +123,13 @@ export default createStore({
     TOGGLE_LOADGIT_MODAL(state) {
       state.showLoadGitModal = !state.showLoadGitModal
     },
+    TOGGLE_LOADLOCALIMAGE_MODAL(state, value) {
+      if (value !== undefined) {
+        state.showLoadLocalImage = value
+      } else {
+        state.showLoadLocalImage = !state.showLoadLocalImage
+      }
+    },
     TOGGLE_MEASURE_MODAL(state) {
       state.showMeasureModal = !state.showMeasureModal
     },
@@ -132,6 +145,7 @@ export default createStore({
     HIDE_MODALS(state) {
       state.showMeasureModal = false
       state.showMdivModal = false
+      state.showLoadLocalImage = false
     },
     TOGGLE_MEASURE_LIST(state) {
       state.showMeasureList = !state.showMeasureList
@@ -143,16 +157,17 @@ export default createStore({
       state.selectedDirectory = gitdirec
     },
     SET_XML_DOC(state, xmlDoc) {
-      console.log("this is the xml doc in set ", xmlDoc)
       state.xmlDoc = xmlDoc
       state.currentPage = 0
     },
     SET_PAGES(state, pageArray) {
       state.pages = pageArray
-      console.log("this is the length of pages ", state.pages)
+    },
+    SET_LOCAL_IMAGE_PAGES(state, pages) {
+      // Store references to local image pages to prevent blob URL garbage collection
+      state.localImagePages = pages
     },
     SET_CURRENT_PAGE(state, i) {
-      console.log("page is changed ", state.pages.length)
       if (i > -1 && i < state.pages.length) {
         state.currentPage = i
       }
@@ -242,7 +257,6 @@ export default createStore({
     UPDATE_ZONE_FROM_ANNOTORIOUS(state, annot) {
       const xmlDoc = state.xmlDoc.cloneNode(true)
       const newZone = annotorious2meiZone(annot)
-      console.log("annotation is ", annot)
 
       const pageIndex = state.currentPage + 1
       const surface = xmlDoc.querySelector('surface:nth-child(' + pageIndex + ')')
@@ -317,15 +331,9 @@ export default createStore({
       }
     },
     CREATE_NEW_MDIV(state) {
-      console.log("new case 1 creating new mdiv")
       const xmlDoc = state.xmlDoc.cloneNode(true)
-            console.log("new case 2 creating new mdiv")
       state.currentMdivId = createNewMdiv(xmlDoc, state.currentMdivId)
-            console.log("new case 3 creating new mdiv")
-
       moveContentToMdiv(xmlDoc, state.currentMeasureId, state.currentMdivId, state)
-            console.log("new case 4 creating new mdiv")
-
       state.xmlDoc = xmlDoc
     },
     SELECT_MDIV(state, selectedMdiv) {
@@ -379,7 +387,6 @@ export default createStore({
       state.importingImages.forEach(page => {
         addImportedPage(xmlDoc, page.index, page.url, page.width, page.height)
       })
-      console.log("state is index", state)
       const pageArray = getPageArray(xmlDoc, state)
       state.pages = pageArray
       state.importingImages = []
@@ -389,7 +396,6 @@ export default createStore({
     CANCEL_IMAGE_IMPORTS(state) {
       state.importingImages = []
       state.showPagesImportModal = false
-      console.log('cancel imports')
     },
     CURRENT_MDIV(state, mdiv) {
       state.currentMdiv = mdiv
@@ -399,6 +405,23 @@ export default createStore({
     },
     PREVIOUS_MDIV(state, mdiv) {
       state.previousMdiv = mdiv
+    },
+    TOGGLE_IMAGE_MISMATCH_MODAL(state) {
+      state.showImageMismatchModal = !state.showImageMismatchModal
+    },
+    SET_IMAGE_MISMATCHES(state, { missing, unreferenced }) {
+      state.missingImages = missing || []
+      state.unreferencedImages = unreferenced || []
+    },
+    SHOW_IMAGE_MISMATCH_MODAL(state, { missing, unreferenced }) {
+      state.missingImages = missing || []
+      state.unreferencedImages = unreferenced || []
+      state.showImageMismatchModal = true
+    },
+    HIDE_IMAGE_MISMATCH_MODAL(state) {
+      state.showImageMismatchModal = false
+      state.missingImages = []
+      state.unreferencedImages = []
     }
   },
   /**
@@ -465,6 +488,9 @@ export default createStore({
     toggleLoadIIIFModal({ commit }) {
       commit('TOGGLE_LOADIIIF_MODAL')
     },
+    toggleLoadLocalImage({ commit }) {
+      commit('TOGGLE_LOADLOCALIMAGE_MODAL')
+    },
     toggleMeasureModal({ commit }) {
       commit('TOGGLE_MEASURE_MODAL')
     },
@@ -479,6 +505,134 @@ export default createStore({
     },
     toggleMeasureList({ commit }) {
       commit('TOGGLE_MEASURE_LIST')
+    },
+    addLocalImagePages({ commit, dispatch, state }, input) {
+      // Handle both old format (pages directly) and new format ({pages, originalMei})
+      const pages = input.pages || input
+      const originalMei = input.originalMei || state.xmlDoc
+      
+      // Check if no images were selected
+      if (!pages || pages.length === 0) {
+        commit('SET_LOADING', false)
+        commit('SET_PROCESSING', false)
+        commit('SHOW_IMAGE_MISMATCH_MODAL', { 
+          missing: ['No images were selected from the folder'], 
+          unreferenced: [] 
+        })
+        return
+      }
+      
+      // Store the original MEI's graphic count for verification
+      const originalGraphicCount = originalMei ? originalMei.querySelectorAll('graphic').length : 0
+      state.originalMeiGraphicCount = originalGraphicCount
+      
+      // Create a complete MEI document with proper facsimile structure for local images
+      // This ensures all drawing and annotation functionality works correctly
+      const surfaceElements = pages.map((page, index) => {
+        const id = `surface_${index + 1}`
+        // Use the image name (e.g., 'image1.jpg') for MEI storage, not the blob URL
+        const target = page.imageName || page.uri || page.imageUrl || `image${index + 1}.jpg`
+        // Include graphic element with dimensions for each surface
+        return `<surface n="${index + 1}" xml:id="${id}">
+      <graphic xml:id="graphic_${index + 1}" target="${target}" width="${page.width}" height="${page.height}"/>
+    </surface>`
+      }).join('\n    ')
+      
+      const pbElements = pages.map((page, index) => {
+        const id = `surface_${index + 1}`
+        return `<pb xml:id="pb_${index + 1}" facs="#${id}" n="${index + 1}"/>`
+      }).join('\n          ')
+      
+      // Build body content: use original MEI's mdivs if available, otherwise create default "Local Images" mdiv
+      let bodyContent
+      let title = 'Local Images'
+      
+      if (originalMei) {
+        const originalMusic = originalMei.querySelector('music')
+        if (originalMusic) {
+          const originalBody = originalMusic.querySelector('body')
+          if (originalBody) {
+            bodyContent = originalBody.innerHTML
+          }
+        }
+        
+        // Extract title from original MEI
+        const originalMeiHead = originalMei.querySelector('meiHead')
+        if (originalMeiHead) {
+          const titleElem = originalMeiHead.querySelector('titleStmt > title')
+          if (titleElem && titleElem.textContent) {
+            title = titleElem.textContent
+          }
+        }
+      }
+      
+      if (!bodyContent) {
+        bodyContent = `<mdiv xml:id="mdiv_1" label="Movement 1">
+        <score>
+          <scoreDef/>
+          <section>
+            ${pbElements}
+          </section>
+        </score>
+      </mdiv>`
+      }
+      
+      const meiTemplate = `<?xml version="1.0" encoding="UTF-8"?>
+<mei xmlns="http://www.music-encoding.org/ns/mei" meiversion="5.0">
+  <meiHead>
+    <fileDesc>
+      <titleStmt>
+        <title>${title}</title>
+      </titleStmt>
+      <pubStmt/>
+    </fileDesc>
+  </meiHead>
+  <music>
+    <facsimile>
+      ${surfaceElements}
+    </facsimile>
+    <body>
+      ${bodyContent}
+    </body>
+  </music>
+</mei>`
+      
+      const parser = new DOMParser()
+      let xmlDoc = parser.parseFromString(meiTemplate, 'text/xml')
+      
+      // If original MEI was provided, merge zones from original surfaces
+      if (originalMei) {
+        const originalSurfaces = originalMei.querySelectorAll('surface')
+        const newSurfaces = xmlDoc.querySelectorAll('surface')
+        
+        originalSurfaces.forEach((origSurface, index) => {
+          if (index < newSurfaces.length) {
+            const newSurface = newSurfaces[index]
+            const zones = origSurface.querySelectorAll('zone')
+            
+            zones.forEach((zone) => {
+              const clonedZone = xmlDoc.importNode(zone, true)
+              newSurface.appendChild(clonedZone)
+            })
+          }
+        })
+      }
+      
+      // Verify image count matches BEFORE committing anything (only if original MEI exists)
+      if (originalMei && state.originalMeiGraphicCount !== pages.length) {
+        const missingCount = Math.max(0, state.originalMeiGraphicCount - pages.length)
+        const extraCount = Math.max(0, pages.length - state.originalMeiGraphicCount)
+        commit('SHOW_IMAGE_MISMATCH_MODAL', { 
+          missing: Array(missingCount).fill('(image)'), 
+          unreferenced: Array(extraCount).fill('(extra)') 
+        })
+        return // Don't load anything if there's a mismatch
+      }
+      
+      commit('SET_XML_DOC', xmlDoc)
+      commit('SET_PAGES', pages)
+      commit('SET_CURRENT_PAGE', 0)
+      commit('HIDE_MODALS')  // Close the modal when images are loaded
     },
     setCurrentPage({ commit }, i) {
       console.log('setting current page to ' + i)
@@ -577,7 +731,6 @@ export default createStore({
       const pageIndex = state.currentPage
       const imageUri = state.pages[pageIndex].uri.replace(/\/info\.json/, '') + '/full/full/0/default.jpg'
       const blob = await fetch(imageUri).then(r => r.blob())
-      console.log("this is blob ", imageUri)
       try {
         const pageIndex = state.currentPage;
         const imageUri = state.pages[pageIndex].uri.replace(/\/info\.json/, '') + '/full/full/0/default.jpg';
@@ -593,18 +746,13 @@ export default createStore({
     }
       const successFunc = (json) => {
         commit('SET_LOADING', false)
-        console.log('success')
-        console.log(json)
-
         // do some sorting here, if necessary
         // then call measure generation
-        console.log('this is from autodetect thing')
         commit('CREATE_ZONES_FROM_MEASURE_DETECTOR_ON_PAGE', { rects: json.measures, pageIndex })
       }
 
       const errorFunc = (err) => {
         commit('SET_LOADING', false)
-        console.log('error retrieving autodetected measure positions for ' + imageUri + ': ' + err)
       }
       const formdata = new FormData()
       formdata.append('Content-Type', 'image/jpg')
@@ -629,18 +777,13 @@ export default createStore({
 
         const successFunc = (json) => {
           commit('SET_LOADING', false)
-          console.log('success')
-          console.log(json)
-
           // do some sorting here, if necessary
           // then call measure generation
-          console.log('this is from autodetect thing')
           commit('CREATE_ZONES_FROM_MEASURE_DETECTOR_ON_PAGE', { rects: json.measures, pageIndex })
         }
 
         const errorFunc = (err) => {
           commit('SET_LOADING', false)
-          console.log('error retrieving autodetected measure positions for ' + imageUri + ': ' + err)
         }
         const formdata = new FormData()
         formdata.append('Content-Type', 'image/jpg')
@@ -658,47 +801,34 @@ export default createStore({
           .catch(error => errorFunc(error))
       }
     },
-    setData({ commit }, mei) {
+    setData({ commit, dispatch }, mei) {
       const pageArray = getPageArray(mei)
-      console.log("page array is ", pageArray)
+      
       commit('SET_PAGES', pageArray)
-      console.log("this is SET_PAGES ", mei)
-
-
       commit('SET_XML_DOC', mei)
-      console.log("this is SET_XML_DOC ", mei)
-
       commit('SET_CURRENT_PAGE', 0)
-      console.log("this is SET_XML_DOC ", mei)
-
       commit('SET_PROCESSING', false)
-      console.log("this is SET_PROCESSING ", mei)
-
       commit('HIDE_MODALS')
-      console.log("this is HIDE_MODALS ", mei)
-
+      
+      // Verify image references after loading MEI data
+      dispatch('verifyImageReferences')
     },
     selectZone({ commit }, id) {
       commit('SELECT_ZONE', id)
-      console.log("this is select zone")
     },
     clickZone({ commit, state }, id) {
-      console.log("this is click zone")
-
       if (state.mode === allowedModes.deletion) {
         state.deleteZoneId = id
         const xmlDoc = state.xmlDoc.cloneNode(true)
         deleteZone(xmlDoc, id, state)
         state.xmlDoc = xmlDoc
       } else if (state.mode === allowedModes.additionalZone) {
-        console.log('clicked on existing zone')
         const xmlDoc = state.xmlDoc.cloneNode(true)
         toggleAdditionalZone(xmlDoc, id, state)
         state.xmlDoc = xmlDoc
       }
     },
     clickMeasureLabel({ commit }, id) {
-      console.log('clicked measure label')
       commit('SET_CURRENT_MEASURE_ID', id)
       commit('TOGGLE_MEASURE_MODAL')
     },
@@ -714,7 +844,6 @@ export default createStore({
       if (state.hoveredZoneId === id) {
         commit('HOVER_ZONE', null)
       }
-      console.log('unhovering ' + id)
     },
     createZone({ commit }, annot) {
       commit('SET_ANNO', annot)
@@ -758,17 +887,14 @@ export default createStore({
     },
     registerImageImports({ commit }, urls) {
       const arr = urls.replace(/\s+/g, ' ').trim().split(' ')
-      console.log("this is arr in register Image " + arr)
       arr.forEach((url, index) => {
         commit('REGISTER_IMAGE_IMPORT', { url, index })
         fetch(url)
           .then(res => res.json())
           .then(json => {
-            console.log('retrieved info.json for ' + url)
             commit('RECEIVE_IMAGE_IMPORT', { url, index, json })
           })
           .catch(err => {
-            console.log('Unable to fetch ' + url + ': ' + err)
             commit('FAILED_IMAGE_IMPORT', { url, index })
           })
       })
@@ -787,6 +913,34 @@ export default createStore({
     },
     previousMdiv({ commit }, mdiv) {        
       commit('PREVIOUS_MDIV', mdiv)
+    },
+    verifyImageReferences({ commit, state }) {
+      if (!state.xmlDoc) {
+        return
+      }
+      
+      // Use original MEI's graphic count if available, otherwise use current xmlDoc
+      const graphicCount = state.originalMeiGraphicCount || state.xmlDoc.querySelectorAll('graphic').length
+      const loadedImageCount = state.pages.length
+      
+      if (graphicCount === loadedImageCount) {
+        return { hasMismatches: false }
+      } else {
+        const missingCount = Math.max(0, graphicCount - loadedImageCount)
+        const extraCount = Math.max(0, loadedImageCount - graphicCount)
+        commit('SHOW_IMAGE_MISMATCH_MODAL', { 
+          missing: Array(missingCount).fill('(image)'), 
+          unreferenced: Array(extraCount).fill('(extra)') 
+        })
+        return { hasMismatches: true, graphicCount, loadedImageCount }
+      }
+    },
+    closeImageMismatchModal({ commit }) {
+      commit('HIDE_IMAGE_MISMATCH_MODAL')
+    },
+    cancelImageMismatch({ commit }) {
+      commit('HIDE_IMAGE_MISMATCH_MODAL')
+      commit('TOGGLE_LOADLOCALIMAGE_MODAL', false)
     }
   },
   /**
@@ -849,9 +1003,22 @@ export default createStore({
     pages: state => {
       const arr = []
       state.pages.forEach(page => {
-        console.log("this is the page width and height at index", page.width, " " , page.height)
+        // Handle both IIIF pages (with uri) and local images (with imageUrl)
+        let tileSource
+        if (page.isLocalImage && page.imageUrl) {
+          // For local images, return a proper tile source object for direct images
+          tileSource = {
+            type: 'image',
+            url: page.imageUrl,
+            width: page.width,
+            height: page.height
+          }
+        } else {
+          // For IIIF pages, just use the uri
+          tileSource = page.uri
+        }
         const obj = {
-          tileSource: page.uri,
+          tileSource: tileSource,
           width: page.width,
           x: 0,
           y: 0
@@ -863,8 +1030,22 @@ export default createStore({
     pagesDetailed: state => {
       const arr = []
       state.pages.forEach(page => {
+        // Handle both IIIF pages (with uri) and local images (with imageUrl)
+        let tileSource
+        if (page.isLocalImage && page.imageUrl) {
+          // For local images, return a proper tile source object for direct images
+          tileSource = {
+            type: 'image',
+            url: page.imageUrl,
+            width: page.width,
+            height: page.height
+          }
+        } else {
+          // For IIIF pages, just use the uri
+          tileSource = page.uri
+        }
         const obj = {
-          tileSource: page.uri,
+          tileSource: tileSource,
           dim: page.width + 'x' + page.height,
           n: page.n,
           label: page.label
@@ -946,7 +1127,6 @@ export default createStore({
       return arr
     },
     currentMdiv: state => {
-      console.log("this is current mdiv id ", state.currentMdivId)
       if (state.currentMdivId === null || state.xmlDoc === null) {
         return null
       }
@@ -970,8 +1150,6 @@ export default createStore({
       if (state.currentMeasureId === null || state.xmlDoc === null) {
         return null
       }
-
-      console.log("current measuser from state is ",   state.currentMeasure)
       // const mdivs = [...state.xmlDoc.querySelectorAll('mdiv')]
       // const mdiv = mdivs.find(mdiv => mdiv.getAttribute('xml:id') === state.currentMdivId)
       let measures = [...state.xmlDoc.querySelectorAll('measure')]
@@ -982,8 +1160,6 @@ export default createStore({
         measure = state.currentMeasure
       }
       const mdiv = measure.closest('mdiv').getAttribute('xml:id')
-      console.log("current measure ", measure)
-
       const multiRestElem = measure.querySelector('multiRest')
       const multiRest = (multiRestElem !== null) ? multiRestElem.getAttribute('num') : null
 
@@ -1019,9 +1195,11 @@ export default createStore({
     showLoadIIIFModal: state => state.showLoadIIIFModal,
     showLoadGitModal: state => state.showLoadGitModal,
     showLoadXMLModal: state => state.showLoadXMLModal,
+    showLoadLocalImage: state => state.showLoadLocalImage,
     showMeasureModal: state => state.showMeasureModal,
     showPagesModal: state => state.showPagesModal,
     showPageImportModal: state => state.showPageImportModal,
+    showImageMismatchModal: state => state.showImageMismatchModal,
     showMdivModal: state => state.showMdivModal,
     showMeasureList: state => state.showMeasureList,
     importingImages: state => state.importingImages,
