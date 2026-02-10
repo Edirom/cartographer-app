@@ -17,6 +17,7 @@
 
 <script>
 import { mapGetters } from 'vuex'
+import { mode as allowedModes } from '@/store/constants.js'
 import AppHeader from '@/components/AppHeader.vue'
 import ContentPreviewPane from '@/components/ContentPreviewPane.vue'
 import AppSidebar from '@/components/AppSidebar.vue'
@@ -60,12 +61,27 @@ export default {
   mounted () {
     window.addEventListener('keyup', e => {
       // console.log('keyupped ' + e.key)
+      const target = e.target
+      const isTypingTarget = target && (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable
+      )
+
+      if (isTypingTarget) return
+
       if (e.key === 'm') {
-        // console.log('toggle measureList')
         this.$store.dispatch('toggleMeasureList')
       } else if (e.key === 'p') {
-        // console.log('toggle pageModal')
         this.$store.dispatch('togglePagesModal')
+      } else if (e.key === 'd') {
+        this.$store.dispatch('setMode', allowedModes.manualRect)
+      } else if (e.key === 'a') {
+        this.$store.dispatch('setMode', allowedModes.additionalZone)
+      } else if (e.key === 'x') {
+        this.$store.dispatch('setMode', allowedModes.deletion)
+      } else if (e.key === 's') {
+        this.$store.dispatch('setMode', allowedModes.selection)
       }
     })
   }
