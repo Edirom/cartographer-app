@@ -13,19 +13,30 @@
 
 /**
  * Convert local image files to OpenSeadragon-compatible format
- * Creates blob URLs that OpenSeadragon can load as simple images
+ * Creates blob URLs for OpenSeadragon while storing file names for MEI references
  * @param {File[]} imageFiles - Array of image File objects
- * @returns {Promise<Array>} - Promise that resolves to an array of tile sources compatible with OpenSeadragon
+ * @returns {Promise<Array>} - Promise that resolves to an array of page objects
  */
 export async function convertLocalImagesToPages(imageFiles) {
+  // Log all available images from the folder
+  const folderImageNames = imageFiles.map(file => file.name)
+  console.log('📂 Images available in selected folder:', folderImageNames)
+  console.log('📊 Total files found:', imageFiles.length)
+  
   const pagePromises = imageFiles.map((file, index) => {
+    console.log(`Processing file ${index + 1}/${imageFiles.length}: ${file.name}`)
     return new Promise((resolve, reject) => {
       // Create blob URL directly from the file (File is a type of Blob)
       const blobUrl = URL.createObjectURL(file)
       
+      // Create a simple name for the image (image1, image2, etc.)
+      const extension = file.name.substring(file.name.lastIndexOf('.')) || '.jpg'
+      const imageName = `image${index + 1}${extension}`
+      
       const img = new Image()
       
       img.onload = () => {
+        console.log(`✅ Image loaded: ${file.name} (${img.width}x${img.height})`)
         // Create a tile source in OpenSeadragon's expected format
         // Using a simple image tile source configuration
         const pageObject = {
@@ -33,13 +44,14 @@ export async function convertLocalImagesToPages(imageFiles) {
           type: 'image',
           url: blobUrl,
           // Metadata for the application
-          uri: blobUrl,
-          imageUrl: blobUrl,  // Required by addLocalImagePages action
+          uri: imageName,          // Use image name instead of blob URL for MEI
+          imageUrl: blobUrl,       // Keep blob URL for OpenSeadragon
           width: img.width,
           height: img.height,
           n: (index + 1).toString(),
-          label: file.name,
+          label: imageName,
           fileName: file.name,
+          imageName: imageName,    // Store the simple name
           filePath: file.webkitRelativePath || file.name,
           isLocalImage: true,
           hasSvg: false,
@@ -52,6 +64,7 @@ export async function convertLocalImagesToPages(imageFiles) {
       }
       
       img.onerror = () => {
+        console.error(`❌ FAILED to load: ${file.name}`)
         reject(new Error(`Failed to load image: ${file.name}`))
       }
       
@@ -60,7 +73,13 @@ export async function convertLocalImagesToPages(imageFiles) {
     })
   })
   
-  return Promise.all(pagePromises)
+  return Promise.all(pagePromises).then(pages => {
+    console.log(`✅ Total images processed: ${pages.length}`)
+    return pages
+  }).catch(err => {
+    console.error('Error during image processing:', err)
+    throw err
+  })
 }
 
 /**

@@ -20,18 +20,25 @@
             />
           </div>
           <div v-if="selectedImages.length > 0" class="image-info">
-            <p><strong>Selected Images: {{ selectedImages.length }}</strong></p>
+            <p><strong>Images Found: {{ selectedImages.length }}</strong></p>
+            <p v-if="totalFilesSelected > selectedImages.length" class="text-gray">
+              ({{ totalFilesSelected - selectedImages.length }} non-image file(s) ignored)
+            </p>
             <div class="image-list">
               <div v-for="(image, index) in selectedImages" :key="index" class="image-item">
                 <span>{{ image.name }}</span>
               </div>
             </div>
           </div>
+          <div v-else-if="totalFilesSelected > 0" class="image-info">
+            <p class="text-warning"><strong>0 images found</strong></p>
+            <p class="text-gray">All {{ totalFilesSelected }} file(s) in the folder are non-image files</p>
+          </div>
         </div>
       </div>
       <div class="modal-footer">
          <button class="btn" @click="closeModal()">Cancel</button>
-         <button class="btn btn-primary" @click="importImages()" :disabled="selectedImages.length === 0">Import</button>
+         <button class="btn btn-primary" @click="importImages()">Import</button>
       </div>
     </div>
   </div>
@@ -44,7 +51,8 @@ export default {
   name: 'LoadLocalImage',
   data: () => ({
     selectedImages: [],
-    selectedFolderPath: ''
+    selectedFolderPath: '',
+    totalFilesSelected: 0
   }),
   components: {
   },
@@ -53,13 +61,13 @@ export default {
   methods: {
     handleFolderSelection (event) {
       const files = event.target.files
+      this.totalFilesSelected = files.length
+      
       if (files.length > 0) {
         // Extract folder path from the first file's path
         const firstFilePath = files[0].webkitRelativePath || ''
         const folderPath = firstFilePath.split('/')[0]
         this.selectedFolderPath = folderPath
-        console.log('Selected folder path:', folderPath)
-        console.log('Total files in folder:', files.length)
         
         // Filter only image files
         const imageFiles = Array.from(files).filter(file => {
@@ -70,39 +78,34 @@ export default {
           name: file.webkitRelativePath || file.name,
           file: file
         }))
-        
-        console.log('Image files found:', this.selectedImages.length)
       }
     },
     importImages () {
-      if (this.selectedImages.length > 0) {
-        console.log('Folder path:', this.selectedFolderPath)
-        console.log('Number of images:', this.selectedImages.length)
-        console.log('Image files:', this.selectedImages.map(img => img.name))
-        
-        // Sort images by name
-        const sortedImages = sortImageFiles(this.selectedImages.map(img => img.file))
-        
-        // Convert images to pages and dispatch to store
-        convertLocalImagesToPages(sortedImages)
-          .then(pages => {
-            console.log('Converted pages:', pages)
-            // Pass original MEI if it exists (to preserve zones/measures)
-            const originalMei = this.$store.state.xmlDoc
-            if (originalMei) {
-              console.log('Dispatching addLocalImagePages with original MEI')
-              this.$store.dispatch('addLocalImagePages', { pages, originalMei })
-            } else {
-              console.log('Dispatching addLocalImagePages without original MEI')
-              this.$store.dispatch('addLocalImagePages', pages)
-            }
-            // Modal will close via HIDE_MODALS commit in addLocalImagePages action
-          })
-          .catch(error => {
-            console.error('Error loading images:', error)
-            alert('Failed to load some images. Check console for details.')
-          })
+      // Check if no images were selected
+      if (this.selectedImages.length === 0) {
+        // Dispatch action to show error modal
+        this.$store.dispatch('addLocalImagePages', [])
+        return
       }
+      
+      // Sort images by name
+      const sortedImages = sortImageFiles(this.selectedImages.map(img => img.file))
+      
+      // Convert images to pages and dispatch to store
+      convertLocalImagesToPages(sortedImages)
+        .then(pages => {
+          // Pass original MEI if it exists (to preserve zones/measures)
+          const originalMei = this.$store.state.xmlDoc
+          if (originalMei) {
+            this.$store.dispatch('addLocalImagePages', { pages, originalMei })
+          } else {
+            this.$store.dispatch('addLocalImagePages', pages)
+          }
+        })
+        .catch(error => {
+          console.error('Error loading images:', error)
+          alert('Failed to load some images. Check console for details.')
+        })
     },
     closeModal: function () {
       this.$store.commit('TOGGLE_LOADLOCALIMAGE_MODAL', false)
@@ -167,5 +170,15 @@ export default {
   &:last-child {
     border-bottom: none;
   }
+}
+
+.text-gray {
+  color: #888;
+  font-size: 0.9rem;
+  margin-top: 0.25rem;
+}
+
+.text-warning {
+  color: #ff5722;
 }
 </style>

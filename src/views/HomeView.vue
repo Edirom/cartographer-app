@@ -3,6 +3,7 @@
     <LoadXMLModal v-if="showLoadXMLModal"/>
     <LoadIIIFModal v-if="showLoadIIIFModal"/>
     <LoadLocalImage v-if="showLoadLocalImage"/>
+    <ImageMismatchModal v-if="showImageMismatchModal"/>
     <!--<ImageSelectionModal/>-->
     <MeasureModal v-if="showMeasureModal"/>
     <MdivModal v-if="showMdivModal"/>
@@ -31,6 +32,7 @@ import MdivModal from '@/components/MdivModal.vue'
 import LoadXMLModal from '@/components/LoadXMLModal.vue'
 import LoadIIIFModal from '@/components/LoadIIIFModal.vue'
 import LoadLocalImage from '@/components/LoadLocalImage.vue'
+import ImageMismatchModal from '@/components/ImageMismatchModal.vue'
 
 
 export default {
@@ -48,7 +50,8 @@ export default {
     MdivModal,
     LoadXMLModal,
     LoadIIIFModal,
-    LoadLocalImage
+    LoadLocalImage,
+    ImageMismatchModal
   },
   computed: {
     ...mapGetters([
@@ -59,6 +62,7 @@ export default {
       'showMdivModal',
       'showPagesModal',
       'showPageImportModal',
+      'showImageMismatchModal',
     ])
   },
   mounted () {
