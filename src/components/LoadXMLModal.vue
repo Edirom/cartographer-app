@@ -158,42 +158,79 @@ export default {
       console.log('Image files found:', imageFiles.length, imageFiles.map(f => f.name))
       
       if (imageFiles.length > 0) {
-        // Sort images by name
-        const sortedImages = sortImageFiles(imageFiles)
-        console.log('Sorted images:', sortedImages.map(f => f.name))
+        // Match files to image targets by path
+        let filesToLoad = imageFiles
         
-        // Convert images to pages to get blob URLs and dimensions
-        console.log('Calling convertLocalImagesToPages with', sortedImages.length, 'files')
-        convertLocalImagesToPages(sortedImages)
-          .then(pages => {
-            console.log('Converted pages:', pages)
-            console.log('Number of pages converted:', pages.length)
-            
-            if (!pages || pages.length === 0) {
-              throw new Error('No pages were converted from images')
-            }
-            
-            // Keep references to pages in the component
-            this.loadedPages = pages
-            
-            // Also store them in the Vuex store to prevent garbage collection of blob URLs
-            this.$store.commit('SET_LOCAL_IMAGE_PAGES', pages)
-            
-            // Pass both pages and the original MEI (to preserve zones) to the action
-            console.log('Dispatching addLocalImagePages action with original MEI')
-            this.$store.dispatch('addLocalImagePages', { pages, originalMei: this.currentMei })
-            this.closeModal()
+        if (this.localImageTargets && this.localImageTargets.length > 0) {
+          console.log('Matching files to targets by path...')
+          // Create a map of target paths to files
+          const fileMap = {}
+          imageFiles.forEach(file => {
+            const filePath = file.webkitRelativePath || file.name
+            fileMap[filePath] = file
           })
-          .catch(error => {
-            console.error('Error loading images:', error)
-            console.error('Stack:', error.stack)
-            alert('Failed to load some images: ' + error.message)
-          })
+          
+          // Try to find files that match the targets
+          filesToLoad = this.localImageTargets
+            .map(target => {
+              const file = fileMap[target]
+              if (file) {
+                console.log(`✅ Found matching file for target: ${target}`)
+                return file
+              } else {
+                console.warn(`⚠️ No matching file found for target: ${target}`)
+                return null
+              }
+            })
+            .filter(f => f !== null) // Remove unmatched targets
+          
+          // If not all targets were matched, warn user
+          if (filesToLoad.length !== this.localImageTargets.length) {
+            console.warn(`Found ${filesToLoad.length} of ${this.localImageTargets.length} expected images`)
+          }
+        } else {
+          // No specific targets, sort all images by name
+          filesToLoad = sortImageFiles(imageFiles)
+        }
+        
+        console.log('Files to load:', filesToLoad.map(f => f.webkitRelativePath || f.name))
+        
+        if (filesToLoad.length > 0) {
+          // Convert images to pages to get blob URLs and dimensions
+          console.log('Calling convertLocalImagesToPages with', filesToLoad.length, 'files')
+          convertLocalImagesToPages(filesToLoad)
+            .then(pages => {
+              console.log('Converted pages:', pages)
+              console.log('Number of pages converted:', pages.length)
+              
+              if (!pages || pages.length === 0) {
+                throw new Error('No pages were converted from images')
+              }
+              
+              // Keep references to pages in the component
+              this.loadedPages = pages
+              
+              // Also store them in the Vuex store to prevent garbage collection of blob URLs
+              this.$store.commit('SET_LOCAL_IMAGE_PAGES', pages)
+              
+              // Pass both pages and the original MEI (to preserve zones) to the action
+              console.log('Dispatching addLocalImagePages action with original MEI')
+              this.$store.dispatch('addLocalImagePages', { pages, originalMei: this.currentMei })
+              this.closeModal()
+            })
+            .catch(error => {
+              console.error('Error loading images:', error)
+              console.error('Stack:', error.stack)
+              alert('Failed to load some images: ' + error.message)
+            })
+        } else {
+          alert('No matching image files found for the MEI targets')
+          this.cancelSelectFolder()
+        }
       } else {
         console.log('No image files found in selected folder')
-        // Still load the MEI without images
-        this.$store.dispatch('setData', this.currentMei)
-        this.closeModal()
+        alert('No image files found in the selected folder')
+        this.cancelSelectFolder()
       }
     },
     closeModal: function () {

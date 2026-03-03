@@ -530,8 +530,9 @@ export default createStore({
       // This ensures all drawing and annotation functionality works correctly
       const surfaceElements = pages.map((page, index) => {
         const id = `surface_${index + 1}`
-        // Use the image name (e.g., 'image1.jpg') for MEI storage, not the blob URL
-        const target = page.imageName || page.uri || page.imageUrl || `image${index + 1}.jpg`
+        // Use the original file path (preserves folder structure) for MEI storage
+        // Fallback to imageName for compatibility with images loaded without paths
+        const target = page.filePath || page.uri || page.imageName || page.imageUrl || `image${index + 1}.jpg`
         // Include graphic element with dimensions for each surface
         return `<surface n="${index + 1}" xml:id="${id}">
       <graphic xml:id="graphic_${index + 1}" target="${target}" width="${page.width}" height="${page.height}"/>
