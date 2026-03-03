@@ -8,8 +8,37 @@ of bounding boxes of measures in music documents. It is a successor of the
 independent. It optionally uses the *Measure Detector* for automatic recognition
 of measure positions, but allows manual correction of these results.
 
+## Prerequisites
 
-## Features
+**Node.js v20.0.0 or higher is required.** This project uses dependencies that mandate Node v20+. Using an older version of Node will result in installation errors.
+
+### Install Node.js
+
+**Using nvm (Recommended):**
+```bash
+nvm install 20
+nvm use 20
+```
+
+This repository includes a `.nvmrc` file, so you can simply run:
+```bash
+nvm use
+```
+
+**Or set v20 as default:**
+```bash
+nvm alias default 20
+```
+
+**Direct download:** Visit https://nodejs.org/ and install the latest LTS (v20 or higher)
+
+**Verify installation:**
+```bash
+node --version  # Should output v20.x.x or higher
+npm --version
+```
+
+## Important Tools and their Documentation
 
 ### Image Import
 The Cartographer App supports importing images from multiple sources:
@@ -25,8 +54,27 @@ The Cartographer App supports importing images from multiple sources:
 
 
 ## Project setup
+
+### Clone the Repository
+```bash
+git clone https://github.com/Edirom/cartographer-app.git
+cd cartographer-app
 ```
+
+### Install Dependencies
+```bash
 npm install
+```
+
+If you encounter peer dependency errors, use:
+```bash
+npm install --legacy-peer-deps
+```
+
+For a complete fresh install, try:
+```bash
+rm -rf node_modules package-lock.json
+npm install --legacy-peer-deps
 ```
 
 ### Compiles and hot-reloads for development
