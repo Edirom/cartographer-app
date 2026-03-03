@@ -7,28 +7,40 @@ import { mode as allowedModes } from '@/store/constants.js'
 const MAX_HISTORY = 50  // Maximum number of undo states to keep
 const parser = new DOMParser()
 const serializer = new XMLSerializer()
+let historySaveTimeout = null  // For debouncing history saves
 
 /**
  * Helper function to save current xmlDoc state to history
+ * Debounced to prevent multiple saves within 50ms (batches changes from multiple mutations)
  * @param {Object} state - Vuex state
  */
 function saveToHistory(state) {
   if (state.xmlDoc === null) return
   
-  // Remove any future states if we're not at the end of history
-  if (state.historyIndex < state.history.length - 1) {
-    state.history = state.history.slice(0, state.historyIndex + 1)
+  // Clear any pending save
+  if (historySaveTimeout) {
+    clearTimeout(historySaveTimeout)
   }
   
-  // Save current state and move history pointer forward
-  state.history.push(state.xmlDoc.cloneNode(true))
-  state.historyIndex = state.history.length - 1
-  
-  // Limit history size to prevent memory bloat
-  if (state.history.length > MAX_HISTORY) {
-    state.history.shift()
-    state.historyIndex--
-  }
+  // Schedule save for after other mutations finish
+  historySaveTimeout = setTimeout(() => {
+    // Remove any future states if we're not at the end of history
+    if (state.historyIndex < state.history.length - 1) {
+      state.history = state.history.slice(0, state.historyIndex + 1)
+    }
+    
+    // Save current state and move history pointer forward
+    state.history.push(state.xmlDoc.cloneNode(true))
+    state.historyIndex = state.history.length - 1
+    
+    // Limit history size to prevent memory bloat
+    if (state.history.length > MAX_HISTORY) {
+      state.history.shift()
+      state.historyIndex--
+    }
+    
+    historySaveTimeout = null
+  }, 50)
 }
 
 function getDefaultState() {
@@ -364,15 +376,11 @@ export default createStore({
       }
     },
     CREATE_NEW_MDIV(state) {
-      console.log("new case 1 creating new mdiv")
       saveToHistory(state)
       const xmlDoc = state.xmlDoc.cloneNode(true)
-            console.log("new case 2 creating new mdiv")
       state.currentMdivId = createNewMdiv(xmlDoc, state.currentMdivId)
-            console.log("new case 3 creating new mdiv")
 
       moveContentToMdiv(xmlDoc, state.currentMeasureId, state.currentMdivId, state)
-            console.log("new case 4 creating new mdiv")
 
       state.xmlDoc = xmlDoc
     },
