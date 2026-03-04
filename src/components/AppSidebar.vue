@@ -14,6 +14,18 @@
       <font-awesome-icon icon="fa-solid fa-pen"/>
     </button>
 
+    <!-- UNDO -->
+    <button class="btn btn-action" title="undo changes" :disabled="!canUndo"
+      @click="undoChanges">
+      <font-awesome-icon icon="fa-solid fa-rotate-left"/>
+    </button>
+
+    <!-- REDO -->
+    <button class="btn btn-action" title="redo changes" :disabled="!canRedo"
+      @click="redoChanges">
+      <font-awesome-icon icon="fa-solid fa-rotate-right"/>
+    </button>
+
     <!-- RECTANGLE -->
     <!-- <button class="btn btn-action" title="draw rectangle" :disabled="!isReady">
       <font-awesome-icon icon="fa-solid fa-crop-simple"/>
@@ -163,6 +175,12 @@ export default {
     },
     measures: function () {
       return this.$store.getters.measures
+    },
+    canUndo: function () {
+      return this.$store.getters.canUndo
+    },
+    canRedo: function () {
+      return this.$store.getters.canRedo
     }
     /* visible: function() {
       return this.$store.getters.imageSelectionModalVisible
@@ -199,6 +217,12 @@ export default {
       } else {
         console.error('mode ' + mode + ' is not known. Please check AppSidebar.vue and @/store/index.js.')
       }
+    },
+    undoChanges: function () {
+      this.$store.dispatch('undo')
+    },
+    redoChanges: function () {
+      this.$store.dispatch('redo')
     }
   }
 }
