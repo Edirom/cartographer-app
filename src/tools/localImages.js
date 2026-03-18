@@ -39,20 +39,22 @@ export async function convertLocalImagesToPages(imageFiles) {
         console.log(`✅ Image loaded: ${file.name} (${img.width}x${img.height})`)
         // Create a tile source in OpenSeadragon's expected format
         // Using a simple image tile source configuration
+        // Use original file path with folder structure if available, otherwise use filename
+        const originalPath = file.webkitRelativePath || file.name
         const pageObject = {
           // OpenSeadragon tile source properties
           type: 'image',
           url: blobUrl,
           // Metadata for the application
-          uri: imageName,          // Use image name instead of blob URL for MEI
+          uri: originalPath,        // Use original path for MEI (preserves folder structure)
           imageUrl: blobUrl,       // Keep blob URL for OpenSeadragon
           width: img.width,
           height: img.height,
           n: (index + 1).toString(),
           label: imageName,
           fileName: file.name,
-          imageName: imageName,    // Store the simple name
-          filePath: file.webkitRelativePath || file.name,
+          imageName: imageName,    // Store the simple name for display
+          filePath: originalPath,  // Store original path with folder structure for MEI
           isLocalImage: true,
           hasSvg: false,
           hasZones: false,
