@@ -7,6 +7,48 @@ import { mode as allowedModes } from '@/store/constants.js'
 const MAX_HISTORY = 50  // Maximum number of undo states to keep
 const parser = new DOMParser()
 const serializer = new XMLSerializer()
+
+/**
+ * Helper function to format XML with proper indentation
+ * @param {string} xmlString - Raw XML string from serializer
+ * @returns {string} Formatted XML with indentation
+ */
+const formatXml = (xmlString) => {
+  const tab = '  '
+  let formatted = ''
+  let indent = 0
+  
+  // Split on tags and process
+  xmlString.match(/(<[^>]+>|[^<]+)/g)?.forEach(node => {
+    node = node.trim()
+    if (!node) return
+    
+    // Skip text nodes that are only whitespace
+    if (!node.startsWith('<')) return
+    
+    // Closing tag - decrease indent before adding
+    if (node.startsWith('</')) {
+      indent = Math.max(0, indent - 1)
+      formatted += tab.repeat(indent) + node + '\n'
+    }
+    // Self-closing or opening tag
+    else if (node.endsWith('/>')) {
+      formatted += tab.repeat(indent) + node + '\n'
+    }
+    // Opening tag - add then increase indent
+    else if (node.startsWith('<') && !node.startsWith('<?')) {
+      formatted += tab.repeat(indent) + node + '\n'
+      indent++
+    }
+    // XML declaration
+    else {
+      formatted += node + '\n'
+    }
+  })
+  
+  return formatted.trim()
+}
+
 let historySaveTimeout = null  // For debouncing history saves
 
 /**
@@ -588,7 +630,7 @@ export default createStore({
     toggleMeasureList({ commit }) {
       commit('TOGGLE_MEASURE_LIST')
     },
-    addLocalImagePages({ commit, dispatch, state }, input) {
+    async addLocalImagePages({ commit, dispatch, state }, input) {
       // Handle both old format (pages directly) and new format ({pages, originalMei})
       const pages = input.pages || input
       const originalMei = input.originalMei || state.xmlDoc
@@ -608,60 +650,30 @@ export default createStore({
       const originalGraphicCount = originalMei ? originalMei.querySelectorAll('graphic').length : 0
       state.originalMeiGraphicCount = originalGraphicCount
       
+      // Import uuid utility for consistent ID generation with IIIF
+      const { uuid } = await import('@/tools/uuid.js')
+      
       // Create a complete MEI document with proper facsimile structure for local images
-      // This ensures all drawing and annotation functionality works correctly
-      const surfaceElements = pages.map((page, index) => {
-        const id = `surface_${index + 1}`
-        // Use the original file path (preserves folder structure) for MEI storage
-        // Fallback to imageName for compatibility with images loaded without paths
-        const target = page.filePath || page.uri || page.imageName || page.imageUrl || `image${index + 1}.jpg`
-        // Include graphic element with dimensions for each surface
-        return `<surface n="${index + 1}" xml:id="${id}">
-      <graphic xml:id="graphic_${index + 1}" target="${target}" width="${page.width}" height="${page.height}"/>
-    </surface>`
-      }).join('\n    ')
+      // This ensures consistency with IIIF-generated MEI files
+      const parser = new DOMParser()
       
-      const pbElements = pages.map((page, index) => {
-        const id = `surface_${index + 1}`
-        return `<pb xml:id="pb_${index + 1}" facs="#${id}" n="${index + 1}"/>`
-      }).join('\n          ')
-      
-      // Build body content: use original MEI's mdivs if available, otherwise create default "Local Images" mdiv
-      let bodyContent
-      let title = 'Local Images'
-      
-      if (originalMei) {
-        const originalMusic = originalMei.querySelector('music')
-        if (originalMusic) {
-          const originalBody = originalMusic.querySelector('body')
-          if (originalBody) {
-            bodyContent = originalBody.innerHTML
-          }
+      // Load the standard MEI template to ensure consistency with IIIF
+      let xmlDoc
+      try {
+        // Try to fetch template with correct path
+        const templateUrl = `${process.env.PUBLIC_URL || ''}/assets/meiFileTemplate.xml`
+        const templateResponse = await fetch(templateUrl)
+        if (!templateResponse.ok) {
+          throw new Error(`Template fetch failed: ${templateResponse.status}`)
         }
-        
-        // Extract title from original MEI
-        const originalMeiHead = originalMei.querySelector('meiHead')
-        if (originalMeiHead) {
-          const titleElem = originalMeiHead.querySelector('titleStmt > title')
-          if (titleElem && titleElem.textContent) {
-            title = titleElem.textContent
-          }
-        }
-      }
-      
-      if (!bodyContent) {
-        bodyContent = `<mdiv xml:id="mdiv_1" label="Movement 1">
-        <score>
-          <scoreDef/>
-          <section>
-            ${pbElements}
-          </section>
-        </score>
-      </mdiv>`
-      }
-      
-      const meiTemplate = `<?xml version="1.0" encoding="UTF-8"?>
-<mei xmlns="http://www.music-encoding.org/ns/mei" meiversion="5.0">
+        const templateText = await templateResponse.text()
+        xmlDoc = parser.parseFromString(templateText, 'text/xml')
+      } catch (e) {
+        console.warn('Could not load MEI template, using fallback:', e.message)
+        // Fallback: create MEI structure matching the standard template
+        const title = originalMei?.querySelector('meiHead titleStmt > title')?.textContent || 'Local Images'
+        const meiTemplate = `<?xml version="1.0" encoding="UTF-8"?>
+<mei xmlns="http://www.music-encoding.org/ns/mei" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:svg="http://www.w3.org/2000/svg" meiversion="5.0.0-dev">
   <meiHead>
     <fileDesc>
       <titleStmt>
@@ -671,34 +683,126 @@ export default createStore({
     </fileDesc>
   </meiHead>
   <music>
-    <facsimile>
-      ${surfaceElements}
-    </facsimile>
-    <body>
-      ${bodyContent}
-    </body>
+    <facsimile></facsimile>
+    <body></body>
   </music>
 </mei>`
+        xmlDoc = parser.parseFromString(meiTemplate, 'text/xml')
+      }
       
-      const parser = new DOMParser()
-      let xmlDoc = parser.parseFromString(meiTemplate, 'text/xml')
+      // Set or update title in meiHead (with null checking)
+      const titleElem = xmlDoc.querySelector('meiHead titleStmt > title')
+      if (titleElem) {
+        if (originalMei) {
+          const originalTitle = originalMei.querySelector('meiHead titleStmt > title')?.textContent
+          if (originalTitle) {
+            titleElem.textContent = originalTitle
+          }
+        } else if (!titleElem.textContent) {
+          titleElem.textContent = 'Local Images'
+        }
+      }
       
-      // If original MEI was provided, merge zones from original surfaces
-      if (originalMei) {
-        const originalSurfaces = originalMei.querySelectorAll('surface')
-        const newSurfaces = xmlDoc.querySelectorAll('surface')
+      // Set root MEI element attributes to match IIIF format
+      const rootMei = xmlDoc.documentElement
+      rootMei.setAttributeNS('http://www.w3.org/XML/1998/namespace', 'xml:id', 'm' + uuid())
+      
+      // Ensure music element has meiversion attribute
+      const musicElem = xmlDoc.querySelector('music')
+      if (musicElem && !musicElem.getAttribute('meiversion')) {
+        musicElem.setAttribute('meiversion', '5.0.0-dev')
+      }
+      
+      // Extract surface IDs for pb references
+      const surfaceIds = []
+      
+      // Add surfaces with proper UUID-based IDs and coordinate attributes
+      const facsimile = xmlDoc.querySelector('facsimile')
+      if (!facsimile) {
+        console.error('MEI document missing facsimile element')
+        return
+      }
+      
+      pages.forEach((page, index) => {
+        const surfaceId = 's' + uuid()
+        const graphicId = 'g' + uuid()
+        surfaceIds.push(surfaceId)
         
-        originalSurfaces.forEach((origSurface, index) => {
-          if (index < newSurfaces.length) {
-            const newSurface = newSurfaces[index]
-            const zones = origSurface.querySelectorAll('zone')
-            
-            zones.forEach((zone) => {
+        const surface = xmlDoc.createElementNS('http://www.music-encoding.org/ns/mei', 'surface')
+        surface.setAttribute('xml:id', surfaceId)
+        surface.setAttribute('n', (index + 1).toString())
+        surface.setAttribute('ulx', '0')
+        surface.setAttribute('uly', '0')
+        surface.setAttribute('lrx', (page.width || 0).toString())
+        surface.setAttribute('lry', (page.height || 0).toString())
+        surface.setAttribute('label', (index + 1).toString())
+        
+        // Use the original file path (preserves folder structure) for MEI storage
+        // Fallback to imageName for compatibility with images loaded without paths
+        const target = page.filePath || page.uri || page.imageName || page.imageUrl || `image${index + 1}.jpg`
+        
+        const graphic = xmlDoc.createElementNS('http://www.music-encoding.org/ns/mei', 'graphic')
+        graphic.setAttribute('xml:id', graphicId)
+        graphic.setAttribute('target', target)
+        graphic.setAttribute('type', 'facsimile')
+        graphic.setAttribute('width', (page.width || 0).toString())
+        graphic.setAttribute('height', (page.height || 0).toString())
+        
+        surface.appendChild(graphic)
+        
+        // Merge zones from original surfaces if they exist
+        if (originalMei) {
+          const originalSurfaces = originalMei.querySelectorAll('surface')
+          if (index < originalSurfaces.length) {
+            const originalSurface = originalSurfaces[index]
+            const zones = originalSurface.querySelectorAll('zone')
+            zones.forEach(zone => {
               const clonedZone = xmlDoc.importNode(zone, true)
-              newSurface.appendChild(clonedZone)
+              surface.appendChild(clonedZone)
             })
           }
+        }
+        
+        facsimile.appendChild(surface)
+      })
+      
+      // Build body content: use original MEI's body if available, otherwise create default
+      const body = xmlDoc.querySelector('body')
+      if (!body) {
+        console.error('MEI document missing body element')
+        return
+      }
+      
+      body.innerHTML = ''
+      
+      if (originalMei) {
+        const originalBody = originalMei.querySelector('body')
+        if (originalBody && originalBody.innerHTML.trim()) {
+          body.innerHTML = originalBody.innerHTML
+        }
+      }
+      
+      // If no body content, create default with pb elements referencing surfaces
+      if (!body.innerHTML.trim()) {
+        const mdiv = xmlDoc.createElementNS('http://www.music-encoding.org/ns/mei', 'mdiv')
+        mdiv.setAttribute('xml:id', 'm' + uuid())
+        mdiv.setAttribute('label', 'Movement 1')
+        mdiv.setAttribute('n', '1')
+        
+        const score = xmlDoc.createElementNS('http://www.music-encoding.org/ns/mei', 'score')
+        const section = xmlDoc.createElementNS('http://www.music-encoding.org/ns/mei', 'section')
+        
+        // Add page breaks referencing the surfaces by their UUID-based IDs
+        surfaceIds.forEach((surfaceId, index) => {
+          const pb = xmlDoc.createElementNS('http://www.music-encoding.org/ns/mei', 'pb')
+          pb.setAttribute('facs', '#' + surfaceId)
+          pb.setAttribute('n', (index + 1).toString())
+          section.appendChild(pb)
         })
+        
+        score.appendChild(section)
+        mdiv.appendChild(score)
+        body.appendChild(mdiv)
       }
       
       // Verify image count matches BEFORE committing anything (only if original MEI exists)
@@ -1070,7 +1174,8 @@ export default createStore({
         return null
       }
       const mei = state.xmlDoc
-      return serializer.serializeToString(mei)
+      const serialized = serializer.serializeToString(mei)
+      return formatXml(serialized)
     },
     currentPageIndexOneBased: state => {
       return state.currentPage + 1

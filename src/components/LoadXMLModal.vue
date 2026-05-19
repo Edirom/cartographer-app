@@ -199,7 +199,7 @@ export default {
           // Convert images to pages to get blob URLs and dimensions
           console.log('Calling convertLocalImagesToPages with', filesToLoad.length, 'files')
           convertLocalImagesToPages(filesToLoad)
-            .then(pages => {
+            .then(async pages => {
               console.log('Converted pages:', pages)
               console.log('Number of pages converted:', pages.length)
               
@@ -215,7 +215,7 @@ export default {
               
               // Pass both pages and the original MEI (to preserve zones) to the action
               console.log('Dispatching addLocalImagePages action with original MEI')
-              this.$store.dispatch('addLocalImagePages', { pages, originalMei: this.currentMei })
+              await this.$store.dispatch('addLocalImagePages', { pages, originalMei: this.currentMei })
               this.closeModal()
             })
             .catch(error => {
