@@ -661,7 +661,8 @@ export default createStore({
       let xmlDoc
       try {
         // Try to fetch template with correct path
-        const templateUrl = `${process.env.PUBLIC_URL || ''}/assets/meiFileTemplate.xml`
+        const base = (process.env.BASE_URL || '/').replace(/\/$/, '')
+        const templateUrl = `${base}/assets/meiFileTemplate.xml`
         const templateResponse = await fetch(templateUrl)
         if (!templateResponse.ok) {
           throw new Error(`Template fetch failed: ${templateResponse.status}`)
@@ -809,6 +810,7 @@ export default createStore({
       if (originalMei && state.originalMeiGraphicCount !== pages.length) {
         const missingCount = Math.max(0, state.originalMeiGraphicCount - pages.length)
         const extraCount = Math.max(0, pages.length - state.originalMeiGraphicCount)
+        commit('SET_LOADING', false)
         commit('SHOW_IMAGE_MISMATCH_MODAL', { 
           missing: Array(missingCount).fill('(image)'), 
           unreferenced: Array(extraCount).fill('(extra)') 
@@ -819,6 +821,7 @@ export default createStore({
       commit('SET_XML_DOC', xmlDoc)
       commit('SET_PAGES', pages)
       commit('SET_CURRENT_PAGE', 0)
+      commit('SET_LOADING', false)
       commit('HIDE_MODALS')  // Close the modal when images are loaded
     },
     setCurrentPage({ commit }, i) {
@@ -1192,20 +1195,19 @@ export default createStore({
         // Handle both IIIF pages (with uri) and local images (with imageUrl)
         let tileSource
         if (page.isLocalImage && page.imageUrl) {
-          // For local images, return a proper tile source object for direct images
-          tileSource = {
-            type: 'image',
-            url: page.imageUrl,
-            width: page.width,
-            height: page.height
-          }
+          // For local images use a simple image tile source.
+          // Only pass width/height when known — if 0 OSD rejects the tile source
+          // outright. Without them OSD loads the blob URL and determines dimensions itself.
+          tileSource = { type: 'image', url: page.imageUrl }
+          if (page.width > 0) tileSource.width = page.width
+          if (page.height > 0) tileSource.height = page.height
         } else {
           // For IIIF pages, just use the uri
           tileSource = page.uri
         }
         const obj = {
           tileSource: tileSource,
-          width: page.width,
+          width: page.width || undefined,
           x: 0,
           y: 0
         }
@@ -1219,13 +1221,9 @@ export default createStore({
         // Handle both IIIF pages (with uri) and local images (with imageUrl)
         let tileSource
         if (page.isLocalImage && page.imageUrl) {
-          // For local images, return a proper tile source object for direct images
-          tileSource = {
-            type: 'image',
-            url: page.imageUrl,
-            width: page.width,
-            height: page.height
-          }
+          tileSource = { type: 'image', url: page.imageUrl }
+          if (page.width > 0) tileSource.width = page.width
+          if (page.height > 0) tileSource.height = page.height
         } else {
           // For IIIF pages, just use the uri
           tileSource = page.uri
@@ -1388,6 +1386,7 @@ export default createStore({
     showImageMismatchModal: state => state.showImageMismatchModal,
     showMdivModal: state => state.showMdivModal,
     showMeasureList: state => state.showMeasureList,
+    loading: state => state.loading,
     importingImages: state => state.importingImages,
     readyForImageImport: state => {
       let bool = true

@@ -4,6 +4,9 @@
     <LoadIIIFModal v-if="showLoadIIIFModal"/>
     <LoadLocalImage v-if="showLoadLocalImage"/>
     <ImageMismatchModal v-if="showImageMismatchModal"/>
+    <div v-if="loading" class="loading-overlay">
+      <div class="loading loading-lg"></div>
+    </div>
     <!--<ImageSelectionModal/>-->
     <MeasureModal v-if="showMeasureModal"/>
     <MdivModal v-if="showMdivModal"/>
@@ -64,6 +67,7 @@ export default {
       'showPagesModal',
       'showPageImportModal',
       'showImageMismatchModal',
+      'loading',
     ])
   },
   mounted () {
@@ -108,5 +112,15 @@ export default {
   height: 100vh;
   width: 100%;
   position: relative;
+}
+
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.6);
 }
 </style>

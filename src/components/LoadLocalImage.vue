@@ -83,13 +83,15 @@ export default {
     importImages () {
       // Check if no images were selected
       if (this.selectedImages.length === 0) {
-        // Dispatch action to show error modal
         this.$store.dispatch('addLocalImagePages', [])
         return
       }
-      
-      // Sort images by name
+
+      // Capture files BEFORE closeModal() clears selectedImages
       const sortedImages = sortImageFiles(this.selectedImages.map(img => img.file))
+
+      this.$store.commit('SET_LOADING', true)
+      this.closeModal()
       
       // Convert images to pages and dispatch to store
       convertLocalImagesToPages(sortedImages)
@@ -104,6 +106,7 @@ export default {
         })
         .catch(error => {
           console.error('Error loading images:', error)
+          this.$store.commit('SET_LOADING', false)
           alert('Failed to load some images. Check console for details.')
         })
     },
