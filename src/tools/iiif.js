@@ -167,12 +167,36 @@ export function getPageArray (mei) {
   mei.querySelectorAll('surface').forEach((surface, n) => {
     const graphic = surface.querySelector('graphic')
     const obj = {}
-    obj.uri = graphic.getAttributeNS('', 'target').trim()
-    obj.id = surface.getAttribute('xml:id').trim()
-    obj.n = surface.getAttributeNS('', 'n').trim()
-    // obj.label = surface.getAttributeNS('', 'label').trim() // Uncomment if label is needed
-    obj.width = parseInt(graphic.getAttributeNS('', 'width').trim(), 10)
-    obj.height = parseInt(graphic.getAttributeNS('', 'height').trim(), 10)
+    
+    // Try multiple ways to get the target attribute
+    let target = null
+    if (graphic) {
+      target = graphic.getAttribute('target') || 
+               graphic.getAttributeNS('', 'target') ||
+               graphic.getAttributeNS('http://www.music-encoding.org/ns/mei', 'target')
+    }
+    
+    obj.uri = target ? target.trim() : null
+    obj.id = surface.getAttribute('xml:id') ? surface.getAttribute('xml:id').trim() : null
+    obj.n = surface.getAttribute('n') ? surface.getAttribute('n').trim() : null
+    obj.label = surface.getAttribute('label') ? surface.getAttribute('label').trim() : null
+    
+    // Get width and height from graphic
+    if (graphic) {
+      const width = graphic.getAttribute('width') || graphic.getAttributeNS('', 'width')
+      const height = graphic.getAttribute('height') || graphic.getAttributeNS('', 'height')
+      obj.width = width ? parseInt(width.trim(), 10) : 0
+      obj.height = height ? parseInt(height.trim(), 10) : 0
+    }
+    
+    // Get width/height from surface as fallback
+    if (!obj.width && surface.getAttribute('lrx')) {
+      obj.width = parseInt(surface.getAttribute('lrx'), 10) - (parseInt(surface.getAttribute('ulx'), 10) || 0)
+    }
+    if (!obj.height && surface.getAttribute('lry')) {
+      obj.height = parseInt(surface.getAttribute('lry'), 10) - (parseInt(surface.getAttribute('uly'), 10) || 0)
+    }
+    
     obj.hasSvg = surface.querySelector('svg') !== null // true if an SVG exists in this surface
     obj.hasZones = surface.querySelector('zone') !== null // true if any zone exists in this surface
 

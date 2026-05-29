@@ -267,6 +267,7 @@ export default {
 
     this.unwatchPages = this.$store.watch((state, getters) => getters.pages,
       (newArr, oldArr) => {
+        console.log('Pages changed in OsdComponent, count:', newArr.length)
         this.viewer.open(newArr)
         this.$store.dispatch('setCurrentPage', 0)
       })
