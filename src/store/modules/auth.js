@@ -86,7 +86,10 @@ export default {
 
     /** Exchange the OAuth authorization code for an access token via the proxy server. */
     async authenticate ({ commit, dispatch }, code) {
-      const res = await fetch('/authenticate', {
+      // In dev VUE_APP_AUTH_URL points directly to node-ghcred (http://localhost:9999).
+      // In production it is unset and nginx proxies /authenticate to node-ghcred.
+      const base = process.env.VUE_APP_AUTH_URL || ''
+      const res = await fetch(`${base}/authenticate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code }),

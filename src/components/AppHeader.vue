@@ -5,16 +5,59 @@
     </section>
     <section class="navbar-section">
       <template v-if="isAuthenticated">
-        <img
-          v-if="user && user.avatar_url"
-          :src="user.avatar_url"
-          class="gh-avatar mr-1"
-          :alt="user.login"
-        />
-        <span class="mr-2 gh-username">{{ user && user.login }}</span>
-        <button class="btn btn-sm mr-2" @click="logout" title="Log out of GitHub">
-          <font-awesome-icon icon="fa-solid fa-user" /> Logout
-        </button>
+        <!-- Profile dropdown -->
+        <div class="dropdown dropdown-right gh-user-dropdown" :class="{ active: menuOpen }">
+          <a
+            class="dropdown-toggle gh-profile-toggle"
+            tabindex="0"
+            @click.prevent="menuOpen = !menuOpen"
+            @keydown.enter.prevent="menuOpen = !menuOpen"
+          >
+            <img
+              v-if="user && user.avatar_url"
+              :src="user.avatar_url"
+              class="gh-avatar"
+              :alt="user.login"
+            />
+            <span class="gh-username ml-1">{{ user && user.login }}</span>
+            <i class="icon icon-caret ml-1"></i>
+          </a>
+          <ul class="menu" @mousedown.prevent>
+            <li class="menu-item menu-item-static">
+              <div class="tile tile-centered">
+                <div class="tile-icon">
+                  <img
+                    v-if="user && user.avatar_url"
+                    :src="user.avatar_url"
+                    class="gh-avatar-lg"
+                    :alt="user.login"
+                  />
+                </div>
+                <div class="tile-content">
+                  <div class="tile-title">{{ user && user.name }}</div>
+                  <div class="tile-subtitle text-gray">{{ user && user.login }}</div>
+                </div>
+              </div>
+            </li>
+            <li class="divider"></li>
+            <li class="menu-item" v-if="isAuthenticated">
+              <a href="#" @click.prevent="openLoadGitModal">
+                <font-awesome-icon icon="fa-solid fa-cloud-arrow-down" class="mr-1" /> Load from GitHub
+              </a>
+            </li>
+            <li class="menu-item" v-if="githubFile">
+              <a href="#" @click.prevent="commitToGithub">
+                <font-awesome-icon icon="fa-solid fa-code-commit" class="mr-1" /> Commit to GitHub
+              </a>
+            </li>
+            <li class="divider"></li>
+            <li class="menu-item">
+              <a href="#" @click.prevent="logout">
+                <font-awesome-icon icon="fa-solid fa-user" class="mr-1" /> Sign out
+              </a>
+            </li>
+          </ul>
+        </div>
       </template>
       <template v-else>
         <button class="btn btn-sm btn-primary mr-2" @click="login" title="Sign in with GitHub">
@@ -36,13 +79,38 @@ import MainMenu from '@/components/MainMenu.vue'
 export default {
   name: 'AppHeader',
   components: { MainMenu },
+  data () {
+    return { menuOpen: false }
+  },
   computed: {
     isAuthenticated () { return this.$store.getters['auth/isAuthenticated'] },
     user ()            { return this.$store.getters['auth/user'] },
+    githubFile ()      { return this.$store.getters.githubFile },
+  },
+  mounted () {
+    // Close dropdown when clicking anywhere outside
+    document.addEventListener('click', this.handleOutsideClick)
+  },
+  beforeUnmount () {
+    document.removeEventListener('click', this.handleOutsideClick)
   },
   methods: {
     login ()  { this.$store.dispatch('auth/login') },
-    logout () { this.$store.dispatch('auth/logout') },
+    logout () {
+      this.menuOpen = false
+      this.$store.dispatch('auth/logout')
+    },
+    openLoadGitModal () {
+      this.menuOpen = false
+      this.$store.dispatch('toggleLoadGitModal')
+    },
+    commitToGithub () {
+      this.menuOpen = false
+      this.$store.dispatch('commitToGithub')
+    },
+    handleOutsideClick (e) {
+      if (!this.$el.contains(e.target)) this.menuOpen = false
+    },
   },
 }
 </script>
@@ -67,6 +135,36 @@ export default {
       color: $fontColorDark;
       border-color: $fontColorDark;
       margin-left: .3rem;
+    }
+  }
+
+  .gh-user-dropdown {
+    position: relative;
+    margin-right: 0.5rem;
+
+    .gh-profile-toggle {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      padding: 0.1rem 0.4rem;
+      border-radius: 4px;
+      color: $fontColorDark;
+      text-decoration: none;
+
+      &:hover { background: rgba(255,255,255,0.15); }
+    }
+
+    .menu {
+      min-width: 180px;
+      right: 0;
+      left: auto;
+      top: 100%;
+
+      .gh-avatar-lg {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+      }
     }
   }
 

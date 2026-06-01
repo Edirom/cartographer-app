@@ -777,6 +777,26 @@ export default createStore({
         commit('SET_LOADING', false)
       }
     },
+    async loadImagesFromGithub ({ commit, dispatch, getters }) {
+      const file = getters['auth/selectedFile']
+      const repo = getters['auth/selectedRepo']
+      if (!file || !repo) throw new Error('No file selected')
+      commit('SET_LOADING', true)
+      try {
+        const { xml } = await dispatch('auth/getFileContent', { repo, path: file.path })
+        const mei = parser.parseFromString(xml, 'application/xml')
+        // Extract all <graphic @target> URLs from <surface> elements
+        const urls = [...mei.querySelectorAll('surface graphic')]
+          .map(g => g.getAttribute('target'))
+          .filter(Boolean)
+        if (urls.length === 0) throw new Error('No image references found in this MEI file.')
+        dispatch('registerImageImports', urls.join(' '))
+        commit('TOGGLE_LOADGIT_MODAL')
+        commit('TOGGLE_PAGE_IMPORT_MODAL')
+      } finally {
+        commit('SET_LOADING', false)
+      }
+    },
     async commitToGithub ({ state, commit, dispatch }, message) {
       if (!state.githubFile || !state.xmlDoc) throw new Error('No GitHub file loaded')
       const content = serializer.serializeToString(state.xmlDoc)

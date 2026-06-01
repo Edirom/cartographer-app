@@ -26,7 +26,13 @@ export default {
       await this.$store.dispatch('auth/authenticate', code)
       this.$router.push('/')
     } catch (e) {
-      this.error = e.message
+      const msg = e.message || ''
+      const isNetwork = msg.toLowerCase().includes('failed to fetch') ||
+                        msg.toLowerCase().includes('networkerror') ||
+                        msg.toLowerCase().includes('load failed')
+      this.error = isNetwork
+        ? 'Cannot reach the authentication proxy. Make sure you started it with `npm run dev` (or `node node-ghcred/server.js` in a separate terminal).'
+        : msg
     }
   },
 }

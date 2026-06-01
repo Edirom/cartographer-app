@@ -11,6 +11,26 @@
       </div>
 
       <div class="modal-body">
+        <!-- ── Mode toggle ── -->
+        <div class="btn-group btn-group-block mode-toggle" style="margin-bottom: 0.8rem;">
+          <button
+            class="btn btn-sm"
+            :class="mode === 'mei' ? 'btn-primary' : ''"
+            @click="mode = 'mei'"
+          >
+            <font-awesome-icon icon="fa-solid fa-file" class="mr-1" /> Load MEI
+          </button>
+          <button
+            class="btn btn-sm"
+            :class="mode === 'images' ? 'btn-primary' : ''"
+            @click="mode = 'images'"
+          >
+            <font-awesome-icon icon="fa-regular fa-images" class="mr-1" /> Import Images from MEI
+          </button>
+        </div>
+        <p v-if="mode === 'images'" class="text-gray text-small" style="margin-bottom:0.6rem;">
+          Select an MEI file — its referenced images will be imported as pages.
+        </p>
         <!-- ── Repository picker ── -->
         <div v-if="!currentRepo">
           <div v-if="loadingRepos" class="text-center" style="padding: 2rem;">
@@ -111,9 +131,9 @@
           class="btn btn-primary"
           :disabled="!selectedFile || importing"
           :class="{ loading: importing }"
-          @click="loadSelectedFile"
+          @click="mode === 'mei' ? loadSelectedFile() : importImagesFromFile()"
         >
-          Load
+          {{ mode === 'mei' ? 'Load MEI' : 'Import Images' }}
         </button>
       </div>
     </div>
@@ -128,6 +148,7 @@ export default {
       repoFilter: '',
       importing: false,
       loadError: null,
+      mode: 'mei',   // 'mei' | 'images'
     }
   },
   computed: {
@@ -193,6 +214,17 @@ export default {
         await this.$store.dispatch('loadFileFromGithub')
       } catch (err) {
         this.loadError = err.message || 'Failed to load file from GitHub.'
+      } finally {
+        this.importing = false
+      }
+    },
+    async importImagesFromFile () {
+      this.loadError = null
+      this.importing = true
+      try {
+        await this.$store.dispatch('loadImagesFromGithub')
+      } catch (err) {
+        this.loadError = err.message || 'Failed to import images.'
       } finally {
         this.importing = false
       }

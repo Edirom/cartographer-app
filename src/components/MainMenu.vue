@@ -5,6 +5,7 @@
       <!--<font-awesome-icon icon="fa-regular fa-images"/>-->
     </a >
     <ul class="menu mainMenu">
+      <li class="divider" data-content="User"></li>
         <li class="menu-item">
         <button class="btn btn-action btn-sm" @click="importXML" title="load MEI file">
           <font-awesome-icon icon="fa-solid fa-file"/> 
@@ -17,20 +18,12 @@
         </button>
         Import IIIF Manifest
       </li>
-      <template v-if="isAuthenticated">
-        <li class="menu-item">
-          <button class="btn btn-action btn-sm" @click="openLoadGitModal" title="Load MEI file from GitHub">
-            <font-awesome-icon icon="fa-solid fa-cloud-arrow-down"/>
-          </button>
-          Load from GitHub
-        </li>
-        <li class="menu-item" v-if="githubFile">
-          <button class="btn btn-action btn-sm" @click="commitToGithub" title="Commit changes to GitHub">
-            <font-awesome-icon icon="fa-solid fa-code-commit"/>
-          </button>
-          Commit to GitHub
-        </li>
-      </template>
+      <li class="menu-item">
+        <button class="btn btn-action btn-sm" @click="importImages" title="import local images">
+          <font-awesome-icon icon="fa-regular fa-images"/>
+        </button>
+        Import Local Images
+      </li>
       <li class="menu-item">
         <template v-if="downloadAvailable">
           <a class="btn btn-action btn-sm" :href="xmlDataUrl()" target="_blank" title="download MEI file" :download="xmlFilename">
@@ -101,12 +94,6 @@ export default {
     existingMusicMode: function () {
       return this.$store.getters.existingMusicMode
     },
-    isAuthenticated () {
-      return this.$store.getters['auth/isAuthenticated']
-    },
-    githubFile () {
-      return this.$store.getters.githubFile
-    },
   },
   methods: {
     importXML: function () {
@@ -114,6 +101,9 @@ export default {
     },
     importManifest: function () {
       this.$store.dispatch('toggleLoadIIIFModal')
+    },
+    importImages: function () {
+      this.$store.dispatch('togglePageImportModal')
     },
     xmlDataUrl () {
       const xml = this.$store.getters.meiFileForDownload
@@ -132,12 +122,6 @@ export default {
       if (this.firstMeasureWithoutZone !== null) {
         this.$store.dispatch('toggleExistingMusicMode')
       }
-    },
-    openLoadGitModal () {
-      this.$store.dispatch('toggleLoadGitModal')
-    },
-    commitToGithub () {
-      this.$store.dispatch('commitToGithub')
     },
   },
 }
