@@ -1,5 +1,8 @@
 'use strict'
 
+// Load .env.local from the project root (one level up) for local development
+require('dotenv').config({ path: require('path').resolve(__dirname, '../.env.local') })
+
 const express = require('express')
 const cors = require('cors')
 
