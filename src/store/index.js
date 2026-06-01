@@ -1,4 +1,5 @@
 import { createStore } from 'vuex'
+import authModule from '@/store/modules/auth.js'
 import { iiifManifest2mei, checkIiifManifest, getPageArray } from '@/tools/iiif.js'
 import { meiZone2annotorious, annotorious2meiZone, measureDetector2meiZone, generateMeasure, insertMeasure, deleteZone, setMultiRest, createNewMdiv, moveContentToMdiv, toggleAdditionalZone, addImportedPage, findZoneInsertionPositionForXmlZone, createAdditionalZone } from '@/tools/meiMappings.js'
 
@@ -9,10 +10,6 @@ const serializer = new XMLSerializer()
 
 function getDefaultState() {
   return {
- selectedRepo: null,            // Currently selected GitHub repository
-      selectedDirectory: null,       // Currently selected directory within the repo
-      directories: [],               // List of directories in the selected repo
-      repos: null,                   // List of available repositories
       xmlDoc: null,                  // The loaded MEI XML document (DOM)
       currentMdiv: null,            // The currently selected movement (mdiv)
       nextMdiv: null,                // The next mdiv to be created (if applicable)  
@@ -21,14 +18,12 @@ function getDefaultState() {
       currentPage: -1,               // Index of the currently selected page
       showLoadXMLModal: false,       // Show/hide modal for loading XML files
       showLoadIIIFModal: false,      // Show/hide modal for loading IIIF manifests
-      showLoadGitModal: false,       // Show/hide modal for loading from Git
       showMeasureModal: false,       // Show/hide modal for editing measure labels/numbers
       showMdivModal: false,          // Show/hide modal for movement (mdiv) management
       showPagesModal: false,         // Show/hide modal for page management
       showPageImportModal: false,    // Show/hide modal for importing pages/images
       showMeasureList: false,        // Show/hide the measure list panel
       loading: false,                // Indicates if the app is currently loading data
-      logedin: false,                // Indicates if the user is logged in
       processing: false,             // Indicates if the app is processing data
       pageDimension: [],             // Array of [width, height] for each page
       mode: allowedModes.selection,  // Current editor mode (selection, manualRect, etc.)
@@ -51,11 +46,14 @@ function getDefaultState() {
       insertMdivup: false,            // True if the new mdiv is to be inserted before the current mdiv
       currentMeasure: null,           // The current measure object 
       additionMeasure: false,         // True if an additional measure is being added (to prevent recursion)
+      showLoadGitModal: false,        // Show/hide modal for loading from GitHub
+      githubFile: null,               // Currently loaded GitHub file { owner, repo, path, sha }
   }
 }
 
 export default createStore({
   modules: {
+    auth: authModule,
   },
     state: getDefaultState(),
   /**
@@ -65,7 +63,6 @@ export default createStore({
  * - RESET_STATE: Resets the entire application state to its default values.
  * - TOGGLE_LOADXML_MODAL: Toggle the visibility of the XML file load modal.
  * - TOGGLE_LOADIIIF_MODAL: Toggle the visibility of the IIIF manifest load modal.
- * - TOGGLE_LOADGIT_MODAL: Toggle the visibility of the GitHub load modal.
  * - TOGGLE_MEASURE_MODAL: Toggle the visibility of the measure label/number modal.
  * - TOGGLE_PAGES_MODAL: Toggle the visibility of the page management modal.
  * - TOGGLE_PAGE_IMPORT_MODAL: Toggle the visibility of the page/image import modal.
@@ -73,7 +70,6 @@ export default createStore({
  * - HIDE_MODALS: Hide both the measure and mdiv modals.
  * - TOGGLE_MEASURE_LIST: Toggle the visibility of the measure list panel.
  * - SET_ANNO: Set the current annotation object.
- * - SET_SELECTED_DIRECTORY: Set the currently selected directory in the repo.
  * - SET_XML_DOC: Set the loaded MEI XML document and reset the current page to 0.
  * - SET_PAGES: Set the array of page objects.
  * - SET_CURRENT_PAGE: Set the index of the currently selected page.
@@ -139,8 +135,8 @@ export default createStore({
     SET_ANNO(state, anno) {
       state.anno = anno
     },
-    SET_SELECTED_DIRECTORY(state, gitdirec) {
-      state.selectedDirectory = gitdirec
+    SET_GITHUB_FILE(state, fileInfo) {
+      state.githubFile = fileInfo
     },
     SET_XML_DOC(state, xmlDoc) {
       console.log("this is the xml doc in set ", xmlDoc)
@@ -405,7 +401,6 @@ export default createStore({
  * Vuex actions for asynchronous operations and complex state updates.
  * Actions can dispatch mutations, perform async tasks, and coordinate multiple state changes.
  *
- * - fetchDirectories: Fetches directory listings from a GitHub repository (example, not fully implemented).
  * - resetAll: Resets the entire application state to its default values.
  * - toggleLoadXMLModal: Toggles the visibility of the XML file load modal.
  * - toggleLoadIIIFModal: Toggles the visibility of the IIIF manifest load modal.
@@ -436,7 +431,6 @@ export default createStore({
  * - setCurrentMeasureMultiRest: Sets, updates, or removes a multiRest element in the current measure.
  * - setPageLabel: Sets the label for a specific page.
  * - setCurrentMdiv: Sets the currently selected mdiv by xml:id.
- * - setDirectory: Sets the currently selected directory.
  * - setCurrentMdivLabel: Sets the label for the current mdiv.
  * - createNewMdiv: Creates a new mdiv and moves content to it.
  * - selectMdiv: Moves content to a selected mdiv and updates the current mdiv id.
@@ -445,17 +439,6 @@ export default createStore({
  * - cancelImageImports: Cancels all pending image imports and hides the import modal.
  */
   actions: {
-    async fetchDirectories({ state, commit }) {
-      try {
-        const url = `https://api.github.com/repos/${state.username}/${state.repository}/contents/${state.path}`;
-        const headers = { Authorization: `token ${state.accessToken}` };
-        //const response = await axios.get(url, { headers });
-        // const directories = response.data.filter(item => item.type === 'dir').map(item => item.name);
-        // commit('setDirectories', directories);
-      } catch (error) {
-        console.error(error);
-      }
-    },
     resetAll({ commit }) {
       commit('RESET_STATE')
     },
@@ -476,6 +459,9 @@ export default createStore({
     },
     toggleMdivModal({ commit }) {
       commit('TOGGLE_MDIV_MODAL')
+    },
+    toggleLoadGitModal ({ commit }) {
+      commit('TOGGLE_LOADGIT_MODAL')
     },
     toggleMeasureList({ commit }) {
       commit('TOGGLE_MEASURE_LIST')
@@ -744,9 +730,6 @@ export default createStore({
     setCurrentMdiv({ commit }, id) {
       commit('SET_CURRENT_MDIV', id)
     },
-    setDirectory({ commit }, directory) {
-      commit('SET_SELECTED_DIRECTORY', directory)
-    },
     setCurrentMdivLabel({ commit }, val) {
       commit('SET_CURRENT_MDIV_LABEL', val)
     },
@@ -778,6 +761,34 @@ export default createStore({
     },
     cancelImageImports({ commit }) {
       commit('CANCEL_IMAGE_IMPORTS')
+    },
+    async loadFileFromGithub ({ commit, dispatch, getters }) {
+      const file = getters['auth/selectedFile']
+      const repo = getters['auth/selectedRepo']
+      if (!file || !repo) throw new Error('No file selected')
+      commit('SET_LOADING', true)
+      try {
+        const { xml, sha } = await dispatch('auth/getFileContent', { repo, path: file.path })
+        const mei = parser.parseFromString(xml, 'application/xml')
+        dispatch('setData', mei)
+        commit('SET_GITHUB_FILE', { owner: repo.owner, repo: repo.name, path: file.path, sha })
+        commit('TOGGLE_LOADGIT_MODAL')
+      } finally {
+        commit('SET_LOADING', false)
+      }
+    },
+    async commitToGithub ({ state, commit, dispatch }, message) {
+      if (!state.githubFile || !state.xmlDoc) throw new Error('No GitHub file loaded')
+      const content = serializer.serializeToString(state.xmlDoc)
+      const { owner, repo, path, sha } = state.githubFile
+      const newSha = await dispatch('auth/commitFile', {
+        repo: { owner, name: repo },
+        path,
+        sha,
+        content,
+        message: message || 'Update MEI file via Cartographer',
+      })
+      if (newSha) commit('SET_GITHUB_FILE', { owner, repo, path, sha: newSha })
     },
     currentMdiv({ commit }, mdiv) {
       commit('CURRENT_MDIV', mdiv)
@@ -811,7 +822,8 @@ export default createStore({
  * - mode: Returns the current editor mode.
  * - selectedZone: Returns the annotation object for the currently selected zone, or null if not set.
  * - showLoadIIIFModal: Returns true if the IIIF modal is visible.
- * - showLoadGitModal: Returns true if the Git modal is visible.
+ * - showLoadGitModal: Returns true if the GitHub modal is visible.
+ * - githubFile: Returns the currently loaded GitHub file info, or null.
  * - showLoadXMLModal: Returns true if the XML modal is visible.
  * - showMeasureModal: Returns true if the measure modal is visible.
  * - showPagesModal: Returns true if the pages modal is visible.
@@ -1018,6 +1030,7 @@ export default createStore({
     },
     showLoadIIIFModal: state => state.showLoadIIIFModal,
     showLoadGitModal: state => state.showLoadGitModal,
+    githubFile: state => state.githubFile,
     showLoadXMLModal: state => state.showLoadXMLModal,
     showMeasureModal: state => state.showMeasureModal,
     showPagesModal: state => state.showPagesModal,

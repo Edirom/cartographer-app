@@ -1,33 +1,42 @@
 <template>
-    <div>
-      <code>{{ code }}</code>
-      <!-- <pre><code>{{ JSON.stringify( user ) }}</code></pre> -->
+  <div class="auth-callback">
+    <div v-if="error" class="toast toast-error" style="max-width: 480px;">
+      <font-awesome-icon icon="fa-solid fa-user" class="mr-1" />
+      Authentication failed: {{ error }}
+      <a href="/" class="btn btn-link ml-2">Go home</a>
     </div>
-  </template>
-  <script>
-  // import { Octokit } from '@octokit/rest'
+    <div v-else style="display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+      <div class="loading loading-lg"></div>
+      <span>Authenticating with GitHub…</span>
+    </div>
+  </div>
+</template>
 
- // import { GH_ACCESS_TOKEN } from '@/store/octokit'
-  const GH_ACCESS_TOKEN = 'tooken'
-  export default {
-    name: 'AuthGithub',
-    data: () => ({
-      code: '',
-      user: {}
-    }),
-    mounted () {
-      this.code = this.$route.query.code
-      this.$store.dispatch('authenticate',  {
-        code:this.code,
-        store: (auth) => {
-          this.$cookies.set(GH_ACCESS_TOKEN, auth, '1d', '/', '', false, 'lax')
-          console.log('set cookie', this.$cookies.get(GH_ACCESS_TOKEN))
-        },
-        remove: () => {
-          this.$cookies.remove(GH_ACCESS_TOKEN, '/')
-        }
-      })
-      this.$router.push('/')
+<script>
+export default {
+  name: 'AuthCallback',
+  data: () => ({ error: null }),
+  async mounted () {
+    const code = this.$route.query.code
+    if (!code) {
+      this.error = 'No authorization code received from GitHub.'
+      return
     }
-  }
-  </script>
+    try {
+      await this.$store.dispatch('auth/authenticate', code)
+      this.$router.push('/')
+    } catch (e) {
+      this.error = e.message
+    }
+  },
+}
+</script>
+
+<style scoped>
+.auth-callback {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+</style>

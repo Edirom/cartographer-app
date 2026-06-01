@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - '8080:80'
+    environment:
+      - VUE_APP_CLIENT_ID=${VUE_APP_CLIENT_ID}
+      - VUE_APP_CALL_BACK=${VUE_APP_CALL_BACK:-http://localhost:8080/callback}
+    depends_on:
+      - node-ghcred
+
+  node-ghcred:
+    build: ./node-ghcred
+    environment:
+      - VUE_APP_CLIENT_ID=${VUE_APP_CLIENT_ID}
+      - VUE_APP_CLIENT_SECRET=${VUE_APP_CLIENT_SECRET}
+      - ALLOWED_ORIGIN=${VUE_APP_CALL_BACK:-http://localhost:8080}

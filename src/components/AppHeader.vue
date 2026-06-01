@@ -4,6 +4,23 @@
       <span class="navbar-brand mr-2">CartographerApp</span>
     </section>
     <section class="navbar-section">
+      <template v-if="isAuthenticated">
+        <img
+          v-if="user && user.avatar_url"
+          :src="user.avatar_url"
+          class="gh-avatar mr-1"
+          :alt="user.login"
+        />
+        <span class="mr-2 gh-username">{{ user && user.login }}</span>
+        <button class="btn btn-sm mr-2" @click="logout" title="Log out of GitHub">
+          <font-awesome-icon icon="fa-solid fa-user" /> Logout
+        </button>
+      </template>
+      <template v-else>
+        <button class="btn btn-sm btn-primary mr-2" @click="login" title="Sign in with GitHub">
+          <font-awesome-icon icon="fa-solid fa-user" /> Login with GitHub
+        </button>
+      </template>
       <div class="input-group input-inline">
         <div class="button-group">
           <MainMenu/>
@@ -15,21 +32,18 @@
 
 <script>
 import MainMenu from '@/components/MainMenu.vue'
-// const xmlUri = 'testfile.xml'
-// 'https://digital.blb-karlsruhe.de/i3f/v20/6146583/manifest'
-// const manifestUri = 'https://api.beethovens-werkstatt.de/iiif/document/r24d1c005-acee-43a0-acfa-5dae796b7ec4/manifest.json' // 'https://iiif.bodleian.ox.ac.uk/iiif/manifest/644ee314-14a2-4006-9fe6-80eea1258a17.json'
 
 export default {
   name: 'AppHeader',
-  components: {
-    MainMenu
-  },
+  components: { MainMenu },
   computed: {
-
+    isAuthenticated () { return this.$store.getters['auth/isAuthenticated'] },
+    user ()            { return this.$store.getters['auth/user'] },
   },
   methods: {
-
-  }
+    login ()  { this.$store.dispatch('auth/login') },
+    logout () { this.$store.dispatch('auth/logout') },
+  },
 }
 </script>
 
@@ -54,6 +68,23 @@ export default {
       border-color: $fontColorDark;
       margin-left: .3rem;
     }
+  }
+
+  .gh-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    vertical-align: middle;
+  }
+
+  .gh-username {
+    font-size: 0.75rem;
+    vertical-align: middle;
+  }
+
+  .btn-primary {
+    color: white;
+    border-color: white;
   }
 }
 </style>
