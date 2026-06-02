@@ -25,16 +25,34 @@ cat > /GH_OAUTH_CLIENT.conf <<EOT
 set \$PUBLIC_PATH $NORMALIZED_PATH;
 EOT
 
-# ---- Replace placeholders in built files ----
 PLACEHOLDER="/myAppPlaceholder"          # ensures single trailing slash
 
+# ---- Step 1: Inject GitHub OAuth placeholders ----
+# Pass these at docker run time:
+#   -e VUE_APP_CLIENT_ID=your_client_id
+#   -e VUE_APP_CALL_BACK=http://localhost:8081/myAppPlaceholder/callback
+# Using /myAppPlaceholder in the callback URL allows the PUBLIC_PATH replacement
+# below to rewrite it to the actual subpath automatically.
+GH_CLIENT_ID="${VUE_APP_CLIENT_ID:-}"
+GH_CALLBACK_URL="${VUE_APP_CALL_BACK:-}"
+
+echo "Injecting GitHub OAuth config: CLIENT_ID=${GH_CLIENT_ID:0:4}**** CALLBACK=${GH_CALLBACK_URL}"
+
+find /usr/share/nginx/html \
+  -type f \( -name "*.js" -o -name "*.html" \) -print0 \
+| while IFS= read -r -d '' f; do
+  sed -i "s|__GH_CLIENT_ID__|${GH_CLIENT_ID}|g" "$f"
+  sed -i "s|__GH_CALLBACK_URL__|${GH_CALLBACK_URL}|g" "$f"
+done
+
+# ---- Step 2: Replace PUBLIC_PATH placeholders (including any inside injected OAuth values) ----
 find /usr/share/nginx/html \
   -type f \( -name "*.html" -o -name "*.js" -o -name "*.css" \) -print0 \
 | while IFS= read -r -d '' f; do
-  sed -i "s|${PLACEHOLDER}/|${NORMALIZED_PATH%/}/|g" "$f" # %/ removes trailing slash for correct replacement
+  sed -i "s|${PLACEHOLDER}/|${NORMALIZED_PATH%/}/|g" "$f"
   sed -i "s|${PLACEHOLDER}|${NORMALIZED_PATH}|g" "$f"
 done
 
 # replace myAppPlaceholder in nginx configuration
-sed -i "s|${PLACEHOLDER}/|${NORMALIZED_PATH%/}/|g" /etc/nginx/nginx.conf # %/ removes trailing slash for correct replacement
+sed -i "s|${PLACEHOLDER}/|${NORMALIZED_PATH%/}/|g" /etc/nginx/nginx.conf
 sed -i "s|${PLACEHOLDER}|${NORMALIZED_PATH}|g" /etc/nginx/nginx.conf

@@ -25,11 +25,11 @@
             :class="mode === 'images' ? 'btn-primary' : ''"
             @click="mode = 'images'"
           >
-            <font-awesome-icon icon="fa-regular fa-images" class="mr-1" /> Import Images from MEI
+            <font-awesome-icon icon="fa-regular fa-images" class="mr-1" /> Import Images
           </button>
         </div>
         <p v-if="mode === 'images'" class="text-gray text-small" style="margin-bottom:0.6rem;">
-          Select an MEI file — its referenced images will be imported as pages.
+          Navigate to the folder containing images, then click Import Images.
         </p>
         <!-- ── Repository picker ── -->
         <div v-if="!currentRepo">
@@ -107,8 +107,8 @@
               <a
                 href="#"
                 @click.prevent="handleItemClick(item)"
-                :class="{ 'text-gray': item.type === 'file' && !isLoadable(item) }"
-                :title="item.type === 'file' && !isLoadable(item) ? 'Only .xml and .mei files can be loaded' : ''"
+                :class="{ 'text-gray': item.type === 'file' && mode === 'mei' && !isLoadable(item) }"
+                :title="item.type === 'file' && mode === 'mei' && !isLoadable(item) ? 'Only .xml and .mei files can be loaded' : ''"
               >
                 <span class="mr-1">{{ item.type === 'dir' ? '📁' : '📄' }}</span>
                 {{ item.name }}
@@ -116,7 +116,10 @@
             </li>
           </ul>
 
-          <p v-if="selectedFile" class="text-small text-success" style="margin-top: 0.4rem;">
+          <p v-if="mode === 'images' && hasImagesInCurrentFolder" class="text-small text-success" style="margin-top: 0.4rem;">
+            ✓ Found <strong>{{ imageCountInCurrentFolder }}</strong> image(s) ready to import.
+          </p>
+          <p v-if="selectedFile && mode === 'mei'" class="text-small text-success" style="margin-top: 0.4rem;">
             ✓ Selected: <strong>{{ selectedFile.name }}</strong>
           </p>
           <p v-if="loadError" class="text-small text-error" style="margin-top: 0.4rem;">
@@ -129,9 +132,9 @@
         <button class="btn" @click="closeModal">Cancel</button>
         <button
           class="btn btn-primary"
-          :disabled="!selectedFile || importing"
+          :disabled="(mode === 'mei' ? !selectedFile : !hasImagesInCurrentFolder) || importing"
           :class="{ loading: importing }"
-          @click="mode === 'mei' ? loadSelectedFile() : importImagesFromFile()"
+          @click="mode === 'mei' ? loadSelectedFile() : importImagesFromFolder()"
         >
           {{ mode === 'mei' ? 'Load MEI' : 'Import Images' }}
         </button>
@@ -166,6 +169,14 @@ export default {
     pathParts () {
       return this.currentPath ? this.currentPath.split('/') : []
     },
+    hasImagesInCurrentFolder () {
+      const IMAGE_RE = /\.(jpe?g|png|gif|webp|bmp|tiff?)$/i
+      return this.contents.some(item => item.type === 'file' && IMAGE_RE.test(item.name))
+    },
+    imageCountInCurrentFolder () {
+      const IMAGE_RE = /\.(jpe?g|png|gif|webp|bmp|tiff?)$/i
+      return this.contents.filter(item => item.type === 'file' && IMAGE_RE.test(item.name)).length
+    },
   },
   async mounted () {
     if (this.repos.length === 0) {
@@ -197,7 +208,8 @@ export default {
       return this.pathParts.slice(0, i + 1).join('/')
     },
     isLoadable (item) {
-      return item.type === 'file' && (item.name.endsWith('.xml') || item.name.endsWith('.mei'))
+      return this.mode === 'mei' && item.type === 'file' &&
+        (item.name.endsWith('.xml') || item.name.endsWith('.mei'))
     },
     handleItemClick (item) {
       if (item.type === 'dir') {
@@ -218,7 +230,7 @@ export default {
         this.importing = false
       }
     },
-    async importImagesFromFile () {
+    async importImagesFromFolder () {
       this.loadError = null
       this.importing = true
       try {

@@ -193,8 +193,7 @@ export default {
     },
 
     /** Fetch and decode the content of a file from GitHub. Returns { xml, sha, path }. */
-    async getFileContent ({ state }, { repo, path }) {
-      const octokit = new Octokit({ auth: state.accessToken })
+    async getFileContent ({ state }, { repo, path }) {      const octokit = new Octokit({ auth: state.accessToken })
       const { data } = await octokit.rest.repos.getContent({
         owner: repo.owner,
         repo: repo.name,
@@ -203,6 +202,34 @@ export default {
       if (Array.isArray(data)) throw new Error(`${path} is a directory, not a file`)
       const xml = decodeBase64Utf8(data.content)
       return { xml, sha: data.sha, path: data.path }
+    },
+
+    /** Fetch raw binary content of a file from GitHub. Returns { bytes, name, path }. */
+    async getImageContent ({ state }, { repo, path }) {
+      const octokit = new Octokit({ auth: state.accessToken })
+      const { data } = await octokit.rest.repos.getContent({
+        owner: repo.owner,
+        repo: repo.name,
+        path,
+      })
+      if (Array.isArray(data)) throw new Error(`${path} is a directory`)
+      let base64
+      if (data.content && data.encoding === 'base64') {
+        // File under ~1MB — content is inline in the API response
+        base64 = data.content
+      } else {
+        // File over 1MB — fetch via Git Blobs API (stays on api.github.com, no CORS issue)
+        const { data: blob } = await octokit.rest.git.getBlob({
+          owner: repo.owner,
+          repo: repo.name,
+          file_sha: data.sha,
+        })
+        base64 = blob.content
+      }
+      const binary = atob(base64.replace(/[\n\r]/g, ''))
+      const bytes = new Uint8Array(binary.length)
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+      return { bytes, name: data.name, path: data.path }
     },
 
     /** Commit updated file content back to GitHub. Returns the new blob SHA. */

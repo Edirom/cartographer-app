@@ -1,13 +1,12 @@
-version: '3.8'
-
 services:
   app:
     build: .
     ports:
       - '8080:80'
     environment:
+      - VUE_APP_PUBLIC_PATH=${VUE_APP_PUBLIC_PATH:-/}
       - VUE_APP_CLIENT_ID=${VUE_APP_CLIENT_ID}
-      - VUE_APP_CALL_BACK=${VUE_APP_CALL_BACK:-http://localhost:8080/callback}
+      - VUE_APP_CALL_BACK=${VUE_APP_CALL_BACK:-http://localhost:8080/auth}
     depends_on:
       - node-ghcred
 

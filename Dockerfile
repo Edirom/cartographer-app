@@ -26,6 +26,9 @@ FROM nginx:alpine
 
 # Default public path; can be overridden at runtime
 ENV VUE_APP_PUBLIC_PATH="/"
+# GitHub OAuth credentials — injected at runtime via 40-create-ghcred.sh
+ENV VUE_APP_CLIENT_ID=""
+ENV VUE_APP_CALL_BACK=""
 
 # Copy final single-file nginx.conf
 COPY nginx.conf /etc/nginx/nginx.conf

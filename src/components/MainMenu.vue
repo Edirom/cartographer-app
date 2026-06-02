@@ -19,12 +19,6 @@
         Import IIIF Manifest
       </li>
       <li class="menu-item">
-        <button class="btn btn-action btn-sm" @click="importImages" title="import local images">
-          <font-awesome-icon icon="fa-regular fa-images"/>
-        </button>
-        Import Local Images
-      </li>
-      <li class="menu-item">
         <template v-if="downloadAvailable">
           <a class="btn btn-action btn-sm" :href="xmlDataUrl()" target="_blank" title="download MEI file" :download="xmlFilename">
             <font-awesome-icon icon="fa-solid fa-download"/>
@@ -101,9 +95,6 @@ export default {
     },
     importManifest: function () {
       this.$store.dispatch('toggleLoadIIIFModal')
-    },
-    importImages: function () {
-      this.$store.dispatch('togglePageImportModal')
     },
     xmlDataUrl () {
       const xml = this.$store.getters.meiFileForDownload

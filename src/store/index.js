@@ -2,6 +2,7 @@ import { createStore } from 'vuex'
 import authModule from '@/store/modules/auth.js'
 import { iiifManifest2mei, checkIiifManifest, getPageArray } from '@/tools/iiif.js'
 import { meiZone2annotorious, annotorious2meiZone, measureDetector2meiZone, generateMeasure, insertMeasure, deleteZone, setMultiRest, createNewMdiv, moveContentToMdiv, toggleAdditionalZone, addImportedPage, findZoneInsertionPositionForXmlZone, createAdditionalZone } from '@/tools/meiMappings.js'
+import { uuid } from '@/tools/uuid.js'
 
 import { mode as allowedModes } from '@/store/constants.js'
 
@@ -778,21 +779,54 @@ export default createStore({
       }
     },
     async loadImagesFromGithub ({ commit, dispatch, getters }) {
-      const file = getters['auth/selectedFile']
       const repo = getters['auth/selectedRepo']
-      if (!file || !repo) throw new Error('No file selected')
+      if (!repo) throw new Error('No repository selected')
+      const contents = getters['auth/repoContents']
+      const IMAGE_RE = /\.(jpe?g|png|gif|webp|bmp|tiff?)$/i
+      const imageItems = contents
+        .filter(item => item.type === 'file' && IMAGE_RE.test(item.name))
+        .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }))
+      if (imageItems.length === 0) {
+        throw new Error('No image files found in this folder. Navigate to a folder containing images.')
+      }
       commit('SET_LOADING', true)
       try {
-        const { xml } = await dispatch('auth/getFileContent', { repo, path: file.path })
-        const mei = parser.parseFromString(xml, 'application/xml')
-        // Extract all <graphic @target> URLs from <surface> elements
-        const urls = [...mei.querySelectorAll('surface graphic')]
-          .map(g => g.getAttribute('target'))
-          .filter(Boolean)
-        if (urls.length === 0) throw new Error('No image references found in this MEI file.')
-        dispatch('registerImageImports', urls.join(' '))
+        const pages = await Promise.all(
+          imageItems.map(async (item, index) => {
+            const { bytes, name } = await dispatch('auth/getImageContent', { repo, path: item.path })
+            const ext = name.split('.').pop().toLowerCase()
+            const mime = (ext === 'jpg' || ext === 'jpeg') ? 'image/jpeg'
+              : ext === 'png' ? 'image/png'
+              : ext === 'gif' ? 'image/gif'
+              : ext === 'webp' ? 'image/webp'
+              : 'application/octet-stream'
+            const blob = new Blob([bytes], { type: mime })
+            const url = URL.createObjectURL(blob)
+            let width = 800, height = 600
+            try {
+              const bitmap = await createImageBitmap(blob)
+              width = bitmap.width
+              height = bitmap.height
+              bitmap.close()
+            } catch (e) {
+              console.warn(`Could not read dimensions for ${name}:`, e)
+            }
+            return { index, url, width, height }
+          })
+        )
+        const templateXml = await fetch('./assets/meiFileTemplate.xml').then(r => r.text())
+        const xmlDoc = parser.parseFromString(templateXml, 'application/xml')
+        const root = xmlDoc.querySelector('mei')
+        root.setAttributeNS('http://www.w3.org/XML/1998/namespace', 'xml:id', 'm' + uuid())
+        const source = xmlDoc.querySelector('source')
+        if (source) source.parentNode.removeChild(source)
+        const dateEl = xmlDoc.querySelector('change date')
+        if (dateEl) dateEl.setAttribute('isodate', new Date().toISOString().substring(0, 10))
+        pages.forEach(page => {
+          addImportedPage(xmlDoc, page.index, page.url, page.width, page.height)
+        })
+        await dispatch('setData', xmlDoc)
         commit('TOGGLE_LOADGIT_MODAL')
-        commit('TOGGLE_PAGE_IMPORT_MODAL')
       } finally {
         commit('SET_LOADING', false)
       }
@@ -881,10 +915,21 @@ export default createStore({
     pages: state => {
       const arr = []
       state.pages.forEach(page => {
-        console.log("this is the page width and height at index", page.width, " " , page.height)
+        const isDirectImage = page.uri && (
+          page.uri.startsWith('blob:') ||
+          /\.(jpe?g|png|gif|webp|bmp|tiff?)$/i.test(page.uri)
+        )
+        let tileSource
+        if (isDirectImage) {
+          tileSource = { type: 'image', url: page.uri }
+          if (page.width > 0) tileSource.width = page.width
+          if (page.height > 0) tileSource.height = page.height
+        } else {
+          tileSource = page.uri
+        }
         const obj = {
-          tileSource: page.uri,
-          width: page.width,
+          tileSource,
+          width: page.width || undefined,
           x: 0,
           y: 0
         }
@@ -895,8 +940,15 @@ export default createStore({
     pagesDetailed: state => {
       const arr = []
       state.pages.forEach(page => {
+        const isDirectImage = page.uri && (
+          page.uri.startsWith('blob:') ||
+          /\.(jpe?g|png|gif|webp|bmp|tiff?)$/i.test(page.uri)
+        )
+        const tileSource = isDirectImage
+          ? { type: 'image', url: page.uri }
+          : page.uri
         const obj = {
-          tileSource: page.uri,
+          tileSource,
           dim: page.width + 'x' + page.height,
           n: page.n,
           label: page.label
