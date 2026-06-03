@@ -3,7 +3,7 @@
     <div v-if="error" class="toast toast-error" style="max-width: 480px;">
       <font-awesome-icon icon="fa-solid fa-user" class="mr-1" />
       Authentication failed: {{ error }}
-      <a href="/" class="btn btn-link ml-2">Go home</a>
+      <router-link :to="{ name: 'home' }" class="btn btn-link ml-2">Go home</router-link>
     </div>
     <div v-else style="display: flex; flex-direction: column; align-items: center; gap: 1rem;">
       <div class="loading loading-lg"></div>
