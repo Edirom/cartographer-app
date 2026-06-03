@@ -2,6 +2,9 @@
   "name": "mercator-app",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "dev": "concurrently --kill-others-on-fail -n vue,ghcred -c cyan,yellow \"npm run serve\" \"node node-ghcred/server.js\"",
     "serve": "vue-cli-service serve",
