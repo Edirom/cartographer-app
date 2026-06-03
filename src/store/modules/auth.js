@@ -304,7 +304,8 @@ export default {
     },
 
     /** Clear all auth state and remove the stored token. */
-    logout ({ commit }) {
+    async logout ({ commit, dispatch }) {
+      await dispatch('revokeGithubBlobUrls', null, { root: true })
       commit('SET_TOKEN', null)
       commit('SET_USER', null)
       commit('SET_REPOS', [])

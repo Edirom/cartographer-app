@@ -9,6 +9,17 @@ import { mode as allowedModes } from '@/store/constants.js'
 const parser = new DOMParser()
 const serializer = new XMLSerializer()
 
+function revokeBlobUrls (urlMap) {
+  if (!urlMap) return
+  Object.keys(urlMap).forEach(url => {
+    try {
+      URL.revokeObjectURL(url)
+    } catch (_) {
+      // Ignore invalid or already revoked URLs.
+    }
+  })
+}
+
 function getDefaultState() {
   return {
       xmlDoc: null,                  // The loaded MEI XML document (DOM)
@@ -142,6 +153,9 @@ export default createStore({
     },
     SET_GITHUB_FILE(state, fileInfo) {
       state.githubFile = fileInfo
+    },
+    CLEAR_GITHUB_FILE(state) {
+      state.githubFile = null
     },
     SET_XML_DOC(state, xmlDoc) {
       state.xmlDoc = xmlDoc
@@ -413,7 +427,14 @@ export default createStore({
  * - cancelImageImports: Cancels all pending image imports and hides the import modal.
  */
   actions: {
-    resetAll({ commit }) {
+    async revokeGithubBlobUrls({ state, commit }) {
+      if (state.githubFile && state.githubFile.urlMap) {
+        revokeBlobUrls(state.githubFile.urlMap)
+      }
+      commit('CLEAR_GITHUB_FILE')
+    },
+    async resetAll({ dispatch, commit }) {
+      await dispatch('revokeGithubBlobUrls')
       commit('RESET_STATE')
     },
     toggleLoadXMLModal({ commit }) {
@@ -609,7 +630,8 @@ export default createStore({
           .catch(error => errorFunc(error))
       }
     },
-    setData({ commit }, mei) {
+    async setData({ dispatch, commit }, mei) {
+      await dispatch('revokeGithubBlobUrls')
       const pageArray = getPageArray(mei)
       console.log("page array is ", pageArray)
       commit('SET_PAGES', pageArray)
@@ -813,6 +835,8 @@ export default createStore({
             // Canonical GitHub raw URL — used as the MEI <graphic target> at commit time
             const encodedPath = item.path.split('/').map(encodeURIComponent).join('/')
             const target = `https://raw.githubusercontent.com/${repo.owner}/${repo.name}/HEAD/${encodedPath}`
+            let width = null
+            let height = null
             try {
               const bitmap = await createImageBitmap(blob)
               width = bitmap.width
