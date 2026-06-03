@@ -969,11 +969,9 @@ export default createStore({
     pages: state => {
       const arr = []
       state.pages.forEach(page => {
-        const lastSegment = page.uri ? (page.uri.split('/').pop() || '') : ''
-        const isDirectImage = page.uri && (
-          page.uri.startsWith('blob:') ||
-          (/\.(jpe?g|png|gif|webp|bmp|tiff?)$/i.test(lastSegment) && !lastSegment.includes('%'))
-        )
+        const uri = page.uri || ''
+        const pathname = uri.startsWith('blob:') ? uri : (() => { try { return decodeURIComponent(new URL(uri).pathname) } catch { return uri } })()
+        const isDirectImage = uri.startsWith('blob:') || /\.(jpe?g|png|gif|webp|bmp|tiff?)$/i.test(pathname)
         let tileSource
         if (isDirectImage) {
           tileSource = { type: 'image', url: page.uri }
