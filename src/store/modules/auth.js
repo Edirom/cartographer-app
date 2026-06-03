@@ -226,7 +226,18 @@ export default {
         path,
       })
       if (Array.isArray(data)) throw new Error(`${path} is a directory, not a file`)
-      const xml = decodeBase64Utf8(data.content)
+      let base64
+      if (data.content && data.encoding === 'base64') {
+        base64 = data.content
+      } else {
+        const { data: blob } = await octokit.rest.git.getBlob({
+          owner: repo.owner,
+          repo: repo.name,
+          file_sha: data.sha,
+        })
+        base64 = blob.content
+      }
+      const xml = decodeBase64Utf8(base64)
       return { xml, sha: data.sha, path: data.path }
     },
 
