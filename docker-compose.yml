@@ -6,7 +6,7 @@ services:
     environment:
       - VUE_APP_PUBLIC_PATH=${VUE_APP_PUBLIC_PATH:-/}
       - VUE_APP_CLIENT_ID=${VUE_APP_CLIENT_ID}
-      - VUE_APP_CALL_BACK=${VUE_APP_CALL_BACK:-http://localhost:8080/auth}
+      - VUE_APP_CALL_BACK=${VUE_APP_CALL_BACK:-http://localhost:8080/myAppPlaceholder/callback}
     depends_on:
       - node-ghcred
 
