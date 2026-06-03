@@ -1001,11 +1001,18 @@ export default createStore({
         const tileSource = isDirectImage
           ? { type: 'image', url: page.uri }
           : page.uri
+        let label = page.label || ''
+        if (state.xmlDoc && page.id) {
+          const surface = state.xmlDoc.querySelector(`surface[xml\\:id="${page.id}"]`)
+          if (surface && surface.hasAttribute('label')) {
+            label = surface.getAttribute('label') || ''
+          }
+        }
         const obj = {
           tileSource,
           dim: page.width + 'x' + page.height,
           n: page.n,
-          label: page.label
+          label
         }
         arr.push(obj)
       })

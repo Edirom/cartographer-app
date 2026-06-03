@@ -164,7 +164,7 @@ export function getPageArray (mei) {
     obj.uri = graphic.getAttributeNS('', 'target').trim()
     obj.id = surface.getAttribute('xml:id').trim()
     obj.n = surface.getAttributeNS('', 'n').trim()
-    // obj.label = surface.getAttributeNS('', 'label').trim() // Uncomment if label is needed
+    obj.label = (surface.getAttribute('label') || '').trim()
     obj.width = parseInt(graphic.getAttributeNS('', 'width').trim(), 10)
     obj.height = parseInt(graphic.getAttributeNS('', 'height').trim(), 10)
     obj.hasSvg = surface.querySelector('svg') !== null // true if an SVG exists in this surface
