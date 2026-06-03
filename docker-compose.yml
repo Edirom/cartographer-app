@@ -15,4 +15,4 @@ services:
     environment:
       - VUE_APP_CLIENT_ID=${VUE_APP_CLIENT_ID}
       - VUE_APP_CLIENT_SECRET=${VUE_APP_CLIENT_SECRET}
-      - ALLOWED_ORIGIN=${VUE_APP_CALL_BACK:-http://localhost:8080}
+      - ALLOWED_ORIGIN=${ALLOWED_ORIGIN:-http://localhost:8080}
