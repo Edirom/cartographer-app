@@ -1,6 +1,6 @@
 <template>
   <div class="modal active">
-    <div class="modal-overlay" @click="closeModal"></div>
+    <a href="#close" class="modal-overlay" aria-label="Close" @click.prevent="closeModal"></a>
     <div class="modal-container" style="max-width: 500px;">
       <div class="modal-header">
         <button class="btn btn-clear float-right" aria-label="Close" @click="closeModal"></button>
