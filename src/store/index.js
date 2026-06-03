@@ -20,6 +20,18 @@ function revokeBlobUrls (urlMap) {
   })
 }
 
+function parseGithubRawUrl (target) {
+  if (typeof target !== 'string') return null
+  const match = target.match(/^https:\/\/raw\.githubusercontent\.com\/([^/]+)\/([^/]+)\/([^/]+)\/(.+)$/)
+  if (!match) return null
+  return {
+    owner: match[1],
+    repo: match[2],
+    ref: match[3],
+    path: match[4],
+  }
+}
+
 function getDefaultState() {
   return {
       xmlDoc: null,                  // The loaded MEI XML document (DOM)
@@ -59,8 +71,9 @@ function getDefaultState() {
       currentMeasure: null,           // The current measure object 
       additionMeasure: false,         // True if an additional measure is being added (to prevent recursion)
       showLoadGitModal: false,        // Show/hide modal for loading from GitHub
-      showCommitModal: false,          // Show/hide modal for committing to GitHub
+      showCommitModal: false,         // Show/hide modal for committing to GitHub
       githubFile: null,               // Currently loaded GitHub file { owner, repo, path, sha }
+      importedGithubUrlMap: null,     // Blob URL map for locally uploaded GitHub image MEIs
   }
 }
 
@@ -156,6 +169,12 @@ export default createStore({
     },
     CLEAR_GITHUB_FILE(state) {
       state.githubFile = null
+    },
+    SET_IMPORTED_GITHUB_URL_MAP(state, urlMap) {
+      state.importedGithubUrlMap = urlMap
+    },
+    CLEAR_IMPORTED_GITHUB_URL_MAP(state) {
+      state.importedGithubUrlMap = null
     },
     SET_XML_DOC(state, xmlDoc) {
       state.xmlDoc = xmlDoc
@@ -431,7 +450,48 @@ export default createStore({
       if (state.githubFile && state.githubFile.urlMap) {
         revokeBlobUrls(state.githubFile.urlMap)
       }
+      if (state.importedGithubUrlMap) {
+        revokeBlobUrls(state.importedGithubUrlMap)
+        commit('CLEAR_IMPORTED_GITHUB_URL_MAP')
+      }
       commit('CLEAR_GITHUB_FILE')
+    },
+    async resolveLocalGithubImageUrls({ state, commit, dispatch }, mei) {
+      const graphics = [...mei.querySelectorAll('graphic[target]')]
+      const urlMap = {}
+      await Promise.all(graphics.map(async graphic => {
+        const target = graphic.getAttribute('target')
+        const parsed = parseGithubRawUrl(target)
+        if (!parsed) return
+        try {
+          let blob
+          if (state.auth && state.auth.accessToken) {
+            const repo = { owner: parsed.owner, name: parsed.repo }
+            const { bytes, name } = await dispatch('auth/getImageContent', { repo, path: parsed.path })
+            const ext = name.split('.').pop().toLowerCase()
+            const mime = (ext === 'jpg' || ext === 'jpeg') ? 'image/jpeg'
+              : ext === 'png' ? 'image/png'
+              : ext === 'gif' ? 'image/gif'
+              : ext === 'webp' ? 'image/webp'
+              : 'application/octet-stream'
+            blob = new Blob([bytes], { type: mime })
+          } else {
+            const response = await fetch(target)
+            if (!response.ok) throw new Error(`Failed to fetch ${target}: ${response.status}`)
+            blob = await response.blob()
+          }
+          const blobUrl = URL.createObjectURL(blob)
+          graphic.setAttribute('target', blobUrl)
+          urlMap[blobUrl] = target
+        } catch (e) {
+          console.warn(`Unable to resolve GitHub image URL ${target}:`, e)
+        }
+      }))
+      if (Object.keys(urlMap).length > 0) {
+        commit('SET_IMPORTED_GITHUB_URL_MAP', urlMap)
+      } else {
+        commit('CLEAR_IMPORTED_GITHUB_URL_MAP')
+      }
     },
     async resetAll({ dispatch, commit }) {
       await dispatch('revokeGithubBlobUrls')
@@ -552,6 +612,10 @@ export default createStore({
           const mei = parser.parseFromString(xml, 'application/xml')
           dispatch('setData', mei)
         })
+    },
+    async uploadLocalMei({ dispatch }, mei) {
+      await dispatch('resolveLocalGithubImageUrls', mei)
+      await dispatch('setData', mei)
     },
     async autoDetectZonesOnCurrentPage({ commit, state }) {
       const pageIndex = state.currentPage
@@ -978,8 +1042,15 @@ export default createStore({
       if (state.xmlDoc === null) {
         return null
       }
-      const mei = state.xmlDoc
-      return serializer.serializeToString(mei)
+      let content = serializer.serializeToString(state.xmlDoc)
+      const rewriteMap = {
+        ...(state.githubFile && state.githubFile.urlMap ? state.githubFile.urlMap : {}),
+        ...(state.importedGithubUrlMap || {}),
+      }
+      for (const [blobUrl, rawUrl] of Object.entries(rewriteMap)) {
+        content = content.split(blobUrl).join(rawUrl)
+      }
+      return content
     },
     currentPageIndexOneBased: state => {
       return state.currentPage + 1
