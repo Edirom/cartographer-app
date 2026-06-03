@@ -2,6 +2,7 @@ import { Octokit } from '@octokit/rest'
 
 const TOKEN_KEY = 'gh_access_token'
 const TOKEN_EXPIRY_KEY = 'gh_access_token_expires_at'
+const OAUTH_STATE_KEY = 'gh_oauth_state'
 const TOKEN_TTL_MS = 60 * 60 * 1000 // 1 hour
 
 function decodeBase64Utf8 (encoded) {
@@ -38,6 +39,20 @@ function setStoredToken (token) {
     sessionStorage.removeItem(TOKEN_KEY)
     sessionStorage.removeItem(TOKEN_EXPIRY_KEY)
   }
+}
+
+function setStoredOAuthState (state) {
+  if (state) {
+    sessionStorage.setItem(OAUTH_STATE_KEY, state)
+  } else {
+    sessionStorage.removeItem(OAUTH_STATE_KEY)
+  }
+}
+
+function generateOAuthState () {
+  const bytes = new Uint8Array(16)
+  window.crypto.getRandomValues(bytes)
+  return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('')
 }
 
 export default {
@@ -100,10 +115,13 @@ export default {
     login () {
       const clientId = process.env.VUE_APP_CLIENT_ID
       const callbackUrl = process.env.VUE_APP_CALL_BACK
+      const state = generateOAuthState()
+      setStoredOAuthState(state)
       const params = new URLSearchParams({
         client_id: clientId,
         redirect_uri: callbackUrl,
         scope: 'repo user:email',
+        state,
       })
       window.location.href = `https://github.com/login/oauth/authorize?${params}`
     },

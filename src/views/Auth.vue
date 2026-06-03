@@ -18,8 +18,19 @@ export default {
   data: () => ({ error: null }),
   async mounted () {
     const code = this.$route.query.code
+    const state = this.$route.query.state
     if (!code) {
       this.error = 'No authorization code received from GitHub.'
+      return
+    }
+    if (!state) {
+      this.error = 'Missing OAuth state; cannot validate the callback.'
+      return
+    }
+    const expectedState = sessionStorage.getItem('gh_oauth_state')
+    sessionStorage.removeItem('gh_oauth_state')
+    if (!expectedState || state !== expectedState) {
+      this.error = 'OAuth state mismatch. Possible CSRF attempt or expired login session.'
       return
     }
     try {
