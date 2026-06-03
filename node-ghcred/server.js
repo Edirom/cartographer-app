@@ -12,8 +12,9 @@ app.use(express.json())
 // In production the Vue nginx container proxies /authenticate directly, so
 // CORS is only needed for local development (vue-cli devServer proxy handles
 // it in dev, but allow it here too for flexibility).
+// Set ALLOWED_ORIGIN in production to restrict to your deployment's origin.
 app.use(cors({
-  origin: process.env.ALLOWED_ORIGIN || '*',
+  origin: process.env.ALLOWED_ORIGIN || 'http://localhost:8081',
   methods: ['POST'],
 }))
 
