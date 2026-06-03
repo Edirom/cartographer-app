@@ -46,7 +46,7 @@
               </a>
             </li>
             <li class="menu-item" v-if="githubFile">
-              <a href="#" @click.prevent="commitToGithub">
+              <a href="#" @click.prevent="openCommitModal">
                 <font-awesome-icon icon="fa-solid fa-code-commit" class="mr-1" /> Commit to GitHub
               </a>
             </li>
@@ -104,9 +104,9 @@ export default {
       this.menuOpen = false
       this.$store.dispatch('toggleLoadGitModal')
     },
-    commitToGithub () {
+    openCommitModal () {
       this.menuOpen = false
-      this.$store.dispatch('commitToGithub')
+      this.$store.dispatch('toggleCommitModal')
     },
     handleOutsideClick (e) {
       if (!this.$el.contains(e.target)) this.menuOpen = false

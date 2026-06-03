@@ -236,14 +236,15 @@ export default {
     async commitFile ({ state }, { repo, path, sha, content, message }) {
       const octokit = new Octokit({ auth: state.accessToken })
       const encoded = encodeBase64Utf8(content)
-      const { data } = await octokit.rest.repos.createOrUpdateFileContents({
+      const payload = {
         owner: repo.owner,
         repo: repo.name,
         path,
         message: message || 'Update MEI file via Cartographer',
         content: encoded,
-        sha,
-      })
+      }
+      if (sha) payload.sha = sha   // omit sha for new-file creation
+      const { data } = await octokit.rest.repos.createOrUpdateFileContents(payload)
       return data.content ? data.content.sha : null
     },
 
