@@ -15,9 +15,6 @@ services:
     environment:
       - VUE_APP_CLIENT_ID=${VUE_APP_CLIENT_ID}
       - VUE_APP_CLIENT_SECRET=${VUE_APP_CLIENT_SECRET}
-<<<<<<< HEAD
       # Set ALLOWED_ORIGIN to your app's scheme+host+port (no path) in production.
       # e.g. ALLOWED_ORIGIN=https://your-domain.com
-=======
->>>>>>> 63faf33d76497a49547b02a6139492a864892921
       - ALLOWED_ORIGIN=${ALLOWED_ORIGIN:-http://localhost:8080}
