@@ -1088,14 +1088,12 @@ export default createStore({
     pagesDetailed: state => {
       const arr = []
       state.pages.forEach(page => {
-        const lastSegment = page.uri ? (page.uri.split('/').pop() || '') : ''
-        const isDirectImage = page.uri && (
-          page.uri.startsWith('blob:') ||
-          (/\.(jpe?g|png|gif|webp|bmp|tiff?)$/i.test(lastSegment) && !lastSegment.includes('%'))
-        )
+        const uri = page.uri || ''
+        const pathname = uri.startsWith('blob:') ? uri : (() => { try { return decodeURIComponent(new URL(uri).pathname) } catch { return uri } })()
+        const isDirectImage = uri.startsWith('blob:') || /\.(jpe?g|png|gif|webp|bmp|tiff?)$/i.test(pathname)
         const tileSource = isDirectImage
-          ? { type: 'image', url: page.uri }
-          : page.uri
+          ? { type: 'image', url: uri }
+          : uri
         let label = page.label || ''
         if (state.xmlDoc && page.id) {
           const surface = state.xmlDoc.querySelector(`surface[xml\\:id="${page.id}"]`)
