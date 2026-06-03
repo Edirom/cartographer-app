@@ -969,9 +969,10 @@ export default createStore({
     pages: state => {
       const arr = []
       state.pages.forEach(page => {
+        const lastSegment = page.uri ? (page.uri.split('/').pop() || '') : ''
         const isDirectImage = page.uri && (
           page.uri.startsWith('blob:') ||
-          /\.(jpe?g|png|gif|webp|bmp|tiff?)$/i.test(page.uri)
+          (/\.(jpe?g|png|gif|webp|bmp|tiff?)$/i.test(lastSegment) && !lastSegment.includes('%'))
         )
         let tileSource
         if (isDirectImage) {
@@ -994,9 +995,10 @@ export default createStore({
     pagesDetailed: state => {
       const arr = []
       state.pages.forEach(page => {
+        const lastSegment = page.uri ? (page.uri.split('/').pop() || '') : ''
         const isDirectImage = page.uri && (
           page.uri.startsWith('blob:') ||
-          /\.(jpe?g|png|gif|webp|bmp|tiff?)$/i.test(page.uri)
+          (/\.(jpe?g|png|gif|webp|bmp|tiff?)$/i.test(lastSegment) && !lastSegment.includes('%'))
         )
         const tileSource = isDirectImage
           ? { type: 'image', url: page.uri }
