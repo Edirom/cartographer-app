@@ -50,7 +50,7 @@
     "@vuepress/plugin-back-to-top": "^1.9.10",
     "@vuepress/plugin-search": "^1.9.10",
     "@vuepress/theme-default": "^2.0.0-rc.103",
-    "concurrently": "^10.0.1",
+    "concurrently": "^9.2.1",
     "jest": "^27.1.0",
     "lint-staged": "^9.5.0",
     "sass": "^1.26.5",

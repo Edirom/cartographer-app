@@ -36,7 +36,8 @@ PLACEHOLDER="/myAppPlaceholder"          # ensures single trailing slash
 GH_CLIENT_ID="${VUE_APP_CLIENT_ID:-}"
 GH_CALLBACK_URL="${VUE_APP_CALL_BACK:-}"
 
-echo "Injecting GitHub OAuth config: CLIENT_ID=${GH_CLIENT_ID:0:4}**** CALLBACK=${GH_CALLBACK_URL}"
+CLIENT_ID_PREFIX=$(printf '%.4s' "$GH_CLIENT_ID")
+echo "Injecting GitHub OAuth config: CLIENT_ID=${CLIENT_ID_PREFIX}**** CALLBACK=${GH_CALLBACK_URL}"
 
 find /usr/share/nginx/html \
   -type f \( -name "*.js" -o -name "*.html" \) -print0 \
