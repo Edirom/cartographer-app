@@ -193,7 +193,9 @@ export default {
     },
 
     /** Fetch and decode the content of a file from GitHub. Returns { xml, sha, path }. */
-    async getFileContent ({ state }, { repo, path }) {      const octokit = new Octokit({ auth: state.accessToken })
+    async getFileContent ({ state }, { repo, path }) {
+      if (!state.accessToken) throw new Error('Not authenticated')
+      const octokit = new Octokit({ auth: state.accessToken })
       const { data } = await octokit.rest.repos.getContent({
         owner: repo.owner,
         repo: repo.name,
