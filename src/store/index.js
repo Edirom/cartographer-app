@@ -811,8 +811,8 @@ export default createStore({
             const blob = new Blob([bytes], { type: mime })
             const url = URL.createObjectURL(blob)
             // Canonical GitHub raw URL — used as the MEI <graphic target> at commit time
-            const target = `https://raw.githubusercontent.com/${repo.owner}/${repo.name}/HEAD/${item.path}`
-            let width = 800, height = 600
+            const encodedPath = item.path.split('/').map(encodeURIComponent).join('/')
+            const target = `https://raw.githubusercontent.com/${repo.owner}/${repo.name}/HEAD/${encodedPath}`
             try {
               const bitmap = await createImageBitmap(blob)
               width = bitmap.width
