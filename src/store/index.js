@@ -838,7 +838,7 @@ export default createStore({
           await Promise.all(imageGraphics.map(async graphic => {
             const rawUrl = graphic.getAttribute('target')
             // Strip "owner/repo/REF/" prefix to get the file path
-            const afterRepo = rawUrl.slice(rawBase.length)
+            const afterRepo = decodeURIComponent(rawUrl.slice(rawBase.length))
             const path = afterRepo.replace(/^[^/]+\//, '')
             try {
               const { bytes, name } = await dispatch('auth/getImageContent', { repo, path })
