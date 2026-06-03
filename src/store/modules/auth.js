@@ -1,6 +1,8 @@
 import { Octokit } from '@octokit/rest'
 
 const TOKEN_KEY = 'gh_access_token'
+const TOKEN_EXPIRY_KEY = 'gh_access_token_expires_at'
+const TOKEN_TTL_MS = 60 * 60 * 1000 // 1 hour
 
 function decodeBase64Utf8 (encoded) {
   const binary = atob(encoded.replace(/[\n\r]/g, ''))
@@ -15,11 +17,34 @@ function encodeBase64Utf8 (text) {
   return btoa(binary)
 }
 
+function getStoredToken () {
+  const token = sessionStorage.getItem(TOKEN_KEY)
+  const expiry = sessionStorage.getItem(TOKEN_EXPIRY_KEY)
+  if (!token || !expiry) return null
+  if (Date.now() > Number(expiry)) {
+    sessionStorage.removeItem(TOKEN_KEY)
+    sessionStorage.removeItem(TOKEN_EXPIRY_KEY)
+    return null
+  }
+  return token
+}
+
+function setStoredToken (token) {
+  if (token) {
+    const expiresAt = Date.now() + TOKEN_TTL_MS
+    sessionStorage.setItem(TOKEN_KEY, token)
+    sessionStorage.setItem(TOKEN_EXPIRY_KEY, String(expiresAt))
+  } else {
+    sessionStorage.removeItem(TOKEN_KEY)
+    sessionStorage.removeItem(TOKEN_EXPIRY_KEY)
+  }
+}
+
 export default {
   namespaced: true,
 
   state: () => ({
-    accessToken: localStorage.getItem(TOKEN_KEY) || null,
+    accessToken: getStoredToken(),
     user: null,               // { login, name, avatar_url }
     repos: [],                // array of { full_name, name, owner, private }
     repoContents: [],         // current directory listing
@@ -33,8 +58,7 @@ export default {
   mutations: {
     SET_TOKEN (state, token) {
       state.accessToken = token
-      if (token) localStorage.setItem(TOKEN_KEY, token)
-      else localStorage.removeItem(TOKEN_KEY)
+      setStoredToken(token)
     },
     SET_USER (state, user) {
       state.user = user
