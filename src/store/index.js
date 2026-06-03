@@ -858,7 +858,7 @@ export default createStore({
           }))
         }
 
-        dispatch('setData', mei)
+        await dispatch('setData', mei)
         const hasUrlMap = Object.keys(urlMap).length > 0
         commit('SET_GITHUB_FILE', {
           owner: repo.owner,
