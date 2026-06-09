@@ -78,7 +78,7 @@
 
 <script>
 export default {
-  name: 'IIIFModal',
+  name: 'LoadGitModal',
   data() {
     return {
       repository: '',
