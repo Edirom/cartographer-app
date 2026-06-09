@@ -10,9 +10,13 @@ const serializer = new XMLSerializer()
 function getDefaultState() {
   return {
  selectedRepo: null,            // Currently selected GitHub repository
-      selectedDirectory: null,       // Currently selected directory within the repo
-      directories: [],               // List of directories in the selected repo
-      repos: null,                   // List of available repositories
+ selectedBranch: null,          // Currently selected GitHub branch
+ newBranchName: '',             // New branch name to create on commit
+ commitFileName: 'meiFile.xml', // Target file name for commit
+ selectedDirectory: null,       // Currently selected directory within the repo
+ directories: [],               // List of directories in the selected repo
+ repos: null,                   // List of available repositories
+ branches: {},                  // Branches keyed by repository name
       xmlDoc: null,                  // The loaded MEI XML document (DOM)
       currentMdiv: null,            // The currently selected movement (mdiv)
       nextMdiv: null,                // The next mdiv to be created (if applicable)  
@@ -141,6 +145,27 @@ export default createStore({
     },
     SET_SELECTED_DIRECTORY(state, gitdirec) {
       state.selectedDirectory = gitdirec
+    },
+    SET_SELECTED_REPOSITORY(state, repository) {
+      state.selectedRepo = repository
+    },
+    SET_SELECTED_BRANCH(state, branch) {
+      state.selectedBranch = branch
+    },
+    SET_NEW_BRANCH_NAME(state, branchName) {
+      state.newBranchName = branchName
+    },
+    SET_COMMIT_FILE_NAME(state, fileName) {
+      state.commitFileName = fileName
+    },
+    SET_REPOSITORIES(state, repositories) {
+      state.repos = repositories
+    },
+    SET_BRANCHES(state, { repository, branches }) {
+      state.branches = {
+        ...state.branches,
+        [repository]: branches
+      }
     },
     SET_XML_DOC(state, xmlDoc) {
       console.log("this is the xml doc in set ", xmlDoc)
@@ -465,6 +490,9 @@ export default createStore({
     toggleLoadIIIFModal({ commit }) {
       commit('TOGGLE_LOADIIIF_MODAL')
     },
+    toggleLoadGitModal({ commit }) {
+      commit('TOGGLE_LOADGIT_MODAL')
+    },
     toggleMeasureModal({ commit }) {
       commit('TOGGLE_MEASURE_MODAL')
     },
@@ -746,6 +774,34 @@ export default createStore({
     },
     setDirectory({ commit }, directory) {
       commit('SET_SELECTED_DIRECTORY', directory)
+    },
+    setSelectedRepository({ commit }, repository) {
+      commit('SET_SELECTED_REPOSITORY', repository)
+    },
+    setSelectedBranch({ commit }, branch) {
+      commit('SET_SELECTED_BRANCH', branch)
+    },
+    setNewBranchName({ commit }, branchName) {
+      commit('SET_NEW_BRANCH_NAME', branchName)
+    },
+    setCommitFileName({ commit }, fileName) {
+      commit('SET_COMMIT_FILE_NAME', fileName)
+    },
+    commitGithub({ commit }, payload = {}) {
+      const branch = payload.branch === '__create_new__' ? payload.newBranchName : payload.branch
+
+      if (payload.repository) {
+        commit('SET_SELECTED_REPOSITORY', payload.repository)
+      }
+      if (branch) {
+        commit('SET_SELECTED_BRANCH', branch)
+      }
+      if (payload.newBranchName) {
+        commit('SET_NEW_BRANCH_NAME', payload.newBranchName)
+      }
+      if (payload.fileName) {
+        commit('SET_COMMIT_FILE_NAME', payload.fileName)
+      }
     },
     setCurrentMdivLabel({ commit }, val) {
       commit('SET_CURRENT_MDIV_LABEL', val)
@@ -1052,5 +1108,17 @@ export default createStore({
       }
       return measure.getAttribute('xml:id')
     },
+    gitRepositories: state => {
+      if (!Array.isArray(state.repos)) {
+        return []
+      }
+      return state.repos
+    },
+    gitBranches: state => {
+      return state.branches || {}
+    },
+    selectedGitRepository: state => state.selectedRepo,
+    selectedGitBranch: state => state.selectedBranch,
+    gitCommitFileName: state => state.commitFileName
   }
 })

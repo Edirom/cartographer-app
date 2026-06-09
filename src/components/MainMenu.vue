@@ -43,6 +43,12 @@
           Download MEI File
         </template>
       </li>
+      <li class="menu-item">
+        <button class="btn btn-action btn-sm" @click="commitGithub" title="commit MEI file">
+          <font-awesome-icon icon="fa-solid fa-code-commit"/>
+        </button>
+        Commit MEI File
+      </li>
       <li class="divider" data-content="Actions"></li>
       <li class="menu-item">
         <button class="btn btn-action btn-sm" @click="showPagesModal" title="Show Page Overview">
@@ -134,7 +140,7 @@ export default {
       this.$store.dispatch('logout')
     },
     commitGithub: function (){
-      this.$store.dispatch('commitGithub')
+      this.$store.dispatch('toggleLoadGitModal')
     },
     importManifest: function () {
       this.$store.dispatch('toggleLoadIIIFModal')
