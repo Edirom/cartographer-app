@@ -806,16 +806,20 @@ export default createStore({
         body.appendChild(mdiv)
       }
       
-      // Verify image count matches BEFORE committing anything (only if original MEI exists)
-      if (originalMei && state.originalMeiGraphicCount !== pages.length) {
-        const missingCount = Math.max(0, state.originalMeiGraphicCount - pages.length)
-        const extraCount = Math.max(0, pages.length - state.originalMeiGraphicCount)
-        commit('SET_LOADING', false)
-        commit('SHOW_IMAGE_MISMATCH_MODAL', { 
-          missing: Array(missingCount).fill('(image)'), 
-          unreferenced: Array(extraCount).fill('(extra)') 
-        })
-        return // Don't load anything if there's a mismatch
+      // Verify image filenames match MEI graphic targets (by basename, ignoring folder prefix)
+      if (originalMei) {
+        const basename = p => p.split('/').pop()
+        const meiTargets = Array.from(originalMei.querySelectorAll('graphic'))
+          .map(g => basename(g.getAttribute('target') || ''))
+          .filter(Boolean)
+        const loadedNames = pages.map(p => basename(p.filePath || p.uri || p.imageName || ''))
+        const missingImages = meiTargets.filter(t => !loadedNames.includes(t))
+        const unreferencedImages = loadedNames.filter(n => !meiTargets.includes(n))
+        if (missingImages.length > 0 || unreferencedImages.length > 0) {
+          commit('SET_LOADING', false)
+          commit('SHOW_IMAGE_MISMATCH_MODAL', { missing: missingImages, unreferenced: unreferencedImages })
+          return // Don't load anything if there's a mismatch
+        }
       }
       
       commit('SET_XML_DOC', xmlDoc)
@@ -1103,24 +1107,23 @@ export default createStore({
       commit('PREVIOUS_MDIV', mdiv)
     },
     verifyImageReferences({ commit, state }) {
-      if (!state.xmlDoc) {
+      if (!state.xmlDoc || !state.pages || state.pages.length === 0) {
         return
       }
       
-      // Use original MEI's graphic count if available, otherwise use current xmlDoc
-      const graphicCount = state.originalMeiGraphicCount || state.xmlDoc.querySelectorAll('graphic').length
-      const loadedImageCount = state.pages.length
+      const basename = p => p.split('/').pop()
+      const meiTargets = Array.from(state.xmlDoc.querySelectorAll('graphic'))
+        .map(g => basename(g.getAttribute('target') || ''))
+        .filter(Boolean)
+      const loadedNames = state.pages.map(p => basename(p.uri || p.filePath || p.imageName || ''))
+      const missingImages = meiTargets.filter(t => !loadedNames.includes(t))
+      const unreferencedImages = loadedNames.filter(n => !meiTargets.includes(n))
       
-      if (graphicCount === loadedImageCount) {
+      if (missingImages.length === 0 && unreferencedImages.length === 0) {
         return { hasMismatches: false }
       } else {
-        const missingCount = Math.max(0, graphicCount - loadedImageCount)
-        const extraCount = Math.max(0, loadedImageCount - graphicCount)
-        commit('SHOW_IMAGE_MISMATCH_MODAL', { 
-          missing: Array(missingCount).fill('(image)'), 
-          unreferenced: Array(extraCount).fill('(extra)') 
-        })
-        return { hasMismatches: true, graphicCount, loadedImageCount }
+        commit('SHOW_IMAGE_MISMATCH_MODAL', { missing: missingImages, unreferenced: unreferencedImages })
+        return { hasMismatches: true }
       }
     },
     closeImageMismatchModal({ commit }) {

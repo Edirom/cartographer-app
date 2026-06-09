@@ -163,17 +163,22 @@ export default {
         
         if (this.localImageTargets && this.localImageTargets.length > 0) {
           console.log('Matching files to targets by path...')
-          // Create a map of target paths to files
+          // Create a map of target paths to files — indexed by both full path and basename
+          // so that MEI targets with or without a folder prefix (e.g. "images/foo.png" vs "foo.png") both match
           const fileMap = {}
           imageFiles.forEach(file => {
             const filePath = file.webkitRelativePath || file.name
             fileMap[filePath] = file
+            const baseName = filePath.split('/').pop()
+            if (!fileMap[baseName]) fileMap[baseName] = file
           })
           
           // Try to find files that match the targets
           filesToLoad = this.localImageTargets
             .map(target => {
-              const file = fileMap[target]
+              // Try full path first, then basename only
+              const baseName = target.split('/').pop()
+              const file = fileMap[target] || fileMap[baseName]
               if (file) {
                 console.log(`✅ Found matching file for target: ${target}`)
                 return file
