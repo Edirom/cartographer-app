@@ -68,11 +68,46 @@
           </template>
         </div>
 
+        <!-- ── Branch picker ── -->
+        <div v-else-if="!selectedBranch">
+          <div class="file-browser-header" style="margin-bottom: 0.6rem;">
+            <button class="btn btn-sm" @click="backToRepos">← Repos</button>
+            <span class="text-bold ml-2">{{ currentRepo.full_name }}</span>
+          </div>
+          <div v-if="loadingBranches" class="text-center" style="padding: 2rem;">
+            <div class="loading loading-lg"></div>
+          </div>
+          <template v-else>
+            <div class="form-group">
+              <input
+                class="form-input"
+                v-model="branchFilter"
+                placeholder="Filter branches…"
+              />
+            </div>
+            <div v-if="filteredBranches.length === 0" class="empty">
+              <p class="empty-subtitle text-gray">No branches found.</p>
+            </div>
+            <ul v-else class="menu" style="max-height: 300px; overflow-y: auto;">
+              <li
+                v-for="branch in filteredBranches"
+                :key="branch.name"
+                class="menu-item"
+              >
+                <a href="#" @click.prevent="selectBranch(branch)">
+                  <font-awesome-icon icon="fa-solid fa-code-branch" class="mr-1" />
+                  {{ branch.name }}
+                </a>
+              </li>
+            </ul>
+          </template>
+        </div>
+
         <!-- ── File browser ── -->
         <div v-else>
           <div class="file-browser-header">
-            <button class="btn btn-sm" @click="backToRepos">← Repos</button>
-            <span class="text-bold ml-2">{{ currentRepo.name }}</span>
+            <button class="btn btn-sm" @click="backToBranches">← Branches</button>
+            <span class="text-bold ml-2">{{ currentRepo.name }} / {{ selectedBranch.name }}</span>
           </div>
 
           <!-- Breadcrumb -->
@@ -149,6 +184,7 @@ export default {
   data () {
     return {
       repoFilter: '',
+      branchFilter: '',
       importing: false,
       loadError: null,
       mode: 'mei',   // 'mei' | 'images'
@@ -162,9 +198,16 @@ export default {
     contents ()         { return this.$store.getters['auth/repoContents'] },
     currentPath ()      { return this.$store.getters['auth/currentRepoPath'] },
     selectedFile ()     { return this.$store.getters['auth/selectedFile'] },
+    branches ()         { return this.$store.getters['auth/branches'] },
+    selectedBranch ()   { return this.$store.getters['auth/selectedBranch'] },
+    loadingBranches ()  { return this.$store.getters['auth/loadingBranches'] },
     filteredRepos () {
       const f = this.repoFilter.toLowerCase().trim()
       return f ? this.repos.filter(r => r.full_name.toLowerCase().includes(f)) : this.repos
+    },
+    filteredBranches () {
+      const f = this.branchFilter.toLowerCase().trim()
+      return f ? this.branches.filter(b => b.name.toLowerCase().includes(f)) : this.branches
     },
     pathParts () {
       return this.currentPath ? this.currentPath.split('/') : []
@@ -195,6 +238,12 @@ export default {
     },
     backToRepos () {
       this.$store.dispatch('auth/clearSelectedRepo')
+    },
+    backToBranches () {
+      this.$store.dispatch('auth/clearSelectedBranch')
+    },
+    selectBranch (branch) {
+      this.$store.dispatch('auth/selectBranch', branch)
     },
     navigateTo (path) {
       this.$store.dispatch('auth/fetchRepoContents', { repo: this.currentRepo, path })

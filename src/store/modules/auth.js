@@ -68,6 +68,9 @@ export default {
     selectedFile: null,       // { name, path, sha } of the file to import
     loadingRepos: false,
     loadingContents: false,
+    branches: [],             // branches of the selected repository
+    selectedBranch: null,     // { name } of the selected branch
+    loadingBranches: false,
   }),
 
   mutations: {
@@ -89,12 +92,16 @@ export default {
       state.currentRepoPath = ''
       state.repoContents = []
       state.selectedFile = null
+      state.branches = []
+      state.selectedBranch = null
     },
     CLEAR_SELECTED_REPO (state) {
       state.selectedRepo = null
       state.currentRepoPath = ''
       state.repoContents = []
       state.selectedFile = null
+      state.branches = []
+      state.selectedBranch = null
     },
     SET_CURRENT_REPO_PATH (state, path) {
       state.currentRepoPath = path
@@ -107,6 +114,24 @@ export default {
     },
     SET_LOADING_CONTENTS (state, bool) {
       state.loadingContents = bool
+    },
+    SET_LOADING_BRANCHES (state, bool) {
+      state.loadingBranches = bool
+    },
+    SET_BRANCHES (state, branches) {
+      state.branches = branches
+    },
+    SET_SELECTED_BRANCH (state, branch) {
+      state.selectedBranch = branch
+      state.currentRepoPath = ''
+      state.repoContents = []
+      state.selectedFile = null
+    },
+    CLEAR_SELECTED_BRANCH (state) {
+      state.selectedBranch = null
+      state.currentRepoPath = ''
+      state.repoContents = []
+      state.selectedFile = null
     },
   },
 
@@ -191,15 +216,43 @@ export default {
       }
     },
 
-    /** Select a repository and load its root contents. */
+    /** Select a repository and load its branches. */
     async selectRepo ({ commit, dispatch }, repo) {
       commit('SET_SELECTED_REPO', repo)
-      await dispatch('fetchRepoContents', { repo, path: '' })
+      await dispatch('fetchBranches', repo)
     },
 
     /** Deselect the current repository and return to the repo list. */
     clearSelectedRepo ({ commit }) {
       commit('CLEAR_SELECTED_REPO')
+    },
+
+    /** Fetch branches for the given repository. */
+    async fetchBranches ({ state, commit }, repo) {
+      if (!state.accessToken) return
+      commit('SET_LOADING_BRANCHES', true)
+      try {
+        const octokit = new Octokit({ auth: state.accessToken })
+        const { data } = await octokit.rest.repos.listBranches({
+          owner: repo.owner,
+          repo: repo.name,
+          per_page: 100,
+        })
+        commit('SET_BRANCHES', data.map(b => ({ name: b.name })))
+      } finally {
+        commit('SET_LOADING_BRANCHES', false)
+      }
+    },
+
+    /** Select a branch and load the repository root contents for that branch. */
+    async selectBranch ({ commit, dispatch, state }, branch) {
+      commit('SET_SELECTED_BRANCH', branch)
+      await dispatch('fetchRepoContents', { repo: state.selectedRepo, path: '' })
+    },
+
+    /** Deselect the current branch and return to the branch list. */
+    clearSelectedBranch ({ commit }) {
+      commit('CLEAR_SELECTED_BRANCH')
     },
 
     /** Fetch the contents of a directory within the selected repository. */
@@ -208,11 +261,13 @@ export default {
       commit('SET_LOADING_CONTENTS', true)
       try {
         const octokit = new Octokit({ auth: state.accessToken })
-        const { data } = await octokit.rest.repos.getContent({
+        const params = {
           owner: repo.owner,
           repo: repo.name,
           path: path || '',
-        })
+        }
+        if (state.selectedBranch) params.ref = state.selectedBranch.name
+        const { data } = await octokit.rest.repos.getContent(params)
         const items = Array.isArray(data) ? data : [data]
         commit('SET_REPO_CONTENTS',
           items
@@ -235,14 +290,18 @@ export default {
     },
 
     /** Fetch and decode the content of a file from GitHub. Returns { xml, sha, path }. */
-    async getFileContent ({ state }, { repo, path }) {
+    async getFileContent ({ state }, { repo, path, ref }) {
       if (!state.accessToken) throw new Error('Not authenticated')
       const octokit = new Octokit({ auth: state.accessToken })
-      const { data } = await octokit.rest.repos.getContent({
+      const params = {
         owner: repo.owner,
         repo: repo.name,
         path,
-      })
+      }
+      // explicit ref takes priority, then the currently selected branch
+      if (ref) params.ref = ref
+      else if (state.selectedBranch) params.ref = state.selectedBranch.name
+      const { data } = await octokit.rest.repos.getContent(params)
       if (Array.isArray(data)) throw new Error(`${path} is a directory, not a file`)
       let base64
       if (data.content && data.encoding === 'base64') {
@@ -262,11 +321,13 @@ export default {
     /** Fetch raw binary content of a file from GitHub. Returns { bytes, name, path }. */
     async getImageContent ({ state }, { repo, path }) {
       const octokit = new Octokit({ auth: state.accessToken })
-      const { data } = await octokit.rest.repos.getContent({
+      const params = {
         owner: repo.owner,
         repo: repo.name,
         path,
-      })
+      }
+      if (state.selectedBranch) params.ref = state.selectedBranch.name
+      const { data } = await octokit.rest.repos.getContent(params)
       if (Array.isArray(data)) throw new Error(`${path} is a directory`)
       let base64
       if (data.content && data.encoding === 'base64') {
@@ -288,7 +349,7 @@ export default {
     },
 
     /** Commit updated file content back to GitHub. Returns the new blob SHA. */
-    async commitFile ({ state }, { repo, path, sha, content, message }) {
+    async commitFile ({ state }, { repo, path, sha, content, message, branch }) {
       const octokit = new Octokit({ auth: state.accessToken })
       const encoded = encodeBase64Utf8(content)
       const payload = {
@@ -299,8 +360,48 @@ export default {
         content: encoded,
       }
       if (sha) payload.sha = sha   // omit sha for new-file creation
+      if (branch) payload.branch = branch
       const { data } = await octokit.rest.repos.createOrUpdateFileContents(payload)
       return data.content ? data.content.sha : null
+    },
+
+    /** Create a new branch in the target repo.
+     *  - Same repo: pass baseBranch to fork from a specific branch.
+     *  - Different repo: omit baseBranch; the target repo's default branch is
+     *    always used as the base — never try to match a source branch by name. */
+    async createBranch ({ state }, { repo, newBranch, baseBranch }) {
+      if (!state.accessToken) throw new Error('Not authenticated')
+      const octokit = new Octokit({ auth: state.accessToken })
+
+      let baseSha
+      if (baseBranch) {
+        // Same-repo path: use the exact branch the user was working on
+        const { data: ref } = await octokit.rest.git.getRef({
+          owner: repo.owner,
+          repo: repo.name,
+          ref: `heads/${baseBranch}`,
+        })
+        baseSha = ref.object.sha
+      } else {
+        // Different-repo path: always resolve the target repo's own default branch
+        const { data: repoData } = await octokit.rest.repos.get({
+          owner: repo.owner,
+          repo: repo.name,
+        })
+        const { data: defaultRef } = await octokit.rest.git.getRef({
+          owner: repo.owner,
+          repo: repo.name,
+          ref: `heads/${repoData.default_branch}`,
+        })
+        baseSha = defaultRef.object.sha
+      }
+
+      await octokit.rest.git.createRef({
+        owner: repo.owner,
+        repo: repo.name,
+        ref: `refs/heads/${newBranch}`,
+        sha: baseSha,
+      })
     },
 
     /** Clear all auth state and remove the stored token. */
@@ -325,5 +426,8 @@ export default {
     selectedFile:    state => state.selectedFile,
     loadingRepos:    state => state.loadingRepos,
     loadingContents: state => state.loadingContents,
+    branches:        state => state.branches,
+    selectedBranch:  state => state.selectedBranch,
+    loadingBranches: state => state.loadingBranches,
   },
 }

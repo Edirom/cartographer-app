@@ -860,12 +860,14 @@ export default createStore({
 
         await dispatch('setData', mei)
         const hasUrlMap = Object.keys(urlMap).length > 0
+        const selectedBranch = getters['auth/selectedBranch']
         commit('SET_GITHUB_FILE', {
           owner: repo.owner,
           repo: repo.name,
           path: file.path,
           sha,
           ...(hasUrlMap ? { urlMap } : {}),
+          ...(selectedBranch ? { branch: selectedBranch.name } : {}),
         })
         commit('TOGGLE_LOADGIT_MODAL')
       } finally {
@@ -884,6 +886,8 @@ export default createStore({
         throw new Error('No image files found in this folder. Navigate to a folder containing images.')
       }
       commit('SET_LOADING', true)
+      const _activeBranch = getters['auth/selectedBranch']
+      const _branchRef = _activeBranch ? _activeBranch.name : 'HEAD'
       try {
         const pages = await Promise.all(
           imageItems.map(async (item, index) => {
@@ -898,7 +902,7 @@ export default createStore({
             const url = URL.createObjectURL(blob)
             // Canonical GitHub raw URL — used as the MEI <graphic target> at commit time
             const encodedPath = item.path.split('/').map(encodeURIComponent).join('/')
-            const target = `https://raw.githubusercontent.com/${repo.owner}/${repo.name}/HEAD/${encodedPath}`
+            const target = `https://raw.githubusercontent.com/${repo.owner}/${repo.name}/${_branchRef}/${encodedPath}`
             let width = null
             let height = null
             try {
@@ -932,7 +936,7 @@ export default createStore({
         const meiPath = currentPath ? `${currentPath}/cartographer.mei` : 'cartographer.mei'
         const urlMap = {}
         pages.forEach(page => { urlMap[page.url] = page.target })
-        commit('SET_GITHUB_FILE', { owner: repo.owner, repo: repo.name, path: meiPath, sha: null, urlMap })
+        commit('SET_GITHUB_FILE', { owner: repo.owner, repo: repo.name, path: meiPath, sha: null, urlMap, ...(_activeBranch ? { branch: _activeBranch.name } : {}) })
         commit('TOGGLE_LOADGIT_MODAL')
       } finally {
         commit('SET_LOADING', false)
@@ -941,10 +945,36 @@ export default createStore({
     toggleCommitModal ({ commit }) {
       commit('TOGGLE_COMMIT_MODAL')
     },
-    async commitToGithub ({ state, commit, dispatch }, message) {
+    async commitToGithub ({ state, commit, dispatch }, { message, owner: ownerOverride, repo: repoOverride, path: pathOverride, branch: branchOverride, createNewBranch, baseBranch } = {}) {
       if (!state.githubFile || !state.xmlDoc) throw new Error('No GitHub file loaded')
-      const { owner, repo, path, urlMap } = state.githubFile
-      let sha = state.githubFile.sha
+      const { urlMap } = state.githubFile
+
+      // Resolve target — overrides win over the stored githubFile values
+      const owner  = ownerOverride  || state.githubFile.owner
+      const repo   = repoOverride   || state.githubFile.repo
+      const path   = pathOverride   || state.githubFile.path
+      const branch = branchOverride !== undefined ? (branchOverride || undefined) : state.githubFile.branch
+
+      // Create a new branch before committing if requested.
+      // Only pass baseBranch when staying in the same repo — for a different repo
+      // we deliberately omit it so createBranch uses the target's own default branch.
+      if (createNewBranch && branch) {
+        const sameRepo = owner === state.githubFile.owner && repo === state.githubFile.repo
+        const base = sameRepo ? (state.githubFile.branch || null) : null
+        await dispatch('auth/createBranch', {
+          repo: { owner, name: repo },
+          newBranch: branch,
+          ...(base ? { baseBranch: base } : {}),
+        })
+      }
+
+      // If the target changed from what was loaded, the stored sha is stale
+      const targetChanged = createNewBranch ||
+        owner  !== state.githubFile.owner ||
+        repo   !== state.githubFile.repo ||
+        path   !== state.githubFile.path ||
+        branch !== state.githubFile.branch
+      let sha = targetChanged ? null : state.githubFile.sha
 
       // Serialize the live MEI document
       let content = serializer.serializeToString(state.xmlDoc)
@@ -956,11 +986,15 @@ export default createStore({
         }
       }
 
-      // For image-imported files (sha === null), check if a file already exists at
-      // the target path so we can update it rather than fail with a 422.
+      // Fetch the current sha for the target path/branch so we can update rather than
+      // fail with 422 (needed when sha is null or the target has changed).
       if (!sha) {
         try {
-          const existing = await dispatch('auth/getFileContent', { repo: { owner, name: repo }, path })
+          const existing = await dispatch('auth/getFileContent', {
+            repo: { owner, name: repo },
+            path,
+            ref: branch || undefined,
+          })
           sha = existing.sha
         } catch (e) {
           if (e.status !== 404) throw e
@@ -975,8 +1009,9 @@ export default createStore({
           sha,
           content,
           message: message || 'Update MEI file via Cartographer',
+          ...(branch ? { branch } : {}),
         })
-        if (newSha) commit('SET_GITHUB_FILE', { owner, repo, path, sha: newSha, urlMap })
+        if (newSha) commit('SET_GITHUB_FILE', { owner, repo, path, sha: newSha, urlMap, ...(branch ? { branch } : {}) })
       } catch (err) {
         if (err.status === 409) {
           const conflictErr = new Error('Conflict: the file was modified on GitHub after you loaded it.')
