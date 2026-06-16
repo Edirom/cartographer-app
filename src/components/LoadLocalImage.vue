@@ -96,13 +96,9 @@ export default {
       // Convert images to pages and dispatch to store
       convertLocalImagesToPages(sortedImages)
         .then(async pages => {
-          // Pass original MEI if it exists (to preserve zones/measures)
-          const originalMei = this.$store.state.xmlDoc
-          if (originalMei) {
-            await this.$store.dispatch('addLocalImagePages', { pages, originalMei })
-          } else {
-            await this.$store.dispatch('addLocalImagePages', pages)
-          }
+          // Always load as fresh — do not pass originalMei so that any previously
+          // loaded MEI state is not checked against the new images.
+          await this.$store.dispatch('addLocalImagePages', pages)
         })
         .catch(error => {
           console.error('Error loading images:', error)

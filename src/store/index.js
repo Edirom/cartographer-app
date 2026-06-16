@@ -632,8 +632,10 @@ export default createStore({
     },
     async addLocalImagePages({ commit, dispatch, state }, input) {
       // Handle both old format (pages directly) and new format ({pages, originalMei})
+      // NOTE: do NOT fall back to state.xmlDoc — local image loads are always a fresh
+      // start and should never be validated against a previously-loaded MEI.
       const pages = input.pages || input
-      const originalMei = input.originalMei || state.xmlDoc
+      const originalMei = input.originalMei || null
       
       // Check if no images were selected
       if (!pages || pages.length === 0) {
