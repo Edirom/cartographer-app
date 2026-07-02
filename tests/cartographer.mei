@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mei xmlns="http://www.music-encoding.org/ns/mei" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:svg="http://www.w3.org/2000/svg" meiversion="5.0.0-dev" xml:id="m06d51429-f5c9-405f-956e-255df6df6274">
+    <meiHead>
+        <fileDesc>
+            <titleStmt>
+                <title/>
+            </titleStmt>
+            <pubStmt/>
+            <sourceDesc>
+                
+            </sourceDesc>
+        </fileDesc>
+        <encodingDesc>
+            <appInfo>
+                <application xml:id="mercatorApp">
+                    <name>Mercator-App</name>
+                    <ptr target="https://github.com/Edirom/mercator-app"/>
+                </application>
+            </appInfo>
+        </encodingDesc>
+        <revisionDesc>
+            <change n="1">
+                <respStmt>
+                    <persName authURI="https://github.com/Hizkie">Hizkiel Alemayehu</persName>
+                    <persName authURI="https://github.com/kepper">Johannes Kepper</persName>
+                </respStmt>
+                <changeDesc>
+                    <p>
+                        File initially generated from IIIF Manifest available at <ptr/>,
+                        using <ptr target="#mercatorApp"/>. This is a generic converter,
+                        so the resulting file may require considerable adjustments to
+                        match local practice.
+                    </p>
+                </changeDesc>
+                <date isodate="2026-07-02"/>
+            </change>
+        </revisionDesc>
+    </meiHead>
+    <music meiversion="5.0.0-dev">
+        <facsimile>
+            
+        <surface xml:id="sabb20087-1735-4463-88d7-42c36f7ec2c7" n="1" label="1" ulx="0" uly="0" lrx="200" lry="200"><zone xml:id="z108d2ffb-cce4-4dc4-85ca-67d21a3a5f1a" type="measure" ulx="0" uly="13" lrx="100" lry="53"/><zone xml:id="z60dd28ac-5c66-45a9-a452-09ad2b96f4f3" type="measure" ulx="100" uly="13" lrx="200" lry="53"/><zone xml:id="z9f67442a-864d-47eb-a7ba-456c13e4b37e" type="measure" ulx="23" uly="53" lrx="177" lry="189"/><graphic xml:id="gfd7cd15c-010e-4aa9-91ab-0bbd1ab0a251" type="facsimile" target="https://raw.githubusercontent.com/Edirom/cartographer-app/dev/src/assets/logo.png" width="200" height="200"/></surface></facsimile>
+        <body>
+            
+        <mdiv xml:id="mc7235943-4d63-48cd-8604-0de20bce5300" label="Movement 1" n="1"><score><section><pb facs="#sabb20087-1735-4463-88d7-42c36f7ec2c7" n="1"/><measure xml:id="b0fb2cf2d-aedf-42ad-b303-c35d35424dcd" facs="#z108d2ffb-cce4-4dc4-85ca-67d21a3a5f1a" n="1"/><measure xml:id="bec368f7b-da81-4038-80cf-53dd20f98468" facs="#z60dd28ac-5c66-45a9-a452-09ad2b96f4f3" n="2"/><sb/><measure xml:id="bf6142bbd-aa0f-4c11-8af9-dea967634049" facs="#z9f67442a-864d-47eb-a7ba-456c13e4b37e" n="3"/></section></score></mdiv></body>
+    </music>
+</mei>
