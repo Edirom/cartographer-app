@@ -2,16 +2,28 @@
   <div class="appSidebar">
     <!-- SELECT -->
     <button class="btn btn-action" :class="{'activeMode': mode === 'selection'}"
-      title="select measure" :disabled="!isReady"
+      title="select measure (s)" :disabled="!isReady"
       @click="activateMode('selection')">
       <font-awesome-icon icon="fa-solid fa-arrow-pointer"/>
     </button>
 
     <!-- DRAW -->
     <button class="btn btn-action"  :class="{'activeMode': mode === 'manualRect'}"
-      title="draw measures" :disabled="!isReady"
+      title="draw measures (d)" :disabled="!isReady"
       @click="activateMode('manualRect')">
       <font-awesome-icon icon="fa-solid fa-pen"/>
+    </button>
+
+    <!-- UNDO -->
+    <button class="btn btn-action" title="undo changes" :disabled="!canUndo"
+      @click="undoChanges">
+      <font-awesome-icon icon="fa-solid fa-rotate-left"/>
+    </button>
+
+    <!-- REDO -->
+    <button class="btn btn-action" title="redo changes" :disabled="!canRedo"
+      @click="redoChanges">
+      <font-awesome-icon icon="fa-solid fa-rotate-right"/>
     </button>
 
     <!-- RECTANGLE -->
@@ -36,7 +48,7 @@
     <!-- ADDITIONAL ZONE PER MEASURE -->
       <!-- @click="activateMode('additionalZone')"> -->
     <button class="btn btn-action"  :class="{'activeMode': mode === 'additionalZone'}"
-      title="add zone to last measure"
+      title="add zone to last measure (a)"
       :disabled="!isReady || measures.length === 0"
       @click="activateMode('additionalZone')">
       <template v-if="mode === 'additionalZone'">
@@ -49,7 +61,7 @@
 
     <!-- DELETE MEASURE -->
     <button class="btn btn-action"  :class="{'activeMode': mode === 'deletion'}"
-      title="delete measure" :disabled="!isReady"
+      title="delete measure (x)" :disabled="!isReady"
       @click="activateMode('deletion')">
       <font-awesome-icon icon="fa-solid fa-eraser"/>
     </button>
@@ -163,6 +175,12 @@ export default {
     },
     measures: function () {
       return this.$store.getters.measures
+    },
+    canUndo: function () {
+      return this.$store.getters.canUndo
+    },
+    canRedo: function () {
+      return this.$store.getters.canRedo
     }
     /* visible: function() {
       return this.$store.getters.imageSelectionModalVisible
@@ -199,6 +217,12 @@ export default {
       } else {
         console.error('mode ' + mode + ' is not known. Please check AppSidebar.vue and @/store/index.js.')
       }
+    },
+    undoChanges: function () {
+      this.$store.dispatch('undo')
+    },
+    redoChanges: function () {
+      this.$store.dispatch('redo')
     }
   }
 }

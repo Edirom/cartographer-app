@@ -6,6 +6,7 @@ import { uuid } from '@/tools/uuid.js'
 
 import { mode as allowedModes } from '@/store/constants.js'
 
+const MAX_HISTORY = 50  // Maximum number of undo states to keep
 const parser = new DOMParser()
 const serializer = new XMLSerializer()
 
@@ -32,6 +33,83 @@ function parseGithubRawUrl (target) {
   }
 }
 
+/**
+ * Helper function to format XML with proper indentation
+ * @param {string} xmlString - Raw XML string from serializer
+ * @returns {string} Formatted XML with indentation
+ */
+const formatXml = (xmlString) => {
+  const tab = '  '
+  let formatted = ''
+  let indent = 0
+  
+  // Split on tags and process
+  xmlString.match(/(<[^>]+>|[^<]+)/g)?.forEach(node => {
+    node = node.trim()
+    if (!node) return
+    
+    // Skip text nodes that are only whitespace
+    if (!node.startsWith('<')) return
+    
+    // Closing tag - decrease indent before adding
+    if (node.startsWith('</')) {
+      indent = Math.max(0, indent - 1)
+      formatted += tab.repeat(indent) + node + '\n'
+    }
+    // Self-closing or opening tag
+    else if (node.endsWith('/>')) {
+      formatted += tab.repeat(indent) + node + '\n'
+    }
+    // Opening tag - add then increase indent
+    else if (node.startsWith('<') && !node.startsWith('<?')) {
+      formatted += tab.repeat(indent) + node + '\n'
+      indent++
+    }
+    // XML declaration
+    else {
+      formatted += node + '\n'
+    }
+  })
+  
+  return formatted.trim()
+}
+
+let historySaveTimeout = null  // For debouncing history saves
+
+/**
+ * Helper function to save current xmlDoc state to history
+ * Debounced to prevent multiple saves within 50ms (batches changes from multiple mutations)
+ * @param {Object} state - Vuex state
+ */
+function saveToHistory(state) {
+  if (state.xmlDoc === null) return
+  
+  // Clear any pending save
+  if (historySaveTimeout) {
+    clearTimeout(historySaveTimeout)
+  }
+  
+  // Schedule save for after other mutations finish
+  historySaveTimeout = setTimeout(() => {
+    // Remove any future states if we're not at the end of history
+    if (state.historyIndex < state.history.length - 1) {
+      state.history = state.history.slice(0, state.historyIndex + 1)
+    }
+    
+    // Save current state and move history pointer forward
+    state.history.push(state.xmlDoc.cloneNode(true))
+    state.historyIndex = state.history.length - 1
+    
+    // Limit history size to prevent memory bloat
+    if (state.history.length > MAX_HISTORY) {
+      state.history.shift()
+      state.historyIndex--
+    }
+    
+    historySaveTimeout = null
+  }, 50)
+}
+
 function getDefaultState() {
   return {
       xmlDoc: null,                  // The loaded MEI XML document (DOM)
@@ -40,8 +118,11 @@ function getDefaultState() {
       previousMdiv: null,            // The previous mdiv (if applicable)
       pages: [],                     // Array of page objects (from MEI or IIIF)
       currentPage: -1,               // Index of the currently selected page
+      history: [],                   // Array of xmlDoc states for undo/redo
+      historyIndex: -1,              // Current position in history
       showLoadXMLModal: false,       // Show/hide modal for loading XML files
       showLoadIIIFModal: false,      // Show/hide modal for loading IIIF manifests
+      showLoadLocalImage: false,     // Show/hide modal for loading local images
       showMeasureModal: false,       // Show/hide modal for editing measure labels/numbers
       showMdivModal: false,          // Show/hide modal for movement (mdiv) management
       showPagesModal: false,         // Show/hide modal for page management
@@ -74,6 +155,11 @@ function getDefaultState() {
       showCommitModal: false,         // Show/hide modal for committing to GitHub
       githubFile: null,               // Currently loaded GitHub file { owner, repo, path, sha }
       importedGithubUrlMap: null,     // Blob URL map for locally uploaded GitHub image MEIs
+      localImagePages: [],            // Store references to local image pages to prevent garbage collection of blob URLs
+      showImageMismatchModal: false,  // Show/hide modal for image mismatch warnings
+      missingImages: [],              // Array of image paths referenced in MEI but not found
+      unreferencedImages: [],         // Array of loaded images not referenced in MEI
+      originalMeiGraphicCount: 0,     // Store original MEI's graphic count for verification
   }
 }
 
@@ -130,6 +216,18 @@ export default createStore({
     RESET_STATE(state) {
         Object.assign(state, getDefaultState())
       },
+    UNDO(state) {
+      if (state.historyIndex > 0) {
+        state.historyIndex--
+        state.xmlDoc = state.history[state.historyIndex].cloneNode(true)
+      }
+    },
+    REDO(state) {
+      if (state.historyIndex < state.history.length - 1) {
+        state.historyIndex++
+        state.xmlDoc = state.history[state.historyIndex].cloneNode(true)
+      }
+    },
     TOGGLE_LOADXML_MODAL(state) {
       state.showLoadXMLModal = !state.showLoadXMLModal
     },
@@ -141,6 +239,13 @@ export default createStore({
     },
     TOGGLE_COMMIT_MODAL(state) {
       state.showCommitModal = !state.showCommitModal
+    },
+    TOGGLE_LOADLOCALIMAGE_MODAL(state, value) {
+      if (value !== undefined) {
+        state.showLoadLocalImage = value
+      } else {
+        state.showLoadLocalImage = !state.showLoadLocalImage
+      }
     },
     TOGGLE_MEASURE_MODAL(state) {
       state.showMeasureModal = !state.showMeasureModal
@@ -157,6 +262,7 @@ export default createStore({
     HIDE_MODALS(state) {
       state.showMeasureModal = false
       state.showMdivModal = false
+      state.showLoadLocalImage = false
     },
     TOGGLE_MEASURE_LIST(state) {
       state.showMeasureList = !state.showMeasureList
@@ -179,9 +285,16 @@ export default createStore({
     SET_XML_DOC(state, xmlDoc) {
       state.xmlDoc = xmlDoc
       state.currentPage = 0
+      // Initialize history when loading new XML document
+      state.history = [xmlDoc.cloneNode(true)]
+      state.historyIndex = 0
     },
     SET_PAGES(state, pageArray) {
       state.pages = pageArray
+    },
+    SET_LOCAL_IMAGE_PAGES(state, pages) {
+      // Store references to local image pages to prevent blob URL garbage collection
+      state.localImagePages = pages
     },
     SET_CURRENT_PAGE(state, i) {
       if (i > -1 && i < state.pages.length) {
@@ -206,7 +319,7 @@ export default createStore({
     CREATE_ZONE_FROM_ANNOTORIOUS(state, annot) {
 
       if (state.mode !== allowedModes.selection) {
-
+        saveToHistory(state)
         const xmlDoc = state.xmlDoc.cloneNode(true)
         const index = state.currentPage + 1
         const surface = xmlDoc.querySelector('surface:nth-child(' + index + ')')
@@ -246,6 +359,7 @@ export default createStore({
       }
     },
     CREATE_ZONES_FROM_MEASURE_DETECTOR_ON_PAGE(state, { rects, pageIndex }) {
+      saveToHistory(state)
       const xmlDoc = state.xmlDoc.cloneNode(true)
       const index = pageIndex + 1 // pageIndex is expected to be zero-based
       const surface = xmlDoc.querySelector('surface:nth-child(' + index + ')')
@@ -269,8 +383,10 @@ export default createStore({
       state.xmlDoc = xmlDoc
     },
     UPDATE_ZONE_FROM_ANNOTORIOUS(state, annot) {
+      saveToHistory(state)
       const xmlDoc = state.xmlDoc.cloneNode(true)
       const newZone = annotorious2meiZone(annot)
+
       const pageIndex = state.currentPage + 1
       const surface = xmlDoc.querySelector('surface:nth-child(' + pageIndex + ')')
       const zones = surface.querySelectorAll('zone')
@@ -305,6 +421,7 @@ export default createStore({
     SET_CURRENT_MEASURE_LABEL(state, val) {
       if (!state.currentMeasureId) return;
 
+      saveToHistory(state)
       const xmlDoc = state.xmlDoc.cloneNode(true);
       const measure = xmlDoc.querySelector(`measure[xml\\:id="${state.currentMeasureId}"]`);
       if (!measure) return;
@@ -319,6 +436,7 @@ export default createStore({
     },
     SET_CURRENT_MEASURE_MULTI_REST(state, val) {
       if (state.currentMeasureId !== null) {
+        saveToHistory(state)
         const xmlDoc = state.xmlDoc.cloneNode(true);
         const measure = [...xmlDoc.querySelectorAll('measure')]
           .find(m => m.getAttribute('xml:id') === state.currentMeasureId);
@@ -327,6 +445,7 @@ export default createStore({
       }
     },
     SET_PAGE_LABEL(state, { index, val }) {
+      saveToHistory(state)
       const xmlDoc = state.xmlDoc.cloneNode(true)
       const surface = xmlDoc.querySelectorAll('surface')[index]
       surface.setAttribute('label', val)
@@ -334,6 +453,7 @@ export default createStore({
     },
     SET_CURRENT_MDIV_LABEL(state, val) {
       if (state.currentMdivId !== null && state.xmlDoc !== null) {
+        saveToHistory(state)
         const xmlDoc = state.xmlDoc.cloneNode(true)
         const mdivs = [...xmlDoc.querySelectorAll('mdiv')]
         const mdiv = mdivs.find(mdiv => mdiv.getAttribute('xml:id') === state.currentMdivId)
@@ -344,9 +464,12 @@ export default createStore({
       }
     },
     CREATE_NEW_MDIV(state) {
+      saveToHistory(state)
       const xmlDoc = state.xmlDoc.cloneNode(true)
       state.currentMdivId = createNewMdiv(xmlDoc, state.currentMdivId)
+
       moveContentToMdiv(xmlDoc, state.currentMeasureId, state.currentMdivId, state)
+
       state.xmlDoc = xmlDoc
     },
     SELECT_MDIV(state, selectedMdiv) {
@@ -360,6 +483,7 @@ export default createStore({
 
       
       if (state.currentMeasureId !== null) {
+        saveToHistory(state)
         moveContentToMdiv(xmlDoc, state.currentMeasureId, selectedMdiv, state)
         state.currentMdivId = selectedMdiv
         state.xmlDoc = xmlDoc
@@ -380,6 +504,7 @@ export default createStore({
       state.importingImages[index].status = 'failed'
     },
     ACCEPT_IMAGE_IMPORTS(state) {
+      saveToHistory(state)
       const xmlDoc = state.xmlDoc.cloneNode(true)
       state.importingImages.forEach(page => {
         addImportedPage(xmlDoc, page.index, page.url, page.width, page.height)
@@ -388,6 +513,18 @@ export default createStore({
       state.pages = pageArray
       state.importingImages = []
       state.showPagesImportModal = false
+      state.xmlDoc = xmlDoc
+    },
+    DELETE_ZONE(state, id) {
+      saveToHistory(state)
+      const xmlDoc = state.xmlDoc.cloneNode(true)
+      deleteZone(xmlDoc, id, state)
+      state.xmlDoc = xmlDoc
+    },
+    TOGGLE_ADDITIONAL_ZONE(state, id) {
+      saveToHistory(state)
+      const xmlDoc = state.xmlDoc.cloneNode(true)
+      toggleAdditionalZone(xmlDoc, id, state)
       state.xmlDoc = xmlDoc
     },
     CANCEL_IMAGE_IMPORTS(state) {
@@ -402,6 +539,23 @@ export default createStore({
     },
     PREVIOUS_MDIV(state, mdiv) {
       state.previousMdiv = mdiv
+    },
+    TOGGLE_IMAGE_MISMATCH_MODAL(state) {
+      state.showImageMismatchModal = !state.showImageMismatchModal
+    },
+    SET_IMAGE_MISMATCHES(state, { missing, unreferenced }) {
+      state.missingImages = missing || []
+      state.unreferencedImages = unreferenced || []
+    },
+    SHOW_IMAGE_MISMATCH_MODAL(state, { missing, unreferenced }) {
+      state.missingImages = missing || []
+      state.unreferencedImages = unreferenced || []
+      state.showImageMismatchModal = true
+    },
+    HIDE_IMAGE_MISMATCH_MODAL(state) {
+      state.showImageMismatchModal = false
+      state.missingImages = []
+      state.unreferencedImages = []
     }
   },
   /**
@@ -497,11 +651,20 @@ export default createStore({
       await dispatch('revokeGithubBlobUrls')
       commit('RESET_STATE')
     },
+    undo({ commit }) {
+      commit('UNDO')
+    },
+    redo({ commit }) {
+      commit('REDO')
+    },
     toggleLoadXMLModal({ commit }) {
       commit('TOGGLE_LOADXML_MODAL')
     },
     toggleLoadIIIFModal({ commit }) {
       commit('TOGGLE_LOADIIIF_MODAL')
+    },
+    toggleLoadLocalImage({ commit }) {
+      commit('TOGGLE_LOADLOCALIMAGE_MODAL')
     },
     toggleMeasureModal({ commit }) {
       commit('TOGGLE_MEASURE_MODAL')
@@ -520,6 +683,206 @@ export default createStore({
     },
     toggleMeasureList({ commit }) {
       commit('TOGGLE_MEASURE_LIST')
+    },
+    async addLocalImagePages({ commit, dispatch, state }, input) {
+      // Handle both old format (pages directly) and new format ({pages, originalMei})
+      // NOTE: do NOT fall back to state.xmlDoc — local image loads are always a fresh
+      // start and should never be validated against a previously-loaded MEI.
+      const pages = input.pages || input
+      const originalMei = input.originalMei || null
+      
+      // Check if no images were selected
+      if (!pages || pages.length === 0) {
+        commit('SET_LOADING', false)
+        commit('SET_PROCESSING', false)
+        commit('SHOW_IMAGE_MISMATCH_MODAL', { 
+          missing: ['No images were selected from the folder'], 
+          unreferenced: [] 
+        })
+        return
+      }
+      
+      // Store the original MEI's graphic count for verification
+      const originalGraphicCount = originalMei ? originalMei.querySelectorAll('graphic').length : 0
+      state.originalMeiGraphicCount = originalGraphicCount
+      
+      // Import uuid utility for consistent ID generation with IIIF
+      const { uuid } = await import('@/tools/uuid.js')
+      
+      // Create a complete MEI document with proper facsimile structure for local images
+      // This ensures consistency with IIIF-generated MEI files
+      const parser = new DOMParser()
+      
+      // Load the standard MEI template to ensure consistency with IIIF
+      let xmlDoc
+      try {
+        // Try to fetch template with correct path
+        const base = (process.env.BASE_URL || '/').replace(/\/$/, '')
+        const templateUrl = `${base}/assets/meiFileTemplate.xml`
+        const templateResponse = await fetch(templateUrl)
+        if (!templateResponse.ok) {
+          throw new Error(`Template fetch failed: ${templateResponse.status}`)
+        }
+        const templateText = await templateResponse.text()
+        xmlDoc = parser.parseFromString(templateText, 'text/xml')
+      } catch (e) {
+        console.warn('Could not load MEI template, using fallback:', e.message)
+        // Fallback: create MEI structure matching the standard template
+        const title = originalMei?.querySelector('meiHead titleStmt > title')?.textContent || 'Local Images'
+        const meiTemplate = `<?xml version="1.0" encoding="UTF-8"?>
+<mei xmlns="http://www.music-encoding.org/ns/mei" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:svg="http://www.w3.org/2000/svg" meiversion="5.0.0-dev">
+  <meiHead>
+    <fileDesc>
+      <titleStmt>
+        <title>${title}</title>
+      </titleStmt>
+      <pubStmt/>
+    </fileDesc>
+  </meiHead>
+  <music>
+    <facsimile></facsimile>
+    <body></body>
+  </music>
+</mei>`
+        xmlDoc = parser.parseFromString(meiTemplate, 'text/xml')
+      }
+      
+      // Set or update title in meiHead (with null checking)
+      const titleElem = xmlDoc.querySelector('meiHead titleStmt > title')
+      if (titleElem) {
+        if (originalMei) {
+          const originalTitle = originalMei.querySelector('meiHead titleStmt > title')?.textContent
+          if (originalTitle) {
+            titleElem.textContent = originalTitle
+          }
+        } else if (!titleElem.textContent) {
+          titleElem.textContent = 'Local Images'
+        }
+      }
+      
+      // Set root MEI element attributes to match IIIF format
+      const rootMei = xmlDoc.documentElement
+      rootMei.setAttributeNS('http://www.w3.org/XML/1998/namespace', 'xml:id', 'm' + uuid())
+      
+      // Ensure music element has meiversion attribute
+      const musicElem = xmlDoc.querySelector('music')
+      if (musicElem && !musicElem.getAttribute('meiversion')) {
+        musicElem.setAttribute('meiversion', '5.0.0-dev')
+      }
+      
+      // Extract surface IDs for pb references
+      const surfaceIds = []
+      
+      // Add surfaces with proper UUID-based IDs and coordinate attributes
+      const facsimile = xmlDoc.querySelector('facsimile')
+      if (!facsimile) {
+        console.error('MEI document missing facsimile element')
+        return
+      }
+      
+      pages.forEach((page, index) => {
+        const surfaceId = 's' + uuid()
+        const graphicId = 'g' + uuid()
+        surfaceIds.push(surfaceId)
+        
+        const surface = xmlDoc.createElementNS('http://www.music-encoding.org/ns/mei', 'surface')
+        surface.setAttribute('xml:id', surfaceId)
+        surface.setAttribute('n', (index + 1).toString())
+        surface.setAttribute('ulx', '0')
+        surface.setAttribute('uly', '0')
+        surface.setAttribute('lrx', (page.width || 0).toString())
+        surface.setAttribute('lry', (page.height || 0).toString())
+        surface.setAttribute('label', (index + 1).toString())
+        
+        // Use the original file path (preserves folder structure) for MEI storage
+        // Fallback to imageName for compatibility with images loaded without paths
+        const target = page.filePath || page.uri || page.imageName || page.imageUrl || `image${index + 1}.jpg`
+        
+        const graphic = xmlDoc.createElementNS('http://www.music-encoding.org/ns/mei', 'graphic')
+        graphic.setAttribute('xml:id', graphicId)
+        graphic.setAttribute('target', target)
+        graphic.setAttribute('type', 'facsimile')
+        graphic.setAttribute('width', (page.width || 0).toString())
+        graphic.setAttribute('height', (page.height || 0).toString())
+        
+        surface.appendChild(graphic)
+        
+        // Merge zones from original surfaces if they exist
+        if (originalMei) {
+          const originalSurfaces = originalMei.querySelectorAll('surface')
+          if (index < originalSurfaces.length) {
+            const originalSurface = originalSurfaces[index]
+            const zones = originalSurface.querySelectorAll('zone')
+            zones.forEach(zone => {
+              const clonedZone = xmlDoc.importNode(zone, true)
+              surface.appendChild(clonedZone)
+            })
+          }
+        }
+        
+        facsimile.appendChild(surface)
+      })
+      
+      // Build body content: use original MEI's body if available, otherwise create default
+      const body = xmlDoc.querySelector('body')
+      if (!body) {
+        console.error('MEI document missing body element')
+        return
+      }
+      
+      body.innerHTML = ''
+      
+      if (originalMei) {
+        const originalBody = originalMei.querySelector('body')
+        if (originalBody && originalBody.innerHTML.trim()) {
+          body.innerHTML = originalBody.innerHTML
+        }
+      }
+      
+      // If no body content, create default with pb elements referencing surfaces
+      if (!body.innerHTML.trim()) {
+        const mdiv = xmlDoc.createElementNS('http://www.music-encoding.org/ns/mei', 'mdiv')
+        mdiv.setAttribute('xml:id', 'm' + uuid())
+        mdiv.setAttribute('label', 'Movement 1')
+        mdiv.setAttribute('n', '1')
+        
+        const score = xmlDoc.createElementNS('http://www.music-encoding.org/ns/mei', 'score')
+        const section = xmlDoc.createElementNS('http://www.music-encoding.org/ns/mei', 'section')
+        
+        // Add page breaks referencing the surfaces by their UUID-based IDs
+        surfaceIds.forEach((surfaceId, index) => {
+          const pb = xmlDoc.createElementNS('http://www.music-encoding.org/ns/mei', 'pb')
+          pb.setAttribute('facs', '#' + surfaceId)
+          pb.setAttribute('n', (index + 1).toString())
+          section.appendChild(pb)
+        })
+        
+        score.appendChild(section)
+        mdiv.appendChild(score)
+        body.appendChild(mdiv)
+      }
+      
+      // Verify image filenames match MEI graphic targets (by basename, ignoring folder prefix)
+      if (originalMei) {
+        const basename = p => p.split('/').pop()
+        const meiTargets = Array.from(originalMei.querySelectorAll('graphic'))
+          .map(g => basename(g.getAttribute('target') || ''))
+          .filter(Boolean)
+        const loadedNames = pages.map(p => basename(p.filePath || p.uri || p.imageName || ''))
+        const missingImages = meiTargets.filter(t => !loadedNames.includes(t))
+        const unreferencedImages = loadedNames.filter(n => !meiTargets.includes(n))
+        if (missingImages.length > 0 || unreferencedImages.length > 0) {
+          commit('SET_LOADING', false)
+          commit('SHOW_IMAGE_MISMATCH_MODAL', { missing: missingImages, unreferenced: unreferencedImages })
+          return // Don't load anything if there's a mismatch
+        }
+      }
+      
+      commit('SET_XML_DOC', xmlDoc)
+      commit('SET_PAGES', pages)
+      commit('SET_CURRENT_PAGE', 0)
+      commit('SET_LOADING', false)
+      commit('HIDE_MODALS')  // Close the modal when images are loaded
     },
     setCurrentPage({ commit }, i) {
       commit('SET_CURRENT_PAGE', i)
@@ -636,6 +999,8 @@ export default createStore({
     }
       const successFunc = (json) => {
         commit('SET_LOADING', false)
+        // do some sorting here, if necessary
+        // then call measure generation
         commit('CREATE_ZONES_FROM_MEASURE_DETECTOR_ON_PAGE', { rects: json.measures, pageIndex })
       }
 
@@ -665,18 +1030,13 @@ export default createStore({
 
         const successFunc = (json) => {
           commit('SET_LOADING', false)
-          console.log('success')
-          console.log(json)
-
           // do some sorting here, if necessary
           // then call measure generation
-          console.log('this is from autodetect thing')
           commit('CREATE_ZONES_FROM_MEASURE_DETECTOR_ON_PAGE', { rects: json.measures, pageIndex })
         }
 
         const errorFunc = (err) => {
           commit('SET_LOADING', false)
-          console.log('error retrieving autodetected measure positions for ' + imageUri + ': ' + err)
         }
         const formdata = new FormData()
         formdata.append('Content-Type', 'image/jpg')
@@ -697,45 +1057,30 @@ export default createStore({
     async setData({ dispatch, commit }, mei) {
       await dispatch('revokeGithubBlobUrls')
       const pageArray = getPageArray(mei)
-      console.log("page array is ", pageArray)
+      
       commit('SET_PAGES', pageArray)
-      console.log("this is SET_PAGES ", mei)
-
-
       commit('SET_XML_DOC', mei)
-      console.log("this is SET_XML_DOC ", mei)
-
       commit('SET_CURRENT_PAGE', 0)
-      console.log("this is SET_XML_DOC ", mei)
-
       commit('SET_PROCESSING', false)
-      console.log("this is SET_PROCESSING ", mei)
-
       commit('HIDE_MODALS')
-      console.log("this is HIDE_MODALS ", mei)
-
+      
+      // Verify image references after loading MEI data
+      dispatch('verifyImageReferences')
     },
     selectZone({ commit }, id) {
       commit('SELECT_ZONE', id)
-      console.log("this is select zone")
     },
     clickZone({ commit, state }, id) {
-      console.log("this is click zone")
-
       if (state.mode === allowedModes.deletion) {
         state.deleteZoneId = id
-        const xmlDoc = state.xmlDoc.cloneNode(true)
-        deleteZone(xmlDoc, id, state)
-        state.xmlDoc = xmlDoc
+        commit('DELETE_ZONE', id)
       } else if (state.mode === allowedModes.additionalZone) {
-        console.log('clicked on existing zone')
         const xmlDoc = state.xmlDoc.cloneNode(true)
         toggleAdditionalZone(xmlDoc, id, state)
         state.xmlDoc = xmlDoc
       }
     },
     clickMeasureLabel({ commit }, id) {
-      console.log('clicked measure label')
       commit('SET_CURRENT_MEASURE_ID', id)
       commit('TOGGLE_MEASURE_MODAL')
     },
@@ -751,7 +1096,6 @@ export default createStore({
       if (state.hoveredZoneId === id) {
         commit('HOVER_ZONE', null)
       }
-      console.log('unhovering ' + id)
     },
     createZone({ commit }, annot) {
       commit('SET_ANNO', annot)
@@ -792,17 +1136,14 @@ export default createStore({
     },
     registerImageImports({ commit }, urls) {
       const arr = urls.replace(/\s+/g, ' ').trim().split(' ')
-      console.log("this is arr in register Image " + arr)
       arr.forEach((url, index) => {
         commit('REGISTER_IMAGE_IMPORT', { url, index })
         fetch(url)
           .then(res => res.json())
           .then(json => {
-            console.log('retrieved info.json for ' + url)
             commit('RECEIVE_IMAGE_IMPORT', { url, index, json })
           })
           .catch(err => {
-            console.log('Unable to fetch ' + url + ': ' + err)
             commit('FAILED_IMAGE_IMPORT', { url, index })
           })
       })
@@ -1029,6 +1370,33 @@ export default createStore({
     },
     previousMdiv({ commit }, mdiv) {        
       commit('PREVIOUS_MDIV', mdiv)
+    },
+    verifyImageReferences({ commit, state }) {
+      if (!state.xmlDoc || !state.pages || state.pages.length === 0) {
+        return
+      }
+      
+      const basename = p => p.split('/').pop()
+      const meiTargets = Array.from(state.xmlDoc.querySelectorAll('graphic'))
+        .map(g => basename(g.getAttribute('target') || ''))
+        .filter(Boolean)
+      const loadedNames = state.pages.map(p => basename(p.uri || p.filePath || p.imageName || ''))
+      const missingImages = meiTargets.filter(t => !loadedNames.includes(t))
+      const unreferencedImages = loadedNames.filter(n => !meiTargets.includes(n))
+      
+      if (missingImages.length === 0 && unreferencedImages.length === 0) {
+        return { hasMismatches: false }
+      } else {
+        commit('SHOW_IMAGE_MISMATCH_MODAL', { missing: missingImages, unreferenced: unreferencedImages })
+        return { hasMismatches: true }
+      }
+    },
+    closeImageMismatchModal({ commit }) {
+      commit('HIDE_IMAGE_MISMATCH_MODAL')
+    },
+    cancelImageMismatch({ commit }) {
+      commit('HIDE_IMAGE_MISMATCH_MODAL')
+      commit('TOGGLE_LOADLOCALIMAGE_MODAL', false)
     }
   },
   /**
@@ -1085,7 +1453,7 @@ export default createStore({
       for (const [blobUrl, rawUrl] of Object.entries(rewriteMap)) {
         content = content.split(blobUrl).join(rawUrl)
       }
-      return content
+      return formatXml(content)
     },
     currentPageIndexOneBased: state => {
       return state.currentPage + 1
@@ -1102,8 +1470,13 @@ export default createStore({
         const uri = page.uri || ''
         const pathname = uri.startsWith('blob:') ? uri : (() => { try { return decodeURIComponent(new URL(uri).pathname) } catch { return uri } })()
         const isDirectImage = uri.startsWith('blob:') || /\.(jpe?g|png|gif|webp|bmp|tiff?)$/i.test(pathname)
+        // Handle local images (imageUrl), direct/GitHub images (blob or image URL), and IIIF pages
         let tileSource
-        if (isDirectImage) {
+        if (page.isLocalImage && page.imageUrl) {
+          tileSource = { type: 'image', url: page.imageUrl }
+          if (page.width > 0) tileSource.width = page.width
+          if (page.height > 0) tileSource.height = page.height
+        } else if (isDirectImage) {
           tileSource = { type: 'image', url: page.uri }
           if (page.width > 0) tileSource.width = page.width
           if (page.height > 0) tileSource.height = page.height
@@ -1126,9 +1499,16 @@ export default createStore({
         const uri = page.uri || ''
         const pathname = uri.startsWith('blob:') ? uri : (() => { try { return decodeURIComponent(new URL(uri).pathname) } catch { return uri } })()
         const isDirectImage = uri.startsWith('blob:') || /\.(jpe?g|png|gif|webp|bmp|tiff?)$/i.test(pathname)
-        const tileSource = isDirectImage
-          ? { type: 'image', url: uri }
-          : uri
+        let tileSource
+        if (page.isLocalImage && page.imageUrl) {
+          tileSource = { type: 'image', url: page.imageUrl }
+          if (page.width > 0) tileSource.width = page.width
+          if (page.height > 0) tileSource.height = page.height
+        } else if (isDirectImage) {
+          tileSource = { type: 'image', url: uri }
+        } else {
+          tileSource = page.uri
+        }
         let label = page.label || ''
         if (state.xmlDoc && page.id) {
           const surface = state.xmlDoc.querySelector(`surface[xml\\:id="${page.id}"]`)
@@ -1219,7 +1599,6 @@ export default createStore({
       return arr
     },
     currentMdiv: state => {
-      console.log("this is current mdiv id ", state.currentMdivId)
       if (state.currentMdivId === null || state.xmlDoc === null) {
         return null
       }
@@ -1243,8 +1622,6 @@ export default createStore({
       if (state.currentMeasureId === null || state.xmlDoc === null) {
         return null
       }
-
-      console.log("current measuser from state is ",   state.currentMeasure)
       // const mdivs = [...state.xmlDoc.querySelectorAll('mdiv')]
       // const mdiv = mdivs.find(mdiv => mdiv.getAttribute('xml:id') === state.currentMdivId)
       let measures = [...state.xmlDoc.querySelectorAll('measure')]
@@ -1255,8 +1632,6 @@ export default createStore({
         measure = state.currentMeasure
       }
       const mdiv = measure.closest('mdiv').getAttribute('xml:id')
-      console.log("current measure ", measure)
-
       const multiRestElem = measure.querySelector('multiRest')
       const multiRest = (multiRestElem !== null) ? multiRestElem.getAttribute('num') : null
 
@@ -1294,11 +1669,14 @@ export default createStore({
     showCommitModal: state => state.showCommitModal,
     githubFile: state => state.githubFile,
     showLoadXMLModal: state => state.showLoadXMLModal,
+    showLoadLocalImage: state => state.showLoadLocalImage,
     showMeasureModal: state => state.showMeasureModal,
     showPagesModal: state => state.showPagesModal,
     showPageImportModal: state => state.showPageImportModal,
+    showImageMismatchModal: state => state.showImageMismatchModal,
     showMdivModal: state => state.showMdivModal,
     showMeasureList: state => state.showMeasureList,
+    loading: state => state.loading,
     importingImages: state => state.importingImages,
     readyForImageImport: state => {
       let bool = true
@@ -1326,6 +1704,12 @@ export default createStore({
         return null
       }
       return measure.getAttribute('xml:id')
+    },
+    canUndo: state => {
+      return state.historyIndex > 0
+    },
+    canRedo: state => {
+      return state.historyIndex < state.history.length - 1
     },
   }
 })
