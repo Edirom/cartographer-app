@@ -16,7 +16,6 @@ function addPage(canvas, canvases, dimension, n, file, meiSurfaceTemplate, hasIt
 
   // Use provided dimensions if available
   if (n <= canvases.length) {
-    console.log("number is", n, "dimension", dimension, "canvas width", canvas.width, "canvas height", canvas.height)
     height = dimension[1]
     width = dimension[0]
   }
@@ -25,10 +24,8 @@ function addPage(canvas, canvases, dimension, n, file, meiSurfaceTemplate, hasIt
   let uri = ""
   if (hasItems === true) {
     // IIIF Presentation 3
-    console.log("has item is true")
     uri = canvas?.items[0]?.items[0]?.body?.service[0].id
   }else{
-    console.log("has item is false")
      uri = canvas?.images[0]?.resource?.service['@id']
   }
 
@@ -110,9 +107,7 @@ export async function iiifManifest2mei (json, url, parser, state) {
 
         const composer = metadata.find(entry => { return entry.label === 'Autor' }).value
         file.querySelector('composer persName').textContent = composer
-      } catch (err) {
-        console.log('Apparently, there is no metadata for this IIIF Manifest.')
-      }
+      } catch (_) {}
       // Add each page as a surface
       if(json.sequences){
         json.sequences[0].canvases.forEach((canvas, i) => {
@@ -145,7 +140,6 @@ export function checkIiifManifest (json) {
   const hasId = typeof json['@id'] === 'string' && json['@id'].length > 0
   const hasSequences = Array.isArray(json.sequences)
   const hasItems = Array.isArray(json.items)
-  console.log("has items is " , claimsManifest)
 
   if (hasItems == true) {
     return true
@@ -170,7 +164,7 @@ export function getPageArray (mei) {
     obj.uri = graphic.getAttributeNS('', 'target').trim()
     obj.id = surface.getAttribute('xml:id').trim()
     obj.n = surface.getAttributeNS('', 'n').trim()
-    // obj.label = surface.getAttributeNS('', 'label').trim() // Uncomment if label is needed
+    obj.label = (surface.getAttribute('label') || '').trim()
     obj.width = parseInt(graphic.getAttributeNS('', 'width').trim(), 10)
     obj.height = parseInt(graphic.getAttributeNS('', 'height').trim(), 10)
     obj.hasSvg = surface.querySelector('svg') !== null // true if an SVG exists in this surface

@@ -55,19 +55,69 @@ npm run test:lint
 ### Customize configuration
 See [Configuration Reference](https://cli.vuejs.org/config/).
 
-### Biuld your image 
-Replace **`cartographer`** with your preferred image name.
+### Docker Deployment
+
+All configuration is injected at **runtime** via environment variables — the same image works for any subpath, host, or GitHub OAuth App.
+
+#### 1. Build the images
+
+```sh
+docker build -t cartographer-app .
+docker build -t node-ghcred ./node-ghcred
 ```
-docker build -t cartographer .
+
+#### 2. Create a Docker network
+
+```sh
+docker network create app1-net
+```
+
+#### 3. Start the OAuth sidecar
+
+The sidecar holds the `client_secret` server-side so it is never exposed in the browser.
+
+```sh
+docker run -d \
+  --name node-ghcred \
+  --network app1-net \
+  -e VUE_APP_CLIENT_ID=<your-github-client-id> \
+  -e VUE_APP_CLIENT_SECRET=<your-github-client-secret> \
+  node-ghcred
+```
+
+#### 4. Start the app
+
+```sh
+docker run -d \
+  --name app1 \
+  --network app1-net \
+  -e VUE_APP_PUBLIC_PATH=/demo \
+  -e VUE_APP_CLIENT_ID=<your-github-client-id> \
+  -e VUE_APP_CALL_BACK=http://localhost:8081/myAppPlaceholder/callback \
+  -p 8081:80 \
+  cartographer-app
+```
+
+Then open http://localhost:8081/demo.
+
+#### Environment variables
+
+| Variable | Container | Description |
+|---|---|---|
+| `VUE_APP_PUBLIC_PATH` | app | Subpath the app is served under (e.g. `/demo`). Defaults to `/`. |
+| `VUE_APP_CLIENT_ID` | app + sidecar | GitHub OAuth App client ID (public). |
+| `VUE_APP_CALL_BACK` | app | OAuth callback URL. Use `/myAppPlaceholder/callback` and it will be rewritten to the actual subpath automatically. |
+| `VUE_APP_CLIENT_SECRET` | sidecar only | GitHub OAuth App client secret. Never passed to the app container. |
+
+#### GitHub OAuth App setup
+
+In **GitHub → Settings → Developer settings → OAuth Apps**, register one callback URL per deployment. Use multiple lines if needed:
 
 ```
-
-### Run 
-
-Replace **demo** with your desired subpath.
-
-Replace **cartographer** with the image name you used when building.
+http://localhost:8081/callback
+http://localhost:8081/demo/callback
+https://myapp.example.org/callback
 ```
-docker run --rm -p 8080:80 -e VUE_APP_PUBLIC_PATH=/demo cartographer
-```
+
+The registered URL must match exactly what `VUE_APP_CALL_BACK` resolves to after the `myAppPlaceholder` substitution.
 

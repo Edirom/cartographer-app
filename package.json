@@ -2,7 +2,11 @@
   "name": "mercator-app",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
+    "dev": "concurrently --kill-others-on-fail -n vue,ghcred -c cyan,yellow \"npm run serve\" \"node node-ghcred/server.js\"",
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
     "test:unit": "vue-cli-service test:unit",
@@ -49,6 +53,7 @@
     "@vuepress/plugin-back-to-top": "^1.9.10",
     "@vuepress/plugin-search": "^1.9.10",
     "@vuepress/theme-default": "^2.0.0-rc.103",
+    "concurrently": "^9.2.1",
     "jest": "^27.1.0",
     "lint-staged": "^9.5.0",
     "sass": "^1.26.5",

@@ -1,4 +1,8 @@
-FROM node:latest
+FROM node:lts-alpine
 WORKDIR /usr/app
-RUN pwd
-RUN echo "VUE_APP_CLIENT_ID=$CLIENT_ID" >.env.development.local
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+COPY server.js ./
+EXPOSE 9999
+CMD ["node", "server.js"]
+

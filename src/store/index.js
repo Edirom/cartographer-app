@@ -1,18 +1,39 @@
 import { createStore } from 'vuex'
+import authModule from '@/store/modules/auth.js'
 import { iiifManifest2mei, checkIiifManifest, getPageArray } from '@/tools/iiif.js'
 import { meiZone2annotorious, annotorious2meiZone, measureDetector2meiZone, generateMeasure, insertMeasure, deleteZone, setMultiRest, createNewMdiv, moveContentToMdiv, toggleAdditionalZone, addImportedPage, findZoneInsertionPositionForXmlZone, createAdditionalZone } from '@/tools/meiMappings.js'
+import { uuid } from '@/tools/uuid.js'
 
 import { mode as allowedModes } from '@/store/constants.js'
 
 const parser = new DOMParser()
 const serializer = new XMLSerializer()
 
+function revokeBlobUrls (urlMap) {
+  if (!urlMap) return
+  Object.keys(urlMap).forEach(url => {
+    try {
+      URL.revokeObjectURL(url)
+    } catch (_) {
+      // Ignore invalid or already revoked URLs.
+    }
+  })
+}
+
+function parseGithubRawUrl (target) {
+  if (typeof target !== 'string') return null
+  const match = target.match(/^https:\/\/raw\.githubusercontent\.com\/([^/]+)\/([^/]+)\/([^/]+)\/(.+)$/)
+  if (!match) return null
+  return {
+    owner: match[1],
+    repo: match[2],
+    ref: match[3],
+    path: match[4],
+  }
+}
+
 function getDefaultState() {
   return {
- selectedRepo: null,            // Currently selected GitHub repository
-      selectedDirectory: null,       // Currently selected directory within the repo
-      directories: [],               // List of directories in the selected repo
-      repos: null,                   // List of available repositories
       xmlDoc: null,                  // The loaded MEI XML document (DOM)
       currentMdiv: null,            // The currently selected movement (mdiv)
       nextMdiv: null,                // The next mdiv to be created (if applicable)  
@@ -21,14 +42,12 @@ function getDefaultState() {
       currentPage: -1,               // Index of the currently selected page
       showLoadXMLModal: false,       // Show/hide modal for loading XML files
       showLoadIIIFModal: false,      // Show/hide modal for loading IIIF manifests
-      showLoadGitModal: false,       // Show/hide modal for loading from Git
       showMeasureModal: false,       // Show/hide modal for editing measure labels/numbers
       showMdivModal: false,          // Show/hide modal for movement (mdiv) management
       showPagesModal: false,         // Show/hide modal for page management
       showPageImportModal: false,    // Show/hide modal for importing pages/images
       showMeasureList: false,        // Show/hide the measure list panel
       loading: false,                // Indicates if the app is currently loading data
-      logedin: false,                // Indicates if the user is logged in
       processing: false,             // Indicates if the app is processing data
       pageDimension: [],             // Array of [width, height] for each page
       mode: allowedModes.selection,  // Current editor mode (selection, manualRect, etc.)
@@ -51,11 +70,16 @@ function getDefaultState() {
       insertMdivup: false,            // True if the new mdiv is to be inserted before the current mdiv
       currentMeasure: null,           // The current measure object 
       additionMeasure: false,         // True if an additional measure is being added (to prevent recursion)
+      showLoadGitModal: false,        // Show/hide modal for loading from GitHub
+      showCommitModal: false,         // Show/hide modal for committing to GitHub
+      githubFile: null,               // Currently loaded GitHub file { owner, repo, path, sha }
+      importedGithubUrlMap: null,     // Blob URL map for locally uploaded GitHub image MEIs
   }
 }
 
 export default createStore({
   modules: {
+    auth: authModule,
   },
     state: getDefaultState(),
   /**
@@ -65,7 +89,6 @@ export default createStore({
  * - RESET_STATE: Resets the entire application state to its default values.
  * - TOGGLE_LOADXML_MODAL: Toggle the visibility of the XML file load modal.
  * - TOGGLE_LOADIIIF_MODAL: Toggle the visibility of the IIIF manifest load modal.
- * - TOGGLE_LOADGIT_MODAL: Toggle the visibility of the GitHub load modal.
  * - TOGGLE_MEASURE_MODAL: Toggle the visibility of the measure label/number modal.
  * - TOGGLE_PAGES_MODAL: Toggle the visibility of the page management modal.
  * - TOGGLE_PAGE_IMPORT_MODAL: Toggle the visibility of the page/image import modal.
@@ -73,7 +96,6 @@ export default createStore({
  * - HIDE_MODALS: Hide both the measure and mdiv modals.
  * - TOGGLE_MEASURE_LIST: Toggle the visibility of the measure list panel.
  * - SET_ANNO: Set the current annotation object.
- * - SET_SELECTED_DIRECTORY: Set the currently selected directory in the repo.
  * - SET_XML_DOC: Set the loaded MEI XML document and reset the current page to 0.
  * - SET_PAGES: Set the array of page objects.
  * - SET_CURRENT_PAGE: Set the index of the currently selected page.
@@ -117,6 +139,9 @@ export default createStore({
     TOGGLE_LOADGIT_MODAL(state) {
       state.showLoadGitModal = !state.showLoadGitModal
     },
+    TOGGLE_COMMIT_MODAL(state) {
+      state.showCommitModal = !state.showCommitModal
+    },
     TOGGLE_MEASURE_MODAL(state) {
       state.showMeasureModal = !state.showMeasureModal
     },
@@ -139,27 +164,32 @@ export default createStore({
     SET_ANNO(state, anno) {
       state.anno = anno
     },
-    SET_SELECTED_DIRECTORY(state, gitdirec) {
-      state.selectedDirectory = gitdirec
+    SET_GITHUB_FILE(state, fileInfo) {
+      state.githubFile = fileInfo
+    },
+    CLEAR_GITHUB_FILE(state) {
+      state.githubFile = null
+    },
+    SET_IMPORTED_GITHUB_URL_MAP(state, urlMap) {
+      state.importedGithubUrlMap = urlMap
+    },
+    CLEAR_IMPORTED_GITHUB_URL_MAP(state) {
+      state.importedGithubUrlMap = null
     },
     SET_XML_DOC(state, xmlDoc) {
-      console.log("this is the xml doc in set ", xmlDoc)
       state.xmlDoc = xmlDoc
       state.currentPage = 0
     },
     SET_PAGES(state, pageArray) {
       state.pages = pageArray
-      console.log("this is the length of pages ", state.pages)
     },
     SET_CURRENT_PAGE(state, i) {
-      console.log("page is changed ", state.pages.length)
       if (i > -1 && i < state.pages.length) {
         state.currentPage = i
       }
     },
     SET_TOTAL_ZONES_COUNT(state, j) {
       state.totalZones = state.totalZones + j
-      // console.log('this is j ' + state.totalZones)
     },
     SET_LOADING(state, bool) {
       state.loading = bool
@@ -178,7 +208,6 @@ export default createStore({
       if (state.mode !== allowedModes.selection) {
 
         const xmlDoc = state.xmlDoc.cloneNode(true)
-        // console.log('create ', annot)
         const index = state.currentPage + 1
         const surface = xmlDoc.querySelector('surface:nth-child(' + index + ')')
 
@@ -242,8 +271,6 @@ export default createStore({
     UPDATE_ZONE_FROM_ANNOTORIOUS(state, annot) {
       const xmlDoc = state.xmlDoc.cloneNode(true)
       const newZone = annotorious2meiZone(annot)
-      console.log("annotation is ", annot)
-
       const pageIndex = state.currentPage + 1
       const surface = xmlDoc.querySelector('surface:nth-child(' + pageIndex + ')')
       const zones = surface.querySelectorAll('zone')
@@ -317,34 +344,12 @@ export default createStore({
       }
     },
     CREATE_NEW_MDIV(state) {
-      console.log("new case 1 creating new mdiv")
       const xmlDoc = state.xmlDoc.cloneNode(true)
-            console.log("new case 2 creating new mdiv")
       state.currentMdivId = createNewMdiv(xmlDoc, state.currentMdivId)
-            console.log("new case 3 creating new mdiv")
-
       moveContentToMdiv(xmlDoc, state.currentMeasureId, state.currentMdivId, state)
-            console.log("new case 4 creating new mdiv")
-
       state.xmlDoc = xmlDoc
     },
     SELECT_MDIV(state, selectedMdiv) {
-      // const xmlDoc = state.xmlDoc.cloneNode(true)
-      // state.currentMdiv = xmlDoc.querySelector('mdiv[xml\\:id="' +  currentMdiv + '"]')
-      // state.selectedMdiv = xmlDoc.querySelector('mdiv[xml\\:id="' + selectedMdiv + '"]')
-
-      // if (state.selectedMdiv && state.currentMdiv) {
-      //   const selectedN = parseInt(state.selectedMdiv.getAttribute('n'))
-      //   const currentN = parseInt(state.currentMdiv.getAttribute('n'))
-      //   console.log("line 341 elected ",selectedN, " currentN ", currentN)
-
-      //   if (!isNaN(selectedN) && !isNaN(currentN) && selectedN > currentN) {
-      //    console.log("")
-      //    state.insertMdivup = true
-      //   }
-      // } else {
-      //   console.warn("Could not find selectedMdiv or currentMdiv in XML.")
-      // }
         const xmlDoc = state.xmlDoc.cloneNode(true)
         const mdivs = [...state.xmlDoc.querySelectorAll('mdiv')]
         state.currentMdiv = mdivs.find(mdiv => {
@@ -379,7 +384,6 @@ export default createStore({
       state.importingImages.forEach(page => {
         addImportedPage(xmlDoc, page.index, page.url, page.width, page.height)
       })
-      console.log("state is index", state)
       const pageArray = getPageArray(xmlDoc, state)
       state.pages = pageArray
       state.importingImages = []
@@ -389,7 +393,6 @@ export default createStore({
     CANCEL_IMAGE_IMPORTS(state) {
       state.importingImages = []
       state.showPagesImportModal = false
-      console.log('cancel imports')
     },
     CURRENT_MDIV(state, mdiv) {
       state.currentMdiv = mdiv
@@ -405,7 +408,6 @@ export default createStore({
  * Vuex actions for asynchronous operations and complex state updates.
  * Actions can dispatch mutations, perform async tasks, and coordinate multiple state changes.
  *
- * - fetchDirectories: Fetches directory listings from a GitHub repository (example, not fully implemented).
  * - resetAll: Resets the entire application state to its default values.
  * - toggleLoadXMLModal: Toggles the visibility of the XML file load modal.
  * - toggleLoadIIIFModal: Toggles the visibility of the IIIF manifest load modal.
@@ -436,7 +438,6 @@ export default createStore({
  * - setCurrentMeasureMultiRest: Sets, updates, or removes a multiRest element in the current measure.
  * - setPageLabel: Sets the label for a specific page.
  * - setCurrentMdiv: Sets the currently selected mdiv by xml:id.
- * - setDirectory: Sets the currently selected directory.
  * - setCurrentMdivLabel: Sets the label for the current mdiv.
  * - createNewMdiv: Creates a new mdiv and moves content to it.
  * - selectMdiv: Moves content to a selected mdiv and updates the current mdiv id.
@@ -445,18 +446,55 @@ export default createStore({
  * - cancelImageImports: Cancels all pending image imports and hides the import modal.
  */
   actions: {
-    async fetchDirectories({ state, commit }) {
-      try {
-        const url = `https://api.github.com/repos/${state.username}/${state.repository}/contents/${state.path}`;
-        const headers = { Authorization: `token ${state.accessToken}` };
-        //const response = await axios.get(url, { headers });
-        // const directories = response.data.filter(item => item.type === 'dir').map(item => item.name);
-        // commit('setDirectories', directories);
-      } catch (error) {
-        console.error(error);
+    async revokeGithubBlobUrls({ state, commit }) {
+      if (state.githubFile && state.githubFile.urlMap) {
+        revokeBlobUrls(state.githubFile.urlMap)
+      }
+      if (state.importedGithubUrlMap) {
+        revokeBlobUrls(state.importedGithubUrlMap)
+        commit('CLEAR_IMPORTED_GITHUB_URL_MAP')
+      }
+      commit('CLEAR_GITHUB_FILE')
+    },
+    async resolveLocalGithubImageUrls({ state, commit, dispatch }, mei) {
+      const graphics = [...mei.querySelectorAll('graphic[target]')]
+      const urlMap = {}
+      await Promise.all(graphics.map(async graphic => {
+        const target = graphic.getAttribute('target')
+        const parsed = parseGithubRawUrl(target)
+        if (!parsed) return
+        try {
+          let blob
+          if (state.auth && state.auth.accessToken) {
+            const repo = { owner: parsed.owner, name: parsed.repo }
+            const { bytes, name } = await dispatch('auth/getImageContent', { repo, path: parsed.path })
+            const ext = name.split('.').pop().toLowerCase()
+            const mime = (ext === 'jpg' || ext === 'jpeg') ? 'image/jpeg'
+              : ext === 'png' ? 'image/png'
+              : ext === 'gif' ? 'image/gif'
+              : ext === 'webp' ? 'image/webp'
+              : 'application/octet-stream'
+            blob = new Blob([bytes], { type: mime })
+          } else {
+            const response = await fetch(target)
+            if (!response.ok) throw new Error(`Failed to fetch ${target}: ${response.status}`)
+            blob = await response.blob()
+          }
+          const blobUrl = URL.createObjectURL(blob)
+          graphic.setAttribute('target', blobUrl)
+          urlMap[blobUrl] = target
+        } catch (e) {
+          console.warn(`Unable to resolve GitHub image URL ${target}:`, e)
+        }
+      }))
+      if (Object.keys(urlMap).length > 0) {
+        commit('SET_IMPORTED_GITHUB_URL_MAP', urlMap)
+      } else {
+        commit('CLEAR_IMPORTED_GITHUB_URL_MAP')
       }
     },
-    resetAll({ commit }) {
+    async resetAll({ dispatch, commit }) {
+      await dispatch('revokeGithubBlobUrls')
       commit('RESET_STATE')
     },
     toggleLoadXMLModal({ commit }) {
@@ -477,11 +515,13 @@ export default createStore({
     toggleMdivModal({ commit }) {
       commit('TOGGLE_MDIV_MODAL')
     },
+    toggleLoadGitModal ({ commit }) {
+      commit('TOGGLE_LOADGIT_MODAL')
+    },
     toggleMeasureList({ commit }) {
       commit('TOGGLE_MEASURE_LIST')
     },
     setCurrentPage({ commit }, i) {
-      console.log('setting current page to ' + i)
       commit('SET_CURRENT_PAGE', i)
     },
     setCurrentPageZone({ commit }, j) {
@@ -573,11 +613,14 @@ export default createStore({
           dispatch('setData', mei)
         })
     },
+    async uploadLocalMei({ dispatch }, mei) {
+      await dispatch('resolveLocalGithubImageUrls', mei)
+      await dispatch('setData', mei)
+    },
     async autoDetectZonesOnCurrentPage({ commit, state }) {
       const pageIndex = state.currentPage
       const imageUri = state.pages[pageIndex].uri.replace(/\/info\.json/, '') + '/full/full/0/default.jpg'
       const blob = await fetch(imageUri).then(r => r.blob())
-      console.log("this is blob ", imageUri)
       try {
         const pageIndex = state.currentPage;
         const imageUri = state.pages[pageIndex].uri.replace(/\/info\.json/, '') + '/full/full/0/default.jpg';
@@ -593,18 +636,11 @@ export default createStore({
     }
       const successFunc = (json) => {
         commit('SET_LOADING', false)
-        console.log('success')
-        console.log(json)
-
-        // do some sorting here, if necessary
-        // then call measure generation
-        console.log('this is from autodetect thing')
         commit('CREATE_ZONES_FROM_MEASURE_DETECTOR_ON_PAGE', { rects: json.measures, pageIndex })
       }
 
       const errorFunc = (err) => {
         commit('SET_LOADING', false)
-        console.log('error retrieving autodetected measure positions for ' + imageUri + ': ' + err)
       }
       const formdata = new FormData()
       formdata.append('Content-Type', 'image/jpg')
@@ -658,7 +694,8 @@ export default createStore({
           .catch(error => errorFunc(error))
       }
     },
-    setData({ commit }, mei) {
+    async setData({ dispatch, commit }, mei) {
+      await dispatch('revokeGithubBlobUrls')
       const pageArray = getPageArray(mei)
       console.log("page array is ", pageArray)
       commit('SET_PAGES', pageArray)
@@ -744,9 +781,6 @@ export default createStore({
     setCurrentMdiv({ commit }, id) {
       commit('SET_CURRENT_MDIV', id)
     },
-    setDirectory({ commit }, directory) {
-      commit('SET_SELECTED_DIRECTORY', directory)
-    },
     setCurrentMdivLabel({ commit }, val) {
       commit('SET_CURRENT_MDIV_LABEL', val)
     },
@@ -778,6 +812,214 @@ export default createStore({
     },
     cancelImageImports({ commit }) {
       commit('CANCEL_IMAGE_IMPORTS')
+    },
+    async loadFileFromGithub ({ commit, dispatch, getters }) {
+      const file = getters['auth/selectedFile']
+      const repo = getters['auth/selectedRepo']
+      if (!file || !repo) throw new Error('No file selected')
+      commit('SET_LOADING', true)
+      try {
+        const { xml, sha } = await dispatch('auth/getFileContent', { repo, path: file.path })
+        const mei = parser.parseFromString(xml, 'application/xml')
+
+        // If this MEI was generated from a GitHub image import, its <graphic target>
+        // values are raw.githubusercontent.com URLs. For private repos those require
+        // auth, so we re-fetch each image through the GitHub API and swap the target
+        // to a local blob URL so OSD can display them. We keep a urlMap so that
+        // committing later writes the real raw URLs back into the file.
+        const IMAGE_RE = /\.(jpe?g|png|gif|webp|bmp|tiff?)$/i
+        const rawBase = `https://raw.githubusercontent.com/${repo.owner}/${repo.name}/`
+        const urlMap = {}
+        const imageGraphics = [...mei.querySelectorAll('graphic[target]')].filter(g => {
+          const t = g.getAttribute('target')
+          return t && t.startsWith(rawBase) && IMAGE_RE.test(t)
+        })
+        if (imageGraphics.length > 0) {
+          await Promise.all(imageGraphics.map(async graphic => {
+            const rawUrl = graphic.getAttribute('target')
+            // Strip "owner/repo/REF/" prefix to get the file path
+            const afterRepo = decodeURIComponent(rawUrl.slice(rawBase.length))
+            const path = afterRepo.replace(/^[^/]+\//, '')
+            try {
+              const { bytes, name } = await dispatch('auth/getImageContent', { repo, path })
+              const ext = name.split('.').pop().toLowerCase()
+              const mime = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg'
+                : ext === 'png' ? 'image/png'
+                : ext === 'gif' ? 'image/gif'
+                : ext === 'webp' ? 'image/webp'
+                : 'application/octet-stream'
+              const blob = new Blob([bytes], { type: mime })
+              const blobUrl = URL.createObjectURL(blob)
+              graphic.setAttribute('target', blobUrl)
+              urlMap[blobUrl] = rawUrl
+            } catch (e) {
+              console.warn(`Could not fetch GitHub image ${rawUrl}:`, e)
+            }
+          }))
+        }
+
+        await dispatch('setData', mei)
+        const hasUrlMap = Object.keys(urlMap).length > 0
+        const selectedBranch = getters['auth/selectedBranch']
+        commit('SET_GITHUB_FILE', {
+          owner: repo.owner,
+          repo: repo.name,
+          path: file.path,
+          sha,
+          ...(hasUrlMap ? { urlMap } : {}),
+          ...(selectedBranch ? { branch: selectedBranch.name } : {}),
+        })
+        commit('TOGGLE_LOADGIT_MODAL')
+      } finally {
+        commit('SET_LOADING', false)
+      }
+    },
+    async loadImagesFromGithub ({ commit, dispatch, getters }) {
+      const repo = getters['auth/selectedRepo']
+      if (!repo) throw new Error('No repository selected')
+      const contents = getters['auth/repoContents']
+      const IMAGE_RE = /\.(jpe?g|png|gif|webp|bmp|tiff?)$/i
+      const imageItems = contents
+        .filter(item => item.type === 'file' && IMAGE_RE.test(item.name))
+        .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }))
+      if (imageItems.length === 0) {
+        throw new Error('No image files found in this folder. Navigate to a folder containing images.')
+      }
+      commit('SET_LOADING', true)
+      const _activeBranch = getters['auth/selectedBranch']
+      const _branchRef = _activeBranch ? _activeBranch.name : 'HEAD'
+      try {
+        const pages = await Promise.all(
+          imageItems.map(async (item, index) => {
+            const { bytes, name } = await dispatch('auth/getImageContent', { repo, path: item.path })
+            const ext = name.split('.').pop().toLowerCase()
+            const mime = (ext === 'jpg' || ext === 'jpeg') ? 'image/jpeg'
+              : ext === 'png' ? 'image/png'
+              : ext === 'gif' ? 'image/gif'
+              : ext === 'webp' ? 'image/webp'
+              : 'application/octet-stream'
+            const blob = new Blob([bytes], { type: mime })
+            const url = URL.createObjectURL(blob)
+            // Canonical GitHub raw URL — used as the MEI <graphic target> at commit time
+            const encodedPath = item.path.split('/').map(encodeURIComponent).join('/')
+            const target = `https://raw.githubusercontent.com/${repo.owner}/${repo.name}/${_branchRef}/${encodedPath}`
+            let width = null
+            let height = null
+            try {
+              const bitmap = await createImageBitmap(blob)
+              width = bitmap.width
+              height = bitmap.height
+              bitmap.close()
+            } catch (_) {}
+            return { index, name: item.name, url, target, width, height }
+          })
+        )
+        // Guarantee the surfaces are appended in the original sorted order,
+        // regardless of which fetch resolved first.
+        pages.sort((a, b) => a.index - b.index)
+        const templateXml = await fetch('./assets/meiFileTemplate.xml').then(r => r.text())
+        const xmlDoc = parser.parseFromString(templateXml, 'application/xml')
+        const root = xmlDoc.querySelector('mei')
+        root.setAttributeNS('http://www.w3.org/XML/1998/namespace', 'xml:id', 'm' + uuid())
+        const source = xmlDoc.querySelector('source')
+        if (source) source.parentNode.removeChild(source)
+        const dateEl = xmlDoc.querySelector('change date')
+        if (dateEl) dateEl.setAttribute('isodate', new Date().toISOString().substring(0, 10))
+        pages.forEach(page => {
+          addImportedPage(xmlDoc, page.index, page.url, page.width, page.height)
+        })
+        await dispatch('setData', xmlDoc)
+        // Track the images folder so the generated MEI can be committed back.
+        // urlMap maps each in-memory blob URL → canonical raw GitHub URL so that
+        // the committed MEI file contains real paths, not temporary blob: URLs.
+        const currentPath = getters['auth/currentRepoPath']
+        const meiPath = currentPath ? `${currentPath}/cartographer.mei` : 'cartographer.mei'
+        const urlMap = {}
+        pages.forEach(page => { urlMap[page.url] = page.target })
+        commit('SET_GITHUB_FILE', { owner: repo.owner, repo: repo.name, path: meiPath, sha: null, urlMap, ...(_activeBranch ? { branch: _activeBranch.name } : {}) })
+        commit('TOGGLE_LOADGIT_MODAL')
+      } finally {
+        commit('SET_LOADING', false)
+      }
+    },
+    toggleCommitModal ({ commit }) {
+      commit('TOGGLE_COMMIT_MODAL')
+    },
+    async commitToGithub ({ state, commit, dispatch }, { message, owner: ownerOverride, repo: repoOverride, path: pathOverride, branch: branchOverride, createNewBranch, baseBranch } = {}) {
+      if (!state.githubFile || !state.xmlDoc) throw new Error('No GitHub file loaded')
+      const { urlMap } = state.githubFile
+
+      // Resolve target — overrides win over the stored githubFile values
+      const owner  = ownerOverride  || state.githubFile.owner
+      const repo   = repoOverride   || state.githubFile.repo
+      const path   = pathOverride   || state.githubFile.path
+      const branch = branchOverride !== undefined ? (branchOverride || undefined) : state.githubFile.branch
+
+      // Create a new branch before committing if requested.
+      // Only pass baseBranch when staying in the same repo — for a different repo
+      // we deliberately omit it so createBranch uses the target's own default branch.
+      if (createNewBranch && branch) {
+        const sameRepo = owner === state.githubFile.owner && repo === state.githubFile.repo
+        const base = sameRepo ? (state.githubFile.branch || null) : null
+        await dispatch('auth/createBranch', {
+          repo: { owner, name: repo },
+          newBranch: branch,
+          ...(base ? { baseBranch: base } : {}),
+        })
+      }
+
+      // If the target changed from what was loaded, the stored sha is stale
+      const targetChanged = createNewBranch ||
+        owner  !== state.githubFile.owner ||
+        repo   !== state.githubFile.repo ||
+        path   !== state.githubFile.path ||
+        branch !== state.githubFile.branch
+      let sha = targetChanged ? null : state.githubFile.sha
+
+      // Serialize the live MEI document
+      let content = serializer.serializeToString(state.xmlDoc)
+
+      // If this was an image-based import, swap in-memory blob: URLs → real GitHub raw URLs
+      if (urlMap) {
+        for (const [blobUrl, rawUrl] of Object.entries(urlMap)) {
+          content = content.split(blobUrl).join(rawUrl)
+        }
+      }
+
+      // Fetch the current sha for the target path/branch so we can update rather than
+      // fail with 422 (needed when sha is null or the target has changed).
+      if (!sha) {
+        try {
+          const existing = await dispatch('auth/getFileContent', {
+            repo: { owner, name: repo },
+            path,
+            ref: branch || undefined,
+          })
+          sha = existing.sha
+        } catch (e) {
+          if (e.status !== 404) throw e
+          // 404 → file does not exist yet → create new (sha stays null)
+        }
+      }
+
+      try {
+        const newSha = await dispatch('auth/commitFile', {
+          repo: { owner, name: repo },
+          path,
+          sha,
+          content,
+          message: message || 'Update MEI file via Cartographer',
+          ...(branch ? { branch } : {}),
+        })
+        if (newSha) commit('SET_GITHUB_FILE', { owner, repo, path, sha: newSha, urlMap, ...(branch ? { branch } : {}) })
+      } catch (err) {
+        if (err.status === 409) {
+          const conflictErr = new Error('Conflict: the file was modified on GitHub after you loaded it.')
+          conflictErr.isConflict = true
+          throw conflictErr
+        }
+        throw err
+      }
     },
     currentMdiv({ commit }, mdiv) {
       commit('CURRENT_MDIV', mdiv)
@@ -811,7 +1053,8 @@ export default createStore({
  * - mode: Returns the current editor mode.
  * - selectedZone: Returns the annotation object for the currently selected zone, or null if not set.
  * - showLoadIIIFModal: Returns true if the IIIF modal is visible.
- * - showLoadGitModal: Returns true if the Git modal is visible.
+ * - showLoadGitModal: Returns true if the GitHub modal is visible.
+ * - githubFile: Returns the currently loaded GitHub file info, or null.
  * - showLoadXMLModal: Returns true if the XML modal is visible.
  * - showMeasureModal: Returns true if the measure modal is visible.
  * - showPagesModal: Returns true if the pages modal is visible.
@@ -834,8 +1077,15 @@ export default createStore({
       if (state.xmlDoc === null) {
         return null
       }
-      const mei = state.xmlDoc
-      return serializer.serializeToString(mei)
+      let content = serializer.serializeToString(state.xmlDoc)
+      const rewriteMap = {
+        ...(state.githubFile && state.githubFile.urlMap ? state.githubFile.urlMap : {}),
+        ...(state.importedGithubUrlMap || {}),
+      }
+      for (const [blobUrl, rawUrl] of Object.entries(rewriteMap)) {
+        content = content.split(blobUrl).join(rawUrl)
+      }
+      return content
     },
     currentPageIndexOneBased: state => {
       return state.currentPage + 1
@@ -849,10 +1099,20 @@ export default createStore({
     pages: state => {
       const arr = []
       state.pages.forEach(page => {
-        console.log("this is the page width and height at index", page.width, " " , page.height)
+        const uri = page.uri || ''
+        const pathname = uri.startsWith('blob:') ? uri : (() => { try { return decodeURIComponent(new URL(uri).pathname) } catch { return uri } })()
+        const isDirectImage = uri.startsWith('blob:') || /\.(jpe?g|png|gif|webp|bmp|tiff?)$/i.test(pathname)
+        let tileSource
+        if (isDirectImage) {
+          tileSource = { type: 'image', url: page.uri }
+          if (page.width > 0) tileSource.width = page.width
+          if (page.height > 0) tileSource.height = page.height
+        } else {
+          tileSource = page.uri
+        }
         const obj = {
-          tileSource: page.uri,
-          width: page.width,
+          tileSource,
+          width: page.width || undefined,
           x: 0,
           y: 0
         }
@@ -863,11 +1123,24 @@ export default createStore({
     pagesDetailed: state => {
       const arr = []
       state.pages.forEach(page => {
+        const uri = page.uri || ''
+        const pathname = uri.startsWith('blob:') ? uri : (() => { try { return decodeURIComponent(new URL(uri).pathname) } catch { return uri } })()
+        const isDirectImage = uri.startsWith('blob:') || /\.(jpe?g|png|gif|webp|bmp|tiff?)$/i.test(pathname)
+        const tileSource = isDirectImage
+          ? { type: 'image', url: uri }
+          : uri
+        let label = page.label || ''
+        if (state.xmlDoc && page.id) {
+          const surface = state.xmlDoc.querySelector(`surface[xml\\:id="${page.id}"]`)
+          if (surface && surface.hasAttribute('label')) {
+            label = surface.getAttribute('label') || ''
+          }
+        }
         const obj = {
-          tileSource: page.uri,
+          tileSource,
           dim: page.width + 'x' + page.height,
           n: page.n,
-          label: page.label
+          label
         }
         arr.push(obj)
       })
@@ -1018,6 +1291,8 @@ export default createStore({
     },
     showLoadIIIFModal: state => state.showLoadIIIFModal,
     showLoadGitModal: state => state.showLoadGitModal,
+    showCommitModal: state => state.showCommitModal,
+    githubFile: state => state.githubFile,
     showLoadXMLModal: state => state.showLoadXMLModal,
     showMeasureModal: state => state.showMeasureModal,
     showPagesModal: state => state.showPagesModal,
