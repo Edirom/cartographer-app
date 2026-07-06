@@ -151,22 +151,24 @@ export default {
       window.location.href = `https://github.com/login/oauth/authorize?${params}`
     },
 
-    /** Exchange the OAuth authorization code for an access token via the proxy server. */
-    async authenticate ({ commit, dispatch }, code) {
-      // In dev VUE_APP_AUTH_URL points directly to node-ghcred (http://localhost:9999).
-      // In production it is unset and nginx proxies /authenticate to node-ghcred.
-      const base = process.env.VUE_APP_AUTH_URL || ''
-      const res = await fetch(`${base}/authenticate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code }),
+    /** Exchange the OAuth authorization code for an access token. */
+    async authenticate ({ commit, dispatch }, { code }) {
+      // GitHub requires the client_secret at the token endpoint and that
+      // endpoint has no CORS support, so we call a same-origin /auth path that
+      // nginx (or the dev proxy) forwards to GitHub with the client_id and
+      // client_secret injected server-side — the secret never reaches the browser.
+      const res = await fetch(`/auth?code=${encodeURIComponent(code)}`, {
+        headers: { Accept: 'application/json' },
       })
       if (!res.ok) {
         const body = await res.json().catch(() => ({}))
-        throw new Error(body.error || `Token exchange failed (${res.status})`)
+        throw new Error(body.error_description || body.error || `Token exchange failed (${res.status})`)
       }
-      const { access_token } = await res.json()
-      commit('SET_TOKEN', access_token)
+      const data = await res.json()
+      if (data.error) {
+        throw new Error(data.error_description || data.error)
+      }
+      commit('SET_TOKEN', data.access_token)
       await dispatch('fetchUser')
     },
 

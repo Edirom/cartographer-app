@@ -55,44 +55,54 @@ npm run test:lint
 ### Customize configuration
 See [Configuration Reference](https://cli.vuejs.org/config/).
 
+### Local development with GitHub authentication
+
+1. Register a GitHub OAuth App at **GitHub → Settings → Developer settings → OAuth Apps → New OAuth App**:
+   - **Homepage URL:** `http://localhost:8080`
+   - **Authorization callback URL:** `http://localhost:8080/myAppPlaceholder/callback`
+   - Click **Generate a new client secret** and copy it.
+2. Create your local env file from the tracked example and fill in your credentials:
+   ```sh
+   cp .env .env.local
+   ```
+   ```ini
+   VUE_APP_CLIENT_ID=<your-client-id>
+   VUE_APP_CALL_BACK=http://localhost:8080/myAppPlaceholder/callback
+   CLIENT_SECRET=<your-client-secret>
+   ```
+   `.env.local` is gitignored, so your secret never gets committed.
+3. Install and run:
+   ```sh
+   npm install
+   npm run serve
+   ```
+   The dev server proxies `/auth` to GitHub's token endpoint with the
+   `client_secret` injected server-side — it stays in the Node dev-server
+   process and is never bundled into the browser, mirroring what nginx does in
+   production.
+
 ### Docker Deployment
 
 All configuration is injected at **runtime** via environment variables — the same image works for any subpath, host, or GitHub OAuth App.
 
-#### 1. Build the images
+#### 1. Build the image
 
 ```sh
 docker build -t cartographer-app .
-docker build -t node-ghcred ./node-ghcred
 ```
 
-#### 2. Create a Docker network
+#### 2. Start the app
 
-```sh
-docker network create app1-net
-```
-
-#### 3. Start the OAuth sidecar
-
-The sidecar holds the `client_secret` server-side so it is never exposed in the browser.
-
-```sh
-docker run -d \
-  --name node-ghcred \
-  --network app1-net \
-  -e VUE_APP_CLIENT_ID=<your-github-client-id> \
-  -e VUE_APP_CLIENT_SECRET=<your-github-client-secret> \
-  node-ghcred
-```
-
-#### 4. Start the app
+nginx serves the SPA **and** performs the GitHub OAuth token exchange
+server-side (it injects the `client_secret`), so no separate auth container is
+needed.
 
 ```sh
 docker run -d \
   --name app1 \
-  --network app1-net \
   -e VUE_APP_PUBLIC_PATH=/demo \
   -e VUE_APP_CLIENT_ID=<your-github-client-id> \
+  -e CLIENT_SECRET=<your-github-client-secret> \
   -e VUE_APP_CALL_BACK=http://localhost:8081/myAppPlaceholder/callback \
   -p 8081:80 \
   cartographer-app
@@ -102,12 +112,12 @@ Then open http://localhost:8081/demo.
 
 #### Environment variables
 
-| Variable | Container | Description |
-|---|---|---|
-| `VUE_APP_PUBLIC_PATH` | app | Subpath the app is served under (e.g. `/demo`). Defaults to `/`. |
-| `VUE_APP_CLIENT_ID` | app + sidecar | GitHub OAuth App client ID (public). |
-| `VUE_APP_CALL_BACK` | app | OAuth callback URL. Use `/myAppPlaceholder/callback` and it will be rewritten to the actual subpath automatically. |
-| `VUE_APP_CLIENT_SECRET` | sidecar only | GitHub OAuth App client secret. Never passed to the app container. |
+| Variable | Description |
+|---|---|
+| `VUE_APP_PUBLIC_PATH` | Subpath the app is served under (e.g. `/demo`). Defaults to `/`. |
+| `VUE_APP_CLIENT_ID` | GitHub OAuth App client ID (public; safe in the browser). |
+| `VUE_APP_CALL_BACK` | OAuth callback URL. Use `/myAppPlaceholder/callback` and it will be rewritten to the actual subpath automatically. |
+| `CLIENT_SECRET` | GitHub OAuth App client secret. Consumed only by nginx for the token exchange — never bundled into the SPA. Do **not** prefix it with `VUE_APP_`. |
 
 #### GitHub OAuth App setup
 

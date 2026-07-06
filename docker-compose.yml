@@ -6,15 +6,7 @@ services:
     environment:
       - VUE_APP_PUBLIC_PATH=${VUE_APP_PUBLIC_PATH:-/}
       - VUE_APP_CLIENT_ID=${VUE_APP_CLIENT_ID}
+      # Client secret is consumed by nginx (40-create-ghcred.sh) for the
+      # server-side token exchange; it is never shipped in the SPA bundle.
+      - CLIENT_SECRET=${CLIENT_SECRET}
       - VUE_APP_CALL_BACK=${VUE_APP_CALL_BACK:-http://localhost:8080/myAppPlaceholder/callback}
-    depends_on:
-      - node-ghcred
-
-  node-ghcred:
-    build: ./node-ghcred
-    environment:
-      - VUE_APP_CLIENT_ID=${VUE_APP_CLIENT_ID}
-      - VUE_APP_CLIENT_SECRET=${VUE_APP_CLIENT_SECRET}
-      # Set ALLOWED_ORIGIN to your app's scheme+host+port (no path) in production.
-      # e.g. ALLOWED_ORIGIN=https://your-domain.com
-      - ALLOWED_ORIGIN=${ALLOWED_ORIGIN:-http://localhost:8080}

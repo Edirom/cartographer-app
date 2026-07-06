@@ -34,7 +34,7 @@ export default {
       return
     }
     try {
-      await this.$store.dispatch('auth/authenticate', code)
+      await this.$store.dispatch('auth/authenticate', { code, state })
       this.$router.push('/')
     } catch (e) {
       const msg = e.message || ''
@@ -42,7 +42,7 @@ export default {
                         msg.toLowerCase().includes('networkerror') ||
                         msg.toLowerCase().includes('load failed')
       this.error = isNetwork
-        ? 'Cannot reach the authentication proxy. Make sure you started it with `npm run dev` (or `node node-ghcred/server.js` in a separate terminal).'
+        ? 'Cannot reach GitHub to complete authentication. Check your network connection and try again.'
         : msg
     }
   },

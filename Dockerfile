@@ -29,6 +29,10 @@ ENV VUE_APP_PUBLIC_PATH="/"
 # GitHub OAuth credentials — injected at runtime via 40-create-ghcred.sh
 ENV VUE_APP_CLIENT_ID=""
 ENV VUE_APP_CALL_BACK=""
+# NOTE: CLIENT_SECRET is intentionally NOT declared as ENV here. It is supplied
+# only at `docker run` / compose time and consumed by 40-create-ghcred.sh
+# (which defaults it to empty). Declaring it as ENV would trigger BuildKit's
+# SecretsUsedInArgOrEnv warning and is unnecessary.
 
 # Copy final single-file nginx.conf
 COPY nginx.conf /etc/nginx/nginx.conf
