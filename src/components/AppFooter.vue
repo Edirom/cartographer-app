@@ -79,13 +79,17 @@ export default {
   },
   methods: {
     showPrevPage: function () {
-      this.currentPage = this.currentPage - 1
-      this.$store.dispatch('setCurrentPage', this.$store.getters.currentPageIndexZeroBased - 1)
-      this.$store.dispatch('setCurrentPageZone', this.$store.getters.zonesOnCurrentPage.length)
+      const prev = this.$store.getters.currentPageIndexZeroBased - 1
+      if (prev >= 0) {
+        this.$store.dispatch('setCurrentPage', prev)
+        this.$store.dispatch('setCurrentPageZone', this.$store.getters.zonesOnCurrentPage.length)
+      }
     },
     showNextPage: function () {
-      this.currentPage = this.currentPage + 1
-      this.$store.dispatch('setCurrentPage', this.$store.getters.currentPageIndexZeroBased + 1)
+      const next = this.$store.getters.currentPageIndexZeroBased + 1
+      if (next < this.$store.getters.maxPageNumber) {
+        this.$store.dispatch('setCurrentPage', next)
+      }
     },
     showMdivModal: function () {
       this.$store.dispatch('toggleMdivModal')
