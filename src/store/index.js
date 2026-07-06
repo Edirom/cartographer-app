@@ -3,9 +3,33 @@ import { iiifManifest2mei, checkIiifManifest, getPageArray } from '@/tools/iiif.
 import { meiZone2annotorious, annotorious2meiZone, measureDetector2meiZone, generateMeasure, insertMeasure, deleteZone, setMultiRest, createNewMdiv, moveContentToMdiv, toggleAdditionalZone, addImportedPage, findZoneInsertionPositionForXmlZone, createAdditionalZone } from '@/tools/meiMappings.js'
 
 import { mode as allowedModes } from '@/store/constants.js'
-
+import { chatCompletion, buildSystemPrompt, buildContextMessage, parseAssistantResponse, DEFAULT_HF_MODEL } from '@/tools/llmChat.js'
 const parser = new DOMParser()
 const serializer = new XMLSerializer()
+
+/**
+ * Collect the zones on the currently visible page, enriched with the measure
+ * number/label that references them. Used to give the chat assistant context so
+ * it can resolve references like "the third measure" to a concrete zone id.
+ *
+ * @param {object} state Vuex state.
+ * @returns {Array<{id: string, n: ?string, label: ?string}>}
+ */
+function collectZonesOnCurrentPage(state) {
+  if (state.xmlDoc === null || state.currentPage < 0) return []
+  const surface = state.xmlDoc.querySelectorAll('surface')[state.currentPage]
+  if (!surface) return []
+  const measures = [...state.xmlDoc.querySelectorAll('measure')]
+  return [...surface.querySelectorAll('zone')].map(zone => {
+    const id = zone.getAttribute('xml:id')
+    const measure = measures.find(m => (m.getAttribute('facs') || '').split(/\s+/).includes('#' + id))
+    return {
+      id,
+      n: measure ? measure.getAttribute('n') : null,
+      label: measure && measure.hasAttribute('label') ? measure.getAttribute('label') : null
+    }
+  })
+}
 
 function getDefaultState() {
   return {
@@ -51,6 +75,12 @@ function getDefaultState() {
       insertMdivup: false,            // True if the new mdiv is to be inserted before the current mdiv
       currentMeasure: null,           // The current measure object 
       additionMeasure: false,         // True if an additional measure is being added (to prevent recursion)
+      showChatAssistant: false,       // Show/hide the LLM chat assistant panel
+      chatMessages: [],               // Chat history [{ role, content }] shown in the assistant
+      chatPending: false,             // True while waiting for an LLM response
+      chatError: null,                // Last chat/LLM error message (if any)
+      hfApiKey: process.env.VUE_APP_HF_TOKEN || '',   // Hugging Face token (from .env, overridable in UI)
+      hfModel: process.env.VUE_APP_HF_MODEL || '',    // Hugging Face model id (from .env, overridable in UI)
   }
 }
 
@@ -399,6 +429,34 @@ export default createStore({
     },
     PREVIOUS_MDIV(state, mdiv) {
       state.previousMdiv = mdiv
+    },
+    TOGGLE_CHAT_ASSISTANT(state) {
+      state.showChatAssistant = !state.showChatAssistant
+    },
+    SET_CHAT_CONFIG(state, { apiKey, model }) {
+      if (apiKey !== undefined) state.hfApiKey = apiKey
+      if (model !== undefined) state.hfModel = model
+    },
+    ADD_CHAT_MESSAGE(state, message) {
+      state.chatMessages.push(message)
+    },
+    SET_CHAT_PENDING(state, bool) {
+      state.chatPending = bool
+    },
+    SET_CHAT_ERROR(state, error) {
+      state.chatError = error
+    },
+    CLEAR_CHAT(state) {
+      state.chatMessages = []
+      state.chatError = null
+    },
+    ASSISTANT_DELETE_ZONE(state, id) {
+      if (state.xmlDoc === null) return
+      state.deleteZoneId = id
+      const xmlDoc = state.xmlDoc.cloneNode(true)
+      deleteZone(xmlDoc, id, state)
+      state.xmlDoc = xmlDoc
+      if (state.selectedZoneId === id) state.selectedZoneId = null
     }
   },
   /**
@@ -723,6 +781,74 @@ export default createStore({
     deleteZone({ commit }, id) {
       commit('DELETE_ZONE', id)
     },
+    toggleChatAssistant({ commit }) {
+      commit('TOGGLE_CHAT_ASSISTANT')
+    },
+    setChatConfig({ commit }, config) {
+      commit('SET_CHAT_CONFIG', config)
+    },
+    clearChat({ commit }) {
+      commit('CLEAR_CHAT')
+    },
+    assistantDeleteZone({ commit }, id) {
+      commit('ASSISTANT_DELETE_ZONE', id)
+    },
+    /**
+     * Send a user message to the Hugging Face-hosted LLM, interpret the reply,
+     * and execute any supported action (currently: deleting a zone).
+     */
+    async sendChatMessage({ state, commit }, text) {
+      const content = (text || '').trim()
+      if (!content || state.chatPending) return
+
+      if (!state.hfApiKey) {
+        commit('SET_CHAT_ERROR', 'Please add your Hugging Face access token in the assistant settings first.')
+        return
+      }
+
+      commit('ADD_CHAT_MESSAGE', { role: 'user', content })
+      commit('SET_CHAT_ERROR', null)
+      commit('SET_CHAT_PENDING', true)
+
+      const zones = collectZonesOnCurrentPage(state)
+
+      const messages = [
+        { role: 'system', content: buildSystemPrompt() },
+        { role: 'system', content: buildContextMessage(zones, state.selectedZoneId) },
+        ...state.chatMessages
+          .filter(m => m.role === 'user' || m.role === 'assistant')
+          .map(m => ({ role: m.role, content: m.content }))
+      ]
+
+      try {
+        const raw = await chatCompletion({
+          apiKey: state.hfApiKey,
+          model: state.hfModel || DEFAULT_HF_MODEL,
+          messages
+        })
+        const { reply, action } = parseAssistantResponse(raw)
+
+        let finalReply = reply || ''
+        if (action && action.type === 'deleteZone') {
+          let zoneId = action.zoneId === 'selected' ? state.selectedZoneId : action.zoneId
+          const exists = zoneId && zones.some(z => z.id === zoneId)
+          if (!zoneId) {
+            finalReply = finalReply || 'Which zone should I delete?'
+          } else if (!exists) {
+            finalReply = `I could not find a zone "${zoneId}" on this page.`
+          } else {
+            commit('ASSISTANT_DELETE_ZONE', zoneId)
+            finalReply = finalReply || `Deleted zone ${zoneId}.`
+          }
+        }
+
+        commit('ADD_CHAT_MESSAGE', { role: 'assistant', content: finalReply || '…' })
+      } catch (err) {
+        commit('SET_CHAT_ERROR', err.message || String(err))
+      } finally {
+        commit('SET_CHAT_PENDING', false)
+      }
+    },
     updateZone({ commit }, annot) {
       commit('UPDATE_ZONE_FROM_ANNOTORIOUS', annot)
     },
@@ -1024,6 +1150,12 @@ export default createStore({
     showPageImportModal: state => state.showPageImportModal,
     showMdivModal: state => state.showMdivModal,
     showMeasureList: state => state.showMeasureList,
+    showChatAssistant: state => state.showChatAssistant,
+    chatMessages: state => state.chatMessages,
+    chatPending: state => state.chatPending,
+    chatError: state => state.chatError,
+    hfApiKey: state => state.hfApiKey,
+    hfModel: state => state.hfModel,
     importingImages: state => state.importingImages,
     readyForImageImport: state => {
       let bool = true

@@ -12,6 +12,7 @@
     <ContentPreviewPane/>
     <AppSidebar/>
     <AppFooter/>
+    <ChatAssistant/>
   </div>
 </template>
 
@@ -29,6 +30,7 @@ import PageImportModal from '@/components/PageImportModal.vue'
 import MdivModal from '@/components/MdivModal.vue'
 import LoadXMLModal from '@/components/LoadXMLModal.vue'
 import LoadIIIFModal from '@/components/LoadIIIFModal.vue'
+import ChatAssistant from '@/components/ChatAssistant.vue'
 
 
 export default {
@@ -46,6 +48,7 @@ export default {
     MdivModal,
     LoadXMLModal,
     LoadIIIFModal,
+    ChatAssistant,
   },
   computed: {
     ...mapGetters([
