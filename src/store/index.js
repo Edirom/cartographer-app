@@ -1468,8 +1468,12 @@ export default createStore({
       const arr = []
       state.pages.forEach(page => {
         const uri = page.uri || ''
-        const pathname = uri.startsWith('blob:') ? uri : (() => { try { return decodeURIComponent(new URL(uri).pathname) } catch { return uri } })()
-        const isDirectImage = uri.startsWith('blob:') || /\.(jpe?g|png|gif|webp|bmp|tiff?)$/i.test(pathname)
+        // A direct image is only a local/GitHub blob URL or a raw.githubusercontent.com file.
+        // IIIF Image API service @ids frequently end in an image extension (e.g. .jpg/.tif)
+        // but are NOT directly loadable images — they must be passed to OpenSeadragon as a
+        // string so it fetches their /info.json. Never classify by file extension alone.
+        const host = uri.startsWith('blob:') ? '' : (() => { try { return new URL(uri).hostname } catch { return '' } })()
+        const isDirectImage = uri.startsWith('blob:') || host === 'raw.githubusercontent.com'
         // Handle local images (imageUrl), direct/GitHub images (blob or image URL), and IIIF pages
         let tileSource
         if (page.isLocalImage && page.imageUrl) {
@@ -1497,8 +1501,10 @@ export default createStore({
       const arr = []
       state.pages.forEach(page => {
         const uri = page.uri || ''
-        const pathname = uri.startsWith('blob:') ? uri : (() => { try { return decodeURIComponent(new URL(uri).pathname) } catch { return uri } })()
-        const isDirectImage = uri.startsWith('blob:') || /\.(jpe?g|png|gif|webp|bmp|tiff?)$/i.test(pathname)
+        // See the `pages` getter: only blob/GitHub-raw URLs are direct images; IIIF service
+        // @ids may end in an image extension yet still require /info.json handling.
+        const host = uri.startsWith('blob:') ? '' : (() => { try { return new URL(uri).hostname } catch { return '' } })()
+        const isDirectImage = uri.startsWith('blob:') || host === 'raw.githubusercontent.com'
         let tileSource
         if (page.isLocalImage && page.imageUrl) {
           tileSource = { type: 'image', url: page.imageUrl }
