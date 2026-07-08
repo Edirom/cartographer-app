@@ -24,6 +24,18 @@
         </button>
         Import Local Image
       </li>
+      <li class="menu-item" v-if="!isAuthenticated">
+        <button class="btn btn-action btn-sm" @click="loginToGithub" title="Login with GitHub">
+          <font-awesome-icon icon="fa-solid fa-user"/>
+        </button>
+        Login with GitHub
+      </li>
+      <li class="menu-item" v-if="isAuthenticated">
+        <button class="btn btn-action btn-sm" @click="loadFromGithub" title="Load from GitHub">
+          <font-awesome-icon icon="fa-solid fa-cloud-arrow-down"/>
+        </button>
+        Load from GitHub
+      </li>
       <li class="menu-item">
         <template v-if="downloadAvailable">
           <a class="btn btn-action btn-sm" :href="xmlDataUrl()" target="_blank" title="download MEI file" :download="xmlFilename">
@@ -38,6 +50,15 @@
           Download MEI File
         </template>
       </li>
+      <template v-if="githubFile">
+        <li class="divider" :data-content="githubBranchLabel"></li>
+        <li class="menu-item">
+          <button class="btn btn-action btn-sm" @click="commitToGithub" title="Commit to GitHub">
+            <font-awesome-icon icon="fa-solid fa-code-commit"/>
+          </button>
+          Commit to GitHub
+        </li>
+      </template>
       <li class="divider" data-content="Actions"></li>
       <li class="menu-item">
         <button class="btn btn-action btn-sm" @click="showPagesModal" title="Show Page Overview">
@@ -94,6 +115,20 @@ export default {
     existingMusicMode: function () {
       return this.$store.getters.existingMusicMode
     },
+    isAuthenticated: function () {
+      return this.$store.getters['auth/isAuthenticated']
+    },
+    githubFile: function () {
+      return this.$store.getters.githubFile
+    },
+    selectedBranch: function () {
+      return this.$store.getters['auth/selectedBranch']
+    },
+    githubBranchLabel: function () {
+      const branch = (this.githubFile && this.githubFile.branch) ||
+        (this.selectedBranch && this.selectedBranch.name)
+      return branch ? 'GitHub · ' + branch : 'GitHub'
+    },
   },
   methods: {
     importXML: function () {
@@ -104,6 +139,15 @@ export default {
     },
     importLocalImage: function () {
       this.$store.dispatch('toggleLoadLocalImage')
+    },
+    loadFromGithub: function () {
+      this.$store.dispatch('toggleLoadGitModal')
+    },
+    loginToGithub: function () {
+      this.$store.dispatch('auth/login')
+    },
+    commitToGithub: function () {
+      this.$store.dispatch('toggleCommitModal')
     },
     getUsername: function () {
       this.$store.state.username;

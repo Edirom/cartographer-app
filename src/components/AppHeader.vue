@@ -40,17 +40,6 @@
               </div>
             </li>
             <li class="divider"></li>
-            <li class="menu-item" v-if="isAuthenticated">
-              <a href="#" @click.prevent="openLoadGitModal">
-                <font-awesome-icon icon="fa-solid fa-cloud-arrow-down" class="mr-1" /> Load from GitHub
-              </a>
-            </li>
-            <li class="menu-item" v-if="githubFile">
-              <a href="#" @click.prevent="openCommitModal">
-                <font-awesome-icon icon="fa-solid fa-code-commit" class="mr-1" /> Commit to GitHub
-              </a>
-            </li>
-            <li class="divider"></li>
             <li class="menu-item">
               <a href="#" @click.prevent="logout">
                 <font-awesome-icon icon="fa-solid fa-user" class="mr-1" /> Sign out
@@ -58,11 +47,6 @@
             </li>
           </ul>
         </div>
-      </template>
-      <template v-else>
-        <button class="btn btn-sm btn-primary mr-2" @click="login" title="Sign in with GitHub">
-          <font-awesome-icon icon="fa-solid fa-user" /> Login with GitHub
-        </button>
       </template>
       <div class="input-group input-inline">
         <div class="button-group">
@@ -85,7 +69,6 @@ export default {
   computed: {
     isAuthenticated () { return this.$store.getters['auth/isAuthenticated'] },
     user ()            { return this.$store.getters['auth/user'] },
-    githubFile ()      { return this.$store.getters.githubFile },
   },
   mounted () {
     // Close dropdown when clicking anywhere outside
@@ -95,18 +78,9 @@ export default {
     document.removeEventListener('click', this.handleOutsideClick)
   },
   methods: {
-    login ()  { this.$store.dispatch('auth/login') },
     logout () {
       this.menuOpen = false
       this.$store.dispatch('auth/logout')
-    },
-    openLoadGitModal () {
-      this.menuOpen = false
-      this.$store.dispatch('toggleLoadGitModal')
-    },
-    openCommitModal () {
-      this.menuOpen = false
-      this.$store.dispatch('toggleCommitModal')
     },
     handleOutsideClick (e) {
       if (!this.$el.contains(e.target)) this.menuOpen = false
