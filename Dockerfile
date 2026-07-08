@@ -15,6 +15,9 @@ COPY . .
 
 # ---- 2) Build frontend (SPA) ----
 FROM base AS build-app
+
+ENV VUE_APP_CLIENT_ID=__GH_CLIENT_ID__
+ENV VUE_APP_CALL_BACK=__GH_CALLBACK_URL__
 RUN npm run build
 
 # ---- 3) Build VuePress docs ----
@@ -25,14 +28,10 @@ RUN npm run docs:build
 FROM nginx:alpine
 
 # Default public path; can be overridden at runtime
-ENV VUE_APP_PUBLIC_PATH="/"
+ENV VUE_APP_PUBLIC_PATH=""
 # GitHub OAuth credentials — injected at runtime via 40-create-ghcred.sh
 ENV VUE_APP_CLIENT_ID=""
 ENV VUE_APP_CALL_BACK=""
-# NOTE: CLIENT_SECRET is intentionally NOT declared as ENV here. It is supplied
-# only at `docker run` / compose time and consumed by 40-create-ghcred.sh
-# (which defaults it to empty). Declaring it as ENV would trigger BuildKit's
-# SecretsUsedInArgOrEnv warning and is unnecessary.
 
 # Copy final single-file nginx.conf
 COPY nginx.conf /etc/nginx/nginx.conf
@@ -46,3 +45,4 @@ COPY --from=build-app  /app/dist/                 /usr/share/nginx/html/
 COPY --from=build-docs /app/docs/.vuepress/dist/  /usr/share/nginx/html/docs/
 
 EXPOSE 80
+

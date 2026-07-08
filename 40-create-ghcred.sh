@@ -40,6 +40,7 @@ cat > /GH_OAUTH_CLIENT.conf <<EOT
 set \$PUBLIC_PATH $NORMALIZED_PATH;
 set \$CLIENT_ID $GH_CLIENT_ID;
 set \$CLIENT_SECRET $GH_CLIENT_SECRET;
+set \$CALLBACK_URL $GH_CALLBACK_URL;
 EOT
 
 CLIENT_ID_PREFIX=$(printf '%.4s' "$GH_CLIENT_ID")
@@ -63,3 +64,8 @@ done
 # replace myAppPlaceholder in nginx configuration
 sed -i "s|${PLACEHOLDER}/|${NORMALIZED_PATH%/}/|g" /etc/nginx/nginx.conf
 sed -i "s|${PLACEHOLDER}|${NORMALIZED_PATH}|g" /etc/nginx/nginx.conf
+
+# also rewrite the placeholder inside the injected OAuth conf so $CALLBACK_URL
+# matches the value baked into the SPA (e.g. /myAppPlaceholder/callback -> /callback)
+sed -i "s|${PLACEHOLDER}/|${NORMALIZED_PATH%/}/|g" /GH_OAUTH_CLIENT.conf
+sed -i "s|${PLACEHOLDER}|${NORMALIZED_PATH}|g" /GH_OAUTH_CLIENT.conf
