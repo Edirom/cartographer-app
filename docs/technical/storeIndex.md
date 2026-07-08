@@ -113,7 +113,7 @@ This store wires together MEI editing, IIIF ingestion, page/zone management, and
 > Actions can be async and may dispatch multiple mutations.
 
 ### UI Toggles
-`toggleLoadXMLModal`, `toggleLoadIIIFModal`, `toggleLoadGitModal`,  
+`toggleLoadXMLModal`, `toggleLoadIIIFModal`, `toggleLoadGitModal`, `toggleLoadLocalImageModal`,  
 `toggleMeasureModal`, `toggleMdivModal`, `togglePagesModal`, `togglePageImportModal`,  
 `toggleMeasureList`
 
@@ -237,6 +237,7 @@ computed: {
 },
 methods: {
   openIiif() { this.$store.dispatch('toggleLoadIIIFModal') },
+  openLocalImages() { this.$store.dispatch('toggleLoadLocalImageModal') },
   goTo(pageIndex) { this.$store.dispatch('setCurrentPage', pageIndex) },
   setLabel(val) { this.$store.dispatch('setCurrentMeasureLabel', val) },
 }

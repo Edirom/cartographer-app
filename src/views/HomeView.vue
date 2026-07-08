@@ -2,6 +2,11 @@
   <div>
     <LoadXMLModal v-if="showLoadXMLModal"/>
     <LoadIIIFModal v-if="showLoadIIIFModal"/>
+    <LoadLocalImage v-if="showLoadLocalImage"/>
+    <ImageMismatchModal v-if="showImageMismatchModal"/>
+    <div v-if="loading" class="loading-overlay">
+      <div class="loading loading-lg"></div>
+    </div>
     <!--<ImageSelectionModal/>-->
     <MeasureModal v-if="showMeasureModal"/>
     <MdivModal v-if="showMdivModal"/>
@@ -17,6 +22,7 @@
 
 <script>
 import { mapGetters } from 'vuex'
+import { mode as allowedModes } from '@/store/constants.js'
 import AppHeader from '@/components/AppHeader.vue'
 import ContentPreviewPane from '@/components/ContentPreviewPane.vue'
 import AppSidebar from '@/components/AppSidebar.vue'
@@ -29,6 +35,8 @@ import PageImportModal from '@/components/PageImportModal.vue'
 import MdivModal from '@/components/MdivModal.vue'
 import LoadXMLModal from '@/components/LoadXMLModal.vue'
 import LoadIIIFModal from '@/components/LoadIIIFModal.vue'
+import LoadLocalImage from '@/components/LoadLocalImage.vue'
+import ImageMismatchModal from '@/components/ImageMismatchModal.vue'
 
 
 export default {
@@ -46,26 +54,46 @@ export default {
     MdivModal,
     LoadXMLModal,
     LoadIIIFModal,
+    LoadLocalImage,
+    ImageMismatchModal
   },
   computed: {
     ...mapGetters([
       'showLoadXMLModal',
       'showLoadIIIFModal',
+      'showLoadLocalImage',
       'showMeasureModal',
       'showMdivModal',
       'showPagesModal',
       'showPageImportModal',
+      'showImageMismatchModal',
+      'loading',
     ])
   },
   mounted () {
     window.addEventListener('keyup', e => {
       // console.log('keyupped ' + e.key)
+      const target = e.target
+      const isTypingTarget = target && (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable
+      )
+
+      if (isTypingTarget) return
+
       if (e.key === 'm') {
-        // console.log('toggle measureList')
         this.$store.dispatch('toggleMeasureList')
       } else if (e.key === 'p') {
-        // console.log('toggle pageModal')
         this.$store.dispatch('togglePagesModal')
+      } else if (e.key === 'd') {
+        this.$store.dispatch('setMode', allowedModes.manualRect)
+      } else if (e.key === 'a') {
+        this.$store.dispatch('setMode', allowedModes.additionalZone)
+      } else if (e.key === 'x') {
+        this.$store.dispatch('setMode', allowedModes.deletion)
+      } else if (e.key === 's') {
+        this.$store.dispatch('setMode', allowedModes.selection)
       }
     })
   }
@@ -84,5 +112,15 @@ export default {
   height: 100vh;
   width: 100%;
   position: relative;
+}
+
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.6);
 }
 </style>
