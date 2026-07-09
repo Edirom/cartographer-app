@@ -233,6 +233,7 @@ export default {
 
 .appSidebar {
   height: calc(100vh - $appHeaderHeight - $appFooterHeight);
+  height: calc(100dvh - #{$appHeaderHeight} - #{$appFooterHeight} - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
   width: $appSidebarWidth;
   background-color: $appColor;
   float: right;
