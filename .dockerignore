@@ -23,8 +23,6 @@ pnpm-debug.log*
 *.sln
 *.sw?
 
-#Electron-builder output
-dist_electron
 /docs/.vuepress/.temp
 /docs/.vuepress/.cache
 /docs/.vuepress/dist
