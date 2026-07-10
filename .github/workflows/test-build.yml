@@ -8,9 +8,16 @@ name: Test build (artifacts only)
 # Run it manually: GitHub -> Actions -> "Test build (artifacts only)" ->
 # Run workflow -> pick this branch. Download the per-OS zips from the finished
 # run's "Artifacts" section. Artifacts are retained for 14 days.
+#
+# NOTE: The manual "Run workflow" button only appears once this file is on the
+# repository's DEFAULT branch. Until then, the push trigger below builds it
+# automatically on every push to the distribution branch so it can be tested.
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - 109-feature-cartographer-distribution
 
 jobs:
   build:
