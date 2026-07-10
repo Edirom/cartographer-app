@@ -17,9 +17,45 @@ of measure positions, but allows manual correction of these results.
 
 ### Image Import
 The Cartographer App supports importing images from multiple sources:
-* **Local Images**: Import images directly from your local file system
-* **IIIF**: Load images from IIIF servers for standardized access to cultural heritage materials
-* **Git Repositories**: Load MEI files with associated images from Git repositories
+* **Local Images**: Import images directly from your local file system. TIFF files
+  are supported, including TIFFs that store their pixel data as an embedded JPEG
+  (the app reconstructs a complete JPEG by injecting the missing DQT/DHT tables
+  from the `JPEGTables` tag).
+* **IIIF**: Load images from IIIF servers for standardized access to cultural
+  heritage materials.
+* **Git Repositories**: Load MEI files with associated images from Git
+  repositories (GitHub OAuth login).
+* **MEI Files**: Upload an existing MEI file and download the edited result at any
+  time.
+
+A loading spinner is shown while images are being processed, and an image
+mismatch warning is raised when the images referenced by a loaded MEI file do not
+match the images that are actually available.
+
+### Measure Annotation
+* **Automatic Measure Detection**: Optionally run the *Measure Detector* to
+  automatically place measure zones on the current page, then correct the results
+  manually.
+* **Manual Editing Modes**: Draw, select, delete and add additional zones to
+  measures. See [Editing modes and keyboard shortcuts](#editing-modes-and-keyboard-shortcuts).
+* **Undo / Redo**: Every change to the document can be undone and redone (up to 50
+  history states) via the sidebar buttons.
+* **Page and Measure Overviews**: Toggleable panels list the pages and measures of
+  the current document for quick navigation.
+
+## Editing modes and keyboard shortcuts
+
+Editing modes can be activated from the sidebar or with keyboard shortcuts.
+Shortcuts are ignored while typing in an input field.
+
+| Key | Action |
+| --- | --- |
+| `s` | Selection mode – select an existing measure |
+| `d` | Draw mode – draw a new measure zone |
+| `a` | Additional-zone mode – add another zone to the last measure |
+| `x` | Deletion mode – delete a measure |
+| `m` | Toggle the measure list |
+| `p` | Toggle the pages overview |
 
 ## Documentation
 
@@ -80,7 +116,7 @@ npm run test:unit
 npm run lint
 ```
 
-### Other approaach to linting which automatically fixes code and gives a nicer rendition of errors using snazzy
+### Other approach to linting which automatically fixes code and gives a nicer rendition of errors using snazzy
 ```
 npm run test:lint
 ```
@@ -88,7 +124,7 @@ npm run test:lint
 ### Customize configuration
 See [Configuration Reference](https://cli.vuejs.org/config/).
 
-### Biuld your image 
+### Build your image 
 Replace **`cartographer`** with your preferred image name.
 ```
 docker build -t cartographer .
