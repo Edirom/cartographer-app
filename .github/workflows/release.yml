@@ -1,0 +1,85 @@
+name: Release desktop app
+
+# Builds installable desktop apps (macOS .dmg / .app, Windows .exe / .msi,
+# Linux .deb / .AppImage) and attaches them to a GitHub Release so users can
+# download and run Cartographer locally without a browser or dev server.
+#
+# Trigger by pushing a version tag, e.g.:
+#   git tag v0.1.0 && git push origin v0.1.0
+# or run it manually from the Actions tab (workflow_dispatch).
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+# Needed so tauri-action can create the GitHub Release and upload assets.
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Apple Silicon + Intel universal macOS build
+          - platform: macos-latest
+            args: "--target universal-apple-darwin"
+          - platform: ubuntu-22.04
+            args: ""
+          - platform: windows-latest
+            args: ""
+
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Linux system dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            build-essential \
+            file \
+            libssl-dev
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          # Include the macOS Intel target so we can build a universal binary.
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - name: Cache Rust build artifacts
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
+
+      - name: Install frontend dependencies
+        # The project has a known peer-dependency conflict (vue3-jest vs
+        # cli-plugin-unit-jest); the Dockerfile uses the same flag.
+        run: npm install --legacy-peer-deps
+
+      - name: Build and release Tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_type == 'tag' && github.ref_name || format('v{0}', github.run_number) }}
+          releaseName: "Cartographer ${{ github.ref_type == 'tag' && github.ref_name || github.run_number }}"
+          releaseBody: "Download the installer for your platform below. See the assets for macOS (.dmg), Windows (.exe/.msi) and Linux (.deb/.AppImage)."
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}

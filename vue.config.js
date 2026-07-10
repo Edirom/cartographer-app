@@ -5,8 +5,12 @@
 const GH_CLIENT_ID = process.env.VUE_APP_CLIENT_ID
 const GH_CLIENT_SECRET = process.env.CLIENT_SECRET
 
+// When building/serving inside Tauri, the app is served from the origin root,
+// so assets must resolve from "/". Tauri sets TAURI_ENV_PLATFORM during the
+// beforeBuildCommand / beforeDevCommand hooks. For the web deployment we keep
+// the "/myAppPlaceholder" subpath.
 module.exports = {
-  publicPath: '/myAppPlaceholder',
+  publicPath: process.env.TAURI_ENV_PLATFORM ? '/' : '/myAppPlaceholder',
   devServer: {
     host: '0.0.0.0',
     allowedHosts: 'all',

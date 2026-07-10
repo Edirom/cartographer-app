@@ -11,8 +11,9 @@
     "build": "vue-cli-service build",
     "test:unit": "vue-cli-service test:unit",
     "lint": "vue-cli-service lint",
-    "tauri:build": "vue-cli-service tauri:build",
-    "tauri:serve": "vue-cli-service tauri:serve",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
     "test:lint": "npx standard --fix | npx snazzy",
     "docs:dev": "vuepress dev docs",
     "docs:build": "vuepress build docs"
@@ -40,6 +41,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.12.16",
+    "@tauri-apps/cli": "^2.11.4",
     "@vue/cli-plugin-babel": "^5.0.8",
     "@vue/cli-plugin-router": "~5.0.0",
     "@vue/cli-plugin-unit-jest": "^5.0.8",
@@ -59,7 +61,6 @@
     "sass": "^1.26.5",
     "sass-loader": "^8.0.2",
     "ts-jest": "^27.1.5",
-    "vue-cli-plugin-tauri": "~1.0.0",
     "vue-styleguidist": "^4.72.4",
     "vuepress": "^2.0.0-rc.23"
   },
