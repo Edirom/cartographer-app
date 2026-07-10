@@ -27,9 +27,10 @@ pnpm-debug.log*
 /docs/.vuepress/.cache
 /docs/.vuepress/dist
 
-#Electron-builder output
-/dist_electron
 .env
 
 # Ignore processed config files
 docs/.vuepress/config.js.*
+
+# Tauri generated schemas (regenerated on every build)
+src-tauri/gen/schemas
