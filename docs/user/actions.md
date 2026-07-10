@@ -4,10 +4,11 @@
 
 ## Importing Images
 
-In the **Cartographer App**, there are two ways to import images:
+In the **Cartographer App**, there are three ways to import images:
 
 1. From a local MEI file — the file references images hosted on a IIIF server.  
-2. Directly from a IIIF server — by providing the IIIF manifest link.
+2. Directly from a IIIF server — by providing the IIIF manifest link.  
+3. From a local folder — by importing image files stored on your computer.
 
 ---
 
@@ -66,6 +67,23 @@ When you select **"Import IIIF Manifest"**, a dialog appears:
 
 3. Click **"Import"** to load the images.  
 4. (Optional) Click **"Cancel"** to close the dialog.  
+
+---
+
+### Importing from a Local Folder
+
+Click the **menu icon** in the header to open the options.  
+Select **"Import Local Image"** to import images from a folder on your computer.
+
+- Click **"Choose Folder"** to select a folder containing your images.  
+- The dialog lists every detected image so you can review them before importing.  
+- Click **"Import"** to add the images as pages.  
+- To cancel, click **"Cancel"**.
+
+Supported formats include JPG, JPEG, PNG, GIF, WebP, SVG, BMP, and TIFF (including
+TIFF files that store their pixel data as an embedded JPEG). If the images do not
+match the references of a loaded MEI file, an **Image Mismatch Warning** is shown
+so the difference can be resolved before continuing.
 
 ---
 
@@ -131,6 +149,14 @@ Click **"Automatic Detection"** to run measure detection on the current page.  (
 
 ---
 
+## Undo and Redo
+Use the **Undo** button (curved arrow pointing left) in the sidebar to revert the
+last change, and the **Redo** button (curved arrow pointing right) to reapply a
+change that was undone. Each button is disabled when there is nothing to undo or
+redo. Up to 50 previous states are kept.
+
+---
+
 ## Navigate Through Pages
 Use the **"Previous"** and **"Next"** navigation buttons in the sidebar or footer.  (See number 6 in image 6) 
 To jump to a specific page, type the page number in the footer’s input box and click **"Go"**.  (See number 3 in image 7) 
@@ -183,3 +209,19 @@ From this window, choose the movement to which the selected measure should belon
 
 ![Change Movement Window](images/changeMovement.png)  
 *Image 12: Change Movement Window*  
+
+---
+
+## Keyboard Shortcuts
+
+The editing modes and side panels can be toggled with the keyboard. Shortcuts are
+ignored while typing in a text field.
+
+| Key | Action |
+| --- | --- |
+| `s` | Selection mode — select an existing measure |
+| `d` | Draw mode — draw a new measure zone |
+| `a` | Additional-zone mode — add another zone to the last measure |
+| `x` | Deletion mode — delete a measure |
+| `m` | Toggle the measure list |
+| `p` | Toggle the pages overview |

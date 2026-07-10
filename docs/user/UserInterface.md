@@ -28,13 +28,14 @@ Additionally, the header includes buttons to open the **Page Overview** and togg
 
 ### Menu Bar
 
-Clicking the dropdown menu in the header opens five options (see Image 3):
+Clicking the dropdown menu in the header opens the following options (see Image 3):
 
 1. **Upload MEI File** — upload an MEI file from your local repository (see number 1 in Image 3).  
 2. **Import IIIF Manifest** — import an IIIF manifest from a server (see number 2 in Image 3).  
-3. **Download MEI File** — download a rendered MEI file from Cartographer (see number 3 in Image 3).  
-4. **Show Page Overview** — display all imported images and add more images (see number 4 in Image 3).  
-5. **Toggle Measure List** — show or hide a list of all movements and measures in a sidebar (see number 5 in Image 3).  
+3. **Import Local Image** — import images directly from a folder on your computer (see number 3 in Image 3).  
+4. **Download MEI File** — download a rendered MEI file from Cartographer (see number 4 in Image 3).  
+5. **Show Page Overview** — display all imported images and add more images (see number 5 in Image 3).  
+6. **Toggle Measure List** — show or hide a list of all movements and measures in a sidebar (see number 6 in Image 3).  
 
 ![Header Menu Bar](images/menubar2.png)  
 *Image 3: Header Menu Bar*  
@@ -61,10 +62,28 @@ The sidebar contains the following tools:
 
 1. **Select Regions** — choose and adjust existing regions (see number 1 in Image 10).  
 2. **Draw Rectangles** — create new rectangular zones (see number 2 in Image 10).  
-3. **Add Measures to Zone** — insert additional measures within the same zone (see number 3 in Image 10).  
-4. **Erase Measures** — remove selected measures (see number 4 in Image 10).  
-5. **Automatic Measure Detection** — run the detector to identify measures automatically (see number 5 in Image 10).  
-6. **Page Navigation** — move between pages of the document (see number 6 in Image 10).  
+3. **Undo** — revert the last change (disabled when there is nothing to undo).  
+4. **Redo** — reapply a change that was undone (disabled when there is nothing to redo).  
+5. **Add Measures to Zone** — insert additional measures within the same zone (see number 3 in Image 10).  
+6. **Erase Measures** — remove selected measures (see number 4 in Image 10).  
+7. **Automatic Measure Detection** — run the detector to identify measures automatically (see number 5 in Image 10).  
+8. **Page Navigation** — move between pages of the document (see number 6 in Image 10).  
 
 ![Sidebar](images/menu_bar.png)  
 *Image 10: The Cartographer App sidebar*  
+
+---
+
+## Keyboard Shortcuts
+
+Editing modes and panels can be toggled with keyboard shortcuts. Shortcuts are
+ignored while you are typing in a text field.
+
+| Key | Action |
+| --- | --- |
+| `s` | Selection mode — select an existing measure |
+| `d` | Draw mode — draw a new measure zone |
+| `a` | Additional-zone mode — add another zone to the last measure |
+| `x` | Deletion mode — delete a measure |
+| `m` | Toggle the measure list |
+| `p` | Toggle the pages overview |
