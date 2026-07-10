@@ -118,6 +118,7 @@ export default {
   text-align: center;
   color: $fontColorDark;
   height: 100vh;
+  height: 100dvh; // track the actual visible height on mobile (collapsing toolbars)
   width: 100%;
   position: relative;
 }

@@ -8,6 +8,8 @@ const GH_CLIENT_SECRET = process.env.CLIENT_SECRET
 module.exports = {
   publicPath: '/myAppPlaceholder',
   devServer: {
+    host: '0.0.0.0',
+    allowedHosts: 'all',
     // Pin the dev server port so it matches the registered GitHub OAuth
     // callback URL (VUE_APP_CALL_BACK) exactly.
     port: 8080,
