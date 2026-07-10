@@ -67,7 +67,9 @@ jobs:
           workspaces: "./src-tauri -> target"
 
       - name: Install frontend dependencies
-        run: npm install
+        # The project has a known peer-dependency conflict (vue3-jest vs
+        # cli-plugin-unit-jest); the Dockerfile uses the same flag.
+        run: npm install --legacy-peer-deps
 
       - name: Build Tauri app
         run: npx tauri build ${{ matrix.args }}
