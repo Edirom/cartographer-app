@@ -1,5 +1,5 @@
 <template>
-  <header class="navbar appHeader">
+  <header v-if="!mobileLayout" class="navbar appHeader">
     <section class="navbar-section">
       <span class="navbar-brand mr-2">CartographerApp</span>
     </section>
@@ -15,6 +15,7 @@
 
 <script>
 import MainMenu from '@/components/MainMenu.vue'
+import { isMobileApp } from '@/tools/platform.js'
 // const xmlUri = 'testfile.xml'
 // 'https://digital.blb-karlsruhe.de/i3f/v20/6146583/manifest'
 // const manifestUri = 'https://api.beethovens-werkstatt.de/iiif/document/r24d1c005-acee-43a0-acfa-5dae796b7ec4/manifest.json' // 'https://iiif.bodleian.ox.ac.uk/iiif/manifest/644ee314-14a2-4006-9fe6-80eea1258a17.json'
@@ -25,7 +26,9 @@ export default {
     MainMenu
   },
   computed: {
-
+    mobileLayout: function () {
+      return isMobileApp()
+    }
   },
   methods: {
 

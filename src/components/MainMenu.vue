@@ -1,6 +1,6 @@
 <template>
   <div class="dropdown">
-    <a class="btn btn-action btn-sm dropdown-toggle" tabindex="1" title="menu" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+    <a class="btn btn-action dropdown-toggle" tabindex="1" title="menu" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
       <font-awesome-icon icon="fa-solid fa-bars"/>
       <!--<font-awesome-icon icon="fa-regular fa-images"/>-->
     </a >
@@ -36,18 +36,11 @@
         Import Local Image
       </li>
       <li class="menu-item">
-        <template v-if="downloadAvailable">
-          <a class="btn btn-action btn-sm" :href="xmlDataUrl()" target="_blank" title="download MEI file" :download="xmlFilename">
-            <font-awesome-icon icon="fa-solid fa-download"/>
-          </a>
-          Download MEI File
-        </template>
-        <template v-else>
-          <a class="btn btn-action btn-sm" :href="xmlDataUrl()" target="_blank" title="download MEI file" disabled :download="xmlFilename">
-            <font-awesome-icon icon="fa-solid fa-download"/>
-          </a>
-          Download MEI File
-        </template>
+        <button class="btn btn-action btn-sm" @click="downloadMei"
+          title="download MEI file" :disabled="!downloadAvailable">
+          <font-awesome-icon icon="fa-solid fa-download"/>
+        </button>
+        Download MEI File
       </li>
       <li class="divider" data-content="Actions"></li>
       <li class="menu-item">
@@ -80,6 +73,7 @@
 
 <script>
 import { mapGetters, mapActions } from 'vuex'
+import { isTauri } from '@/tools/platform.js'
 
 export default {
   name: 'MainMenu',
@@ -157,6 +151,39 @@ export default {
         return 'data:text/xml,' + encodeURIComponent(xml)
       }
       return '#'
+    },
+    // Save the current MEI document. The plain anchor/`data:` download does not
+    // work inside the Android WebView, so on any Tauri target we go through the
+    // native save dialog + filesystem plugins; on the web we fall back to a
+    // Blob download.
+    async downloadMei () {
+      const xml = this.$store.getters.meiFileForDownload
+      if (xml === null) return
+      if (isTauri()) {
+        try {
+          const { save } = await import('@tauri-apps/plugin-dialog')
+          const { writeTextFile } = await import('@tauri-apps/plugin-fs')
+          const path = await save({
+            defaultPath: this.xmlFilename,
+            filters: [{ name: 'MEI', extensions: ['xml'] }]
+          })
+          if (path) {
+            await writeTextFile(path, xml)
+          }
+        } catch (err) {
+          console.error('Failed to save MEI file:', err)
+        }
+      } else {
+        const blob = new Blob([xml], { type: 'application/xml' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = this.xmlFilename
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+      }
     },
     toggleMeasureList () {
       this.$store.dispatch('toggleMeasureList')

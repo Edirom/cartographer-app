@@ -1,5 +1,5 @@
 <template>
-  <div id="osdContainer" :class="{'fullWidth': !measureListVisible}"></div>
+  <div id="osdContainer" :class="{'fullWidth': !measureListVisible, 'mobile': isMobileLayout}"></div>
 </template>
 
 <script>
@@ -7,6 +7,7 @@ import OpenSeadragon from 'openseadragon'
 import * as Annotorious from '@recogito/annotorious-openseadragon'
 import '@recogito/annotorious-openseadragon/dist/annotorious.min.css'
 import { uuid } from '@/tools/uuid.js'
+import { isMobileApp } from '@/tools/platform.js'
 
 import { mode as allowedModes } from '@/store/constants.js'
 
@@ -34,6 +35,9 @@ export default {
     },
     measureListVisible: function () {
       return this.$store.getters.showMeasureList
+    },
+    isMobileLayout: function () {
+      return isMobileApp()
     }
   },
   methods: {
@@ -185,10 +189,78 @@ export default {
       if (this.anno) {
         this.anno.setDrawingEnabled(drawing)
       }
+    },
+    // Re-fit the image to the viewport after the container size changes (e.g.
+    // entering/leaving fullscreen on macOS). OpenSeadragon preserves the zoom
+    // level on resize, which otherwise leaves the image at its old size inside
+    // the now-larger container.
+    handleResize: function () {
+      if (!this.viewer) return
+      clearTimeout(this._resizeTimer)
+      this._resizeTimer = setTimeout(() => {
+        if (!this.viewer || !this.viewer.viewport) return
+        const container = this.viewer.container
+        if (container) {
+          this.viewer.viewport.resize(
+            new OpenSeadragon.Point(container.clientWidth, container.clientHeight),
+            false
+          )
+        }
+        this.viewer.viewport.goHome(true)
+        this.viewer.forceRedraw()
+      }, 120)
+    },
+    goToNextPage: function () {
+      const idx = this.$store.getters.currentPageIndexZeroBased
+      const max = this.$store.getters.maxPageNumber
+      if (idx + 1 < max) {
+        this.$store.dispatch('setCurrentPage', idx + 1)
+      }
+    },
+    goToPrevPage: function () {
+      const idx = this.$store.getters.currentPageIndexZeroBased
+      if (idx > 0) {
+        this.$store.dispatch('setCurrentPage', idx - 1)
+      }
+    },
+    // On mobile the image pan/zoom gestures are disabled; a horizontal swipe
+    // instead flips to the previous/next page. Vertical swipes and drawing
+    // gestures are ignored so annotation still works on touch devices.
+    setupSwipeNavigation: function () {
+      const el = document.getElementById('osdContainer')
+      if (!el) return
+      let startX = 0
+      let startY = 0
+      let startT = 0
+      this._onTouchStart = (e) => {
+        if (e.touches.length !== 1) return
+        startX = e.touches[0].clientX
+        startY = e.touches[0].clientY
+        startT = Date.now()
+      }
+      this._onTouchEnd = (e) => {
+        // Don't hijack swipes while a drawing tool is active.
+        if (this.isDrawingMode()) return
+        const touch = e.changedTouches[0]
+        if (!touch) return
+        const dx = touch.clientX - startX
+        const dy = touch.clientY - startY
+        const dt = Date.now() - startT
+        const isHorizontalSwipe = dt < 800 &&
+          Math.abs(dx) > 60 &&
+          Math.abs(dx) > Math.abs(dy) * 1.5
+        if (!isHorizontalSwipe) return
+        if (dx < 0) {
+          this.goToNextPage()
+        } else {
+          this.goToPrevPage()
+        }
+      }
+      el.addEventListener('touchstart', this._onTouchStart, { passive: true })
+      el.addEventListener('touchend', this._onTouchEnd, { passive: true })
     }
   },
-  mounted: function () {
-    this.viewer = OpenSeadragon({
+  mounted: function () {    this.viewer = OpenSeadragon({
       id: 'osdContainer',
       preserveViewport: false,
       visibilityRatio: 0.8,
@@ -220,6 +292,23 @@ export default {
     // Set the initial drawing state to match the current tool/mode.
     this.toggleSelection(this.mode)
 
+    // On mobile, disable OpenSeadragon's own touch pan/zoom gestures and use a
+    // horizontal swipe to navigate between pages instead.
+    if (this.isMobileLayout) {
+      Object.assign(this.viewer.gestureSettingsTouch, {
+        dragToPan: false,
+        pinchToZoom: false,
+        flickEnabled: false,
+        scrollToZoom: false,
+        clickToZoom: false,
+        dblClickToZoom: false
+      })
+      this.setupSwipeNavigation()
+    }
+
+    // Re-fit the image whenever the window/container is resized (e.g. macOS
+    // fullscreen toggle).
+    window.addEventListener('resize', this.handleResize)
 
     // Load annotations in W3C WebAnnotation format
     // anno.loadAnnotations('annotations.w3c.json');
@@ -349,6 +438,13 @@ export default {
     this.unwatchZonesOnCurrentPage()
     this.unwatchSelectedZone()
     this.unwatchMode()
+    window.removeEventListener('resize', this.handleResize)
+    clearTimeout(this._resizeTimer)
+    const el = document.getElementById('osdContainer')
+    if (el && this._onTouchStart) {
+      el.removeEventListener('touchstart', this._onTouchStart)
+      el.removeEventListener('touchend', this._onTouchEnd)
+    }
   }
 }
 </script>
@@ -366,6 +462,15 @@ $thickLineColor: #cccccc66; // #ffffff99;
 
   &.fullWidth {
     width: calc(100% - $appSidebarWidth);
+  }
+
+  // On mobile the toolbar sits in a horizontal bar at the top (not on the
+  // side) and the header is hidden, so the image area spans the full width and
+  // starts below the single top bar.
+  &.mobile {
+    width: 100%;
+    margin-top: calc(#{$mobileToolbarHeight} + env(safe-area-inset-top, 0px));
+    height: calc(100dvh - #{$mobileToolbarHeight} - #{$appFooterHeight} - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
   }
 
   float: left;

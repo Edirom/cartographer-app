@@ -8,9 +8,14 @@
       </div>
       <div class="modal-body">
         <div class="content">
-          <div v-if="!showSelectFolderModal">
-            <button class="btn btn-link" @click="testData()">Load test data</button>
-            <input type="file" id="mei-file-input" accept=".xml, .mei" />
+          <div v-if="!showSelectFolderModal" class="loadOptions">
+            <div class="loadRow">
+              <button class="btn btn-link" @click="testData()">Load test data</button>
+            </div>
+            <div class="loadRow">
+              <input v-if="!isTauriApp" type="file" id="mei-file-input" accept=".xml, .mei" />
+              <button v-else class="btn btn-primary" @click="main()">Upload MEI File</button>
+            </div>
           </div>
           <div v-else>
             <p>This MEI file contains local image references.</p>
@@ -36,6 +41,7 @@
 <script>
 
 import { convertLocalImagesToPages, sortImageFiles } from '@/tools/localImages.js'
+import { isTauri } from '@/tools/platform.js'
 
 const testUri = 'testfile.xml'
 
@@ -50,6 +56,9 @@ export default {
   components: {
   },
   computed: {
+    isTauriApp: function () {
+      return isTauri()
+    }
   },
   data() {
     return {
@@ -78,40 +87,68 @@ export default {
           this.closeModal()
         })
     },
-    main () {
+    async main () {
+      // Inside the Tauri app (notably Android) the HTML <input type="file"> +
+      // FileReader path does not reliably return the file's text in the
+      // WebView, which produced an empty parse (0 surfaces -> "1/0"). Use the
+      // native open dialog + filesystem plugins instead. The browser keeps the
+      // standard file input.
+      if (isTauri()) {
+        try {
+          const { open } = await import('@tauri-apps/plugin-dialog')
+          const { readTextFile } = await import('@tauri-apps/plugin-fs')
+          const selected = await open({
+            multiple: false,
+            directory: false,
+            filters: [{ name: 'MEI', extensions: ['xml', 'mei'] }]
+          })
+          if (!selected) return
+          const path = typeof selected === 'string' ? selected : selected.path
+          const xml = await readTextFile(path)
+          this.processMei(xml)
+        } catch (err) {
+          console.error('Failed to open MEI file:', err)
+        }
+        return
+      }
+
       const input = document.querySelector('#mei-file-input')
       const [file] = input.files
       if (file) {
         const reader = new FileReader()
         reader.addEventListener('load', () => {
-          const xml = reader.result
-          const mei = parser.parseFromString(xml, 'application/xml')
-          
-          // Get all graphic elements and check for local image targets
-          const graphicElements = mei.querySelectorAll('graphic')
-          const imageTargets = []
-          
-          graphicElements.forEach(graphic => {
-            const target = graphic.getAttribute('target')
-            if (target && !target.startsWith('http')) {
-              imageTargets.push(target)
-            }
-          })
-          
-          // If there are local images, show folder selection modal
-          if (imageTargets.length > 0) {
-            console.log('Local images found:', imageTargets)
-            this.currentMei = mei
-            this.localImageTargets = imageTargets
-            this.showSelectFolderModal = true
-          } else {
-            // No local images, proceed normally
-            console.log('No local images found')
-            this.$store.dispatch('setData', mei)
-            this.closeModal()
-          }
+          this.processMei(reader.result)
         })
         reader.readAsText(file)
+      }
+    },
+    // Parse the MEI text and route to local-image folder selection or straight
+    // to loading, depending on whether the graphics reference local files.
+    processMei (xml) {
+      const mei = parser.parseFromString(xml, 'application/xml')
+
+      // Get all graphic elements and check for local image targets
+      const graphicElements = mei.querySelectorAll('graphic')
+      const imageTargets = []
+
+      graphicElements.forEach(graphic => {
+        const target = graphic.getAttribute('target')
+        if (target && !target.startsWith('http')) {
+          imageTargets.push(target)
+        }
+      })
+
+      // If there are local images, show folder selection modal
+      if (imageTargets.length > 0) {
+        console.log('Local images found:', imageTargets)
+        this.currentMei = mei
+        this.localImageTargets = imageTargets
+        this.showSelectFolderModal = true
+      } else {
+        // No local images, proceed normally
+        console.log('No local images found')
+        this.$store.dispatch('setData', mei)
+        this.closeModal()
       }
     },
     selectImagesFolder() {
@@ -259,6 +296,11 @@ export default {
 
 .modal.modal-sm .modal-container {
   max-width: 360px;
+}
+
+.loadOptions .loadRow {
+  display: block;
+  margin-bottom: .8rem;
 }
 
 .modal-container .modal-body {

@@ -22,6 +22,8 @@
     "@fortawesome/vue-fontawesome": "^3.0.1",
     "@octokit/rest": "^19.0.7",
     "@recogito/annotorious-openseadragon": "^2.7.6",
+    "@tauri-apps/plugin-dialog": "^2.7.1",
+    "@tauri-apps/plugin-fs": "^2.5.1",
     "core-js": "^3.6.5",
     "js-base64": "^3.7.5",
     "octokit": "^2.0.14",
