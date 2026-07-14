@@ -8,7 +8,7 @@
             <font-awesome-icon icon="fa-solid fa-sitemap" /> {{ mdivLabel }}
           </span>
         </div>
-        <div class="column col-4">
+        <div class="column col-4" v-if="!mobileLayout">
           <span @click="showPrevPage" :disabled="!prevAvailable">
             <font-awesome-icon icon="fa-solid fa-angle-left" />
           </span>
@@ -17,6 +17,9 @@
             <font-awesome-icon icon="fa-solid fa-angle-right" />
           </span>
           <button class="ml-2 btn jumpBtn" @click="jumpToPage()">Go</button>
+        </div>
+        <div class="column col-4 pageCount" v-else>
+          {{ currentPage }} / {{ maxPage }}
         </div>
         <div class="column col-3">
           zones: {{ zonesCount }}
@@ -31,6 +34,7 @@
 </template>
 
 <script>
+import { isMobileApp } from '@/tools/platform.js'
 
 export default {
   name: 'AppFooter',
@@ -43,14 +47,14 @@ export default {
     }
   },
   computed: {
+    mobileLayout: function () {
+      return isMobileApp()
+    },
     currentPage: function () {
       return this.$store.getters.currentPageIndexOneBased
     },
     maxPage: function () {
       return this.$store.getters.maxPageNumber
-    },
-    isReady: function () {
-      return this.$store.getters.isReady
     },
     isLoading: function () {
       return this.$store.getters.isLoading
