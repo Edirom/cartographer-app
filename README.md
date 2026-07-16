@@ -9,14 +9,33 @@
 The Cartographer App is used to provide placement information of zones of interest
 in (historical) documents. The first and foremost use case is the identification
 of bounding boxes of measures in music documents. It is a successor of the
-*Vertaktoid*, but other than that uses web technology and is thus platform
-independent. It optionally uses the *Measure Detector* for automatic recognition
-of measure positions, but allows manual correction of these results.
+*Vertaktoid*, but other than that is built on web technologies (Vue.js) and is
+thus [platform independent](#platform-independence). It optionally uses the
+*Measure Detector* for automatic recognition of measure positions, but allows
+manual correction of these results.
+
+## Platform Independence
+
+The Cartographer App is platform independent in the sense that a single,
+web-based codebase runs on any operating system — there are no separate,
+platform-specific implementations to maintain. From this one codebase, the
+app can be delivered through three channels:
+
+* **Browser**: used directly in any modern web browser, with no installation
+  required
+* **Web service**: deployed as a containerized service (Docker) and hosted
+  by an institution for its users
+* **Native application**: packaged via the Tauri integration as an
+  installable application for Windows, macOS, Linux, and Android — e.g., for
+  offline use or for environments where locally installed software is
+  preferred
 
 ## Features
 
 ### Image Import
+
 The Cartographer App supports importing images from multiple sources:
+
 * **Local Images**: Import images directly from your local file system
 * **IIIF**: Load images from IIIF servers for standardized access to cultural heritage materials
 * **Git Repositories**: Load MEI files with associated images from Git repositories
@@ -31,6 +50,7 @@ available at: https://cartographer-app.zenmem.de/docs/
 * Vectre, which is a VueJS version of Spectre CSS. See https://vectrejs.github.io/docs/#/pages/getting-started
 * OpenSeadragon. See http://openseadragon.github.io/
 * Annotorious OpenSeadragon Plugin. See https://recogito.github.io/annotorious/getting-started/osd-plugin/
+* Tauri, used to package the app as a native desktop application. See https://tauri.app/
 
 ## Prerequisites
 
@@ -39,68 +59,109 @@ available at: https://cartographer-app.zenmem.de/docs/
 ## Project setup
 
 ### Clone the Repository
+
 ```bash
 git clone https://github.com/Edirom/cartographer-app.git
 cd cartographer-app
 ```
 
 ### Install Dependencies
+
 ```bash
 npm install
 ```
 
 If you encounter peer dependency errors, use:
+
 ```bash
 npm install --legacy-peer-deps
 ```
 
 For a complete fresh install, try:
+
 ```bash
 rm -rf node_modules package-lock.json
 npm install --legacy-peer-deps
 ```
 
 ### Compiles and hot-reloads for development
+
 ```
 npm run serve
 ```
 
 ### Compiles and minifies for production
+
 ```
 npm run build
 ```
 
 ### Run your unit tests
+
 ```
 npm run test:unit
 ```
 
 ### Lints and fixes files
+
 ```
 npm run lint
 ```
 
-### Other approaach to linting which automatically fixes code and gives a nicer rendition of errors using snazzy
+### Other approach to linting which automatically fixes code and gives a nicer rendition of errors using snazzy
+
 ```
 npm run test:lint
 ```
 
 ### Customize configuration
+
 See [Configuration Reference](https://cli.vuejs.org/config/).
 
-### Biuld your image 
+## Docker
+
+### Build your image
+
 Replace **`cartographer`** with your preferred image name.
+
 ```
 docker build -t cartographer .
-
 ```
 
-### Run 
+### Run
 
 Replace **demo** with your desired subpath.
 
 Replace **cartographer** with the image name you used when building.
+
 ```
 docker run --rm -p 8080:80 -e VUE_APP_PUBLIC_PATH=/demo cartographer
 ```
 
+## Native Applications (Tauri)
+
+The repository includes a Tauri setup (`src-tauri`) that wraps the web
+application into native applications for Windows, macOS, Linux, and Android.
+
+To run the desktop app in development mode:
+
+```bash
+npx tauri dev
+```
+
+To build a distributable desktop application:
+
+```bash
+npx tauri build
+```
+
+To run and build the Android app:
+
+```bash
+npx tauri android dev
+npx tauri android build
+```
+
+See the [Tauri documentation](https://tauri.app/) for platform-specific
+prerequisites (e.g., Rust toolchain, system dependencies, and for Android
+the Android SDK/NDK).
