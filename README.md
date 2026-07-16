@@ -14,6 +14,13 @@ thus [platform independent](#platform-independence). It optionally uses the
 *Measure Detector* for automatic recognition of measure positions, but allows
 manual correction of these results.
 
+## Used by
+
+The Cartographer App is used by historical digital edition projects,
+including but not limited to:
+
+* [VerDigital](https://verdigital-unipv.github.io/) — a model for an interactive digital critical edition of Italian 19th-century opera (University of Pavia)
+
 ## Platform Independence
 
 The Cartographer App is platform independent in the sense that a single,
