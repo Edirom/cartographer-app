@@ -31,6 +31,4 @@ pnpm-debug.log*
 
 # Ignore processed config files
 docs/.vuepress/config.js.*
-
-# Tauri generated schemas (regenerated on every build)
-src-tauri/gen/schemas
+src-tauri/gen
