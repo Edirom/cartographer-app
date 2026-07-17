@@ -305,6 +305,17 @@ export default {
     this.unwatchPages = this.$store.watch((state, getters) => getters.pages,
       (newArr, oldArr) => {
         console.log('Pages changed in OsdComponent, count:', newArr.length)
+        if (!newArr || newArr.length === 0) {
+          // Reset / no pages loaded: tear down the currently displayed image.
+          // viewer.open([]) does NOT clear an already-open image, so close it
+          // explicitly and remove any zone overlays / annotations.
+          this.viewer.clearOverlays()
+          if (this.anno) {
+            this.anno.clearAnnotations()
+          }
+          this.viewer.close()
+          return
+        }
         this.viewer.open(newArr)
         this.$store.dispatch('setCurrentPage', 0)
       })
