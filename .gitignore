@@ -33,3 +33,4 @@ pnpm-debug.log*
 
 # Ignore processed config files
 docs/.vuepress/config.js.*
+.src-tauri/gen
