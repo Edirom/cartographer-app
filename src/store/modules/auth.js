@@ -157,7 +157,7 @@ export default {
       // endpoint has no CORS support, so we call a same-origin /auth path that
       // nginx (or the dev proxy) forwards to GitHub with the client_id and
       // client_secret injected server-side — the secret never reaches the browser.
-      const res = await fetch(`/auth?code=${encodeURIComponent(code)}`, {
+      const res = await fetch(`${process.env.BASE_URL}auth?code=${encodeURIComponent(code)}`, {
         headers: { Accept: 'application/json' },
       })
       if (!res.ok) {
