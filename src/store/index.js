@@ -423,7 +423,8 @@ export default createStore({
 
       saveToHistory(state)
       const xmlDoc = state.xmlDoc.cloneNode(true);
-      const measure = xmlDoc.querySelector(`measure[xml\\:id="${state.currentMeasureId}"]`);
+      const measure = [...xmlDoc.querySelectorAll('measure')]
+        .find(m => m.getAttribute('xml:id') === state.currentMeasureId);
       if (!measure) return;
 
       if (val == null || val === '') {
