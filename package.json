@@ -22,7 +22,7 @@
     "@octokit/rest": "^22.0.1",
     "@recogito/annotorious-openseadragon": "^2.7.6",
     "core-js": "^3.49.0",
-    "openseadragon": "^3.0.0",
+    "openseadragon": "^6.0.2",
     "snazzy": "^9.0.0",
     "spectre.css": "^0.5.9",
     "standard": "^17.0.0",
