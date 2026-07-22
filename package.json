@@ -47,7 +47,7 @@
     "jest": "^30.4.2",
     "sass": "^1.26.5",
     "sass-loader": "^8.0.2",
-    "ts-jest": "^27.1.5",
+    "ts-jest": "^29.4.12",
     "vuepress": "^2.0.0-rc.23"
   },
   "overrides": {
