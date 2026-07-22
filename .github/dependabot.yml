@@ -1,0 +1,41 @@
+version: 2
+updates:
+  # Frontend / app dependencies (root package.json)
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    groups:
+      # Batch low-risk dev-tooling bumps into a single PR to reduce noise.
+      dev-dependencies:
+        dependency-type: development
+        update-types:
+          - minor
+          - patch
+
+  # Documentation site dependencies (docs/package.json)
+  - package-ecosystem: npm
+    directory: "/docs"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+
+  # Rust / Tauri backend
+  - package-ecosystem: cargo
+    directory: "/src-tauri"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+
+  # GitHub Actions workflow pins
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+
+  # Container base image
+  - package-ecosystem: docker
+    directory: "/"
+    schedule:
+      interval: weekly
