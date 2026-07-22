@@ -30,7 +30,7 @@ Select **"Upload MEI File"** to import an MEI XML file.
    - **"Load Test Data"** → imports the sample dataset provided with Cartographer.  
    - **"Choose File"** → opens a dialog to select a file from your computer.  
 
-   ![Import image window](images/load_mei.png)  
+   ![Import image window](./images/load_mei.png)  
    *Image 1: Import MEI dialog*  
 
 3. Click **"Load"** to import the file.  
@@ -61,7 +61,7 @@ When you select **"Import IIIF Manifest"**, a dialog appears:
    - **"Get Test URI"** → use the sample manifest provided with Cartographer.  
    - **"Paste Your URI"** → enter your own IIIF manifest URI in the input field.  
 
-   ![Import IIIF Manifest](images/IIIF_Import.png)  
+   ![Import IIIF Manifest](./images/IIIF_Import.png)  
    *Image 2: Import IIIF Manifest dialog*  
 
 3. Click **"Import"** to load the images.  
@@ -78,10 +78,10 @@ Click **"Download MEI File"** in the header menu to save the current MEI file to
 Click **"Page Overview"** in the header menu to display a list of all pages with detailed information.  
 This view also contains a button to copy and paste a IIIF manifest (**"Import Images"**).  
 
-![Page Overview](images/imagelist.png)  
+![Page Overview](./images/imagelist.png)  
 *Image 3: Page Overview*  
 
-![Import Images](images/importImages.png)  
+![Import Images](./images/importImages.png)  
 *Image 4: Import Images*  
 
 ---
@@ -89,7 +89,7 @@ This view also contains a button to copy and paste a IIIF manifest (**"Import Im
 ## Toggle Measure List
 Click **"Toggle Measure List"** in the header menu to show or hide the list of musical measures next to the right toolbar.  
 
-![Toggle Measures](images/tougleMeasure.png)  
+![Toggle Measures](./images/tougleMeasure.png)  
 *Image 5: Toggle Measure List*  
 
 ---
@@ -98,12 +98,12 @@ Click **"Toggle Measure List"** in the header menu to show or hide the list of m
 Click **"Select"** (pointer icon) to choose and adjust existing regions. (See number 1 in image 6) 
  
 ---
-![Menu bar actions](images/menu_bar.png) 
+![Menu bar actions](./images/menu_bar.png) 
 *Image 6: Menu bar actions*
 
 
 
-![Menu bar actions](images/footer.png) 
+![Menu bar actions](./images/footer.png) 
 *Image 7: Footer actions*
 
 ## Drawing Measures
@@ -141,7 +141,7 @@ To jump to a specific page, type the page number in the footer’s input box and
 Double click a measure where you want to start a new movement.  
 From the dropdown, select **"new-mdiv"**, then click **"Close"** to confirm.  (See image 8)
 
-![New Movement](images/newMdiv.png)
+![New Movement](./images/newMdiv.png)
 *Image 8: Create New Movement*  
 
 ---
@@ -150,7 +150,7 @@ From the dropdown, select **"new-mdiv"**, then click **"Close"** to confirm.  (S
 Double click the measure you want to edit.  
 Enable **"Explicit @label"**, type the new label, and click **"Close"**.  (See image 9)
 
-![Change Measure Label](images/editMeasure.png) 
+![Change Measure Label](./images/editMeasure.png) 
 *Image 9: Change Measure Label*  
 
 ---
@@ -159,7 +159,7 @@ Enable **"Explicit @label"**, type the new label, and click **"Close"**.  (See i
 Enable **"Multiple Measure Rest"**.  
 Enter the number of measures in the input box, then click **"Close"**.  (See image 10)
 
-![Multiple Measure Rest](images/multipleRest.png)
+![Multiple Measure Rest](./images/multipleRest.png)
 *Image 10: Multiple Measure Rest*
 
 ---
@@ -169,7 +169,7 @@ Click the **"Movement"** button in the lower left corner of the footer.  (See nu
 Edit the movement name in the input box.  (See Image 11)
 When finished, click **"Close"**.  
 
-![Change Movement Label](images/editMovement.png)
+![Change Movement Label](./images/editMovement.png)
 *Image 11: Change Movement Label*  
 
 ## Change Movement
@@ -181,5 +181,5 @@ From this window, choose the movement to which the selected measure should belon
 - If the current movement is **before** the new one, the measure and all following measures will be reassigned.  
 - If the current movement is **after** the new one, the measure and all previous measures will be reassigned.  
 
-![Change Movement Window](images/changeMovement.png)  
+![Change Movement Window](./images/changeMovement.png)  
 *Image 12: Change Movement Window*  
