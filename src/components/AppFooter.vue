@@ -79,13 +79,17 @@ export default {
   },
   methods: {
     showPrevPage: function () {
-      this.currentPage = this.currentPage - 1
-      this.$store.dispatch('setCurrentPage', this.$store.getters.currentPageIndexZeroBased - 1)
-      this.$store.dispatch('setCurrentPageZone', this.$store.getters.zonesOnCurrentPage.length)
+      const prev = this.$store.getters.currentPageIndexZeroBased - 1
+      if (prev >= 0) {
+        this.$store.dispatch('setCurrentPage', prev)
+        this.$store.dispatch('setCurrentPageZone', this.$store.getters.zonesOnCurrentPage.length)
+      }
     },
     showNextPage: function () {
-      this.currentPage = this.currentPage + 1
-      this.$store.dispatch('setCurrentPage', this.$store.getters.currentPageIndexZeroBased + 1)
+      const next = this.$store.getters.currentPageIndexZeroBased + 1
+      if (next < this.$store.getters.maxPageNumber) {
+        this.$store.dispatch('setCurrentPage', next)
+      }
     },
     showMdivModal: function () {
       this.$store.dispatch('toggleMdivModal')
@@ -112,8 +116,9 @@ export default {
 .appFooter {
   position: absolute;
   bottom: 0;
-  height: $appFooterHeight;
-  width: 100vw;
+  height: calc(#{$appFooterHeight} + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  width: 100%;
   background-color: $appColor;
   border-top: $thickBorder;
   box-sizing: border-box;
@@ -149,5 +154,57 @@ export default {
       height: 1rem;
       margin: 0 .2rem;
     }
+}
+
+// Small screens (phones): keep the footer on a single row and make its
+// contents fit instead of overflowing / being clipped.
+@media (max-width: 599px) {
+  .appFooter {
+    font-size: .6rem;
+
+    .container,
+    .columns {
+      flex-wrap: nowrap;
+      align-items: center;
+      height: 100%;
+    }
+
+    .column {
+      padding-left: 2px;
+      padding-right: 2px;
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    // The mdiv label is supplementary (also reachable via the mdiv modal),
+    // so let it shrink/truncate first to give the page navigation room.
+    .col-4.text-left {
+      flex: 0 1 auto;
+      width: auto;
+    }
+
+    // Page navigation and zone count keep their natural width (most useful);
+    // the progress column absorbs any remaining space.
+    .col-4:not(.text-left),
+    .col-3 {
+      flex: 0 0 auto;
+      width: auto;
+    }
+
+    .col-1 {
+      flex: 1 1 auto;
+      width: auto;
+    }
+
+    .pageInput {
+      width: 1.4rem;
+    }
+
+    .jumpBtn {
+      margin: 0 .1rem;
+    }
+  }
 }
 </style>
