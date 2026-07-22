@@ -1,5 +1,5 @@
 # ---- 1) Base build stage ----
-FROM node:20-alpine AS base
+FROM node:26-alpine AS base
 WORKDIR /app
 
 # Install deps first (cache-friendly)
