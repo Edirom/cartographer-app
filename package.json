@@ -21,7 +21,7 @@
     "@fortawesome/vue-fontawesome": "^3.0.1",
     "@octokit/rest": "^22.0.1",
     "@recogito/annotorious-openseadragon": "^2.7.6",
-    "core-js": "^3.6.5",
+    "core-js": "^3.49.0",
     "openseadragon": "^3.0.0",
     "snazzy": "^9.0.0",
     "spectre.css": "^0.5.9",
