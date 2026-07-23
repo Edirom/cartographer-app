@@ -6,17 +6,6 @@
     </a >
     <ul class="menu mainMenu">
       <li class="divider" data-content="User"></li>
-
-      <!--<li class="menu-item">
-        <a href="#">
-          <i class="icon icon-refresh"></i> Fetch updates
-        </a>
-      </li>
-      <li class="menu-item">
-        <a href="#">
-          <i class="icon icon-upload"></i> Commit changes
-        </a>
-      </li>-->
         <li class="menu-item">
         <button class="btn btn-action btn-sm" @click="importXML" title="load MEI file">
           <font-awesome-icon icon="fa-solid fa-file"/> 
@@ -35,6 +24,18 @@
         </button>
         Import Local Image
       </li>
+      <li class="menu-item" v-if="!isAuthenticated">
+        <button class="btn btn-action btn-sm" @click="loginToGithub" title="Login with GitHub">
+          <font-awesome-icon icon="fa-solid fa-user"/>
+        </button>
+        Login with GitHub
+      </li>
+      <li class="menu-item" v-if="isAuthenticated">
+        <button class="btn btn-action btn-sm" @click="loadFromGithub" title="Load from GitHub">
+          <font-awesome-icon icon="fa-solid fa-cloud-arrow-down"/>
+        </button>
+        Load from GitHub
+      </li>
       <li class="menu-item">
         <template v-if="downloadAvailable">
           <a class="btn btn-action btn-sm" :href="xmlDataUrl()" target="_blank" title="download MEI file" :download="xmlFilename">
@@ -49,6 +50,15 @@
           Download MEI File
         </template>
       </li>
+      <template v-if="githubFile">
+        <li class="divider" :data-content="githubBranchLabel"></li>
+        <li class="menu-item">
+          <button class="btn btn-action btn-sm" @click="commitToGithub" title="Commit to GitHub">
+            <font-awesome-icon icon="fa-solid fa-code-commit"/>
+          </button>
+          Commit to GitHub
+        </li>
+      </template>
       <li class="divider" data-content="Actions"></li>
       <li class="menu-item">
         <button class="btn btn-action btn-sm" @click="showPagesModal" title="Show Page Overview">
@@ -89,19 +99,6 @@ export default {
 
   },
   computed: {
-    ...mapGetters({
-      accessToken: 'accessToken',
-      directories: 'directories',
-      selectedDirectory: state => state.selectedDirectory // Define a getter function for selectedDirectory
-    }),
-    selectedDirectory: {
-      set (val) {
-        selectedDirectory: ''
-      },
-      get(){
-
-      }
-    },
     manifest: function () {
       return this.$store.getters.manifest
     },
@@ -112,41 +109,45 @@ export default {
     downloadAvailable: function () {
       return this.$store.getters.meiFileForDownload !== null
     },
-    isLoggedin: function (){
-      return this.$store.getters.getLoginStatus !== false
-    },
     firstMeasureWithoutZone: function () {
       return this.$store.getters.firstMeasureWithoutZone
     },
     existingMusicMode: function () {
       return this.$store.getters.existingMusicMode
     },
-    getUserName: function (){
-      console.log("this is the log in data " + this.$store.getters.getUserName)
-      return this.$store.getters.getUserName
-    }
+    isAuthenticated: function () {
+      return this.$store.getters['auth/isAuthenticated']
+    },
+    githubFile: function () {
+      return this.$store.getters.githubFile
+    },
+    selectedBranch: function () {
+      return this.$store.getters['auth/selectedBranch']
+    },
+    githubBranchLabel: function () {
+      const branch = (this.githubFile && this.githubFile.branch) ||
+        (this.selectedBranch && this.selectedBranch.name)
+      return branch ? 'GitHub · ' + branch : 'GitHub'
+    },
   },
   methods: {
-    ...mapActions([
-      'fetchDirectories',
-    ]),
     importXML: function () {
       this.$store.dispatch('toggleLoadXMLModal')
-    },
-    loginGithub: function (){
-      this.$store.dispatch('login')
-    },
-    logoutGithub: function (){
-      this.$store.dispatch('logout')
-    },
-    commitGithub: function (){
-      this.$store.dispatch('commitGithub')
     },
     importManifest: function () {
       this.$store.dispatch('toggleLoadIIIFModal')
     },
     importLocalImage: function () {
       this.$store.dispatch('toggleLoadLocalImage')
+    },
+    loadFromGithub: function () {
+      this.$store.dispatch('toggleLoadGitModal')
+    },
+    loginToGithub: function () {
+      this.$store.dispatch('auth/login')
+    },
+    commitToGithub: function () {
+      this.$store.dispatch('toggleCommitModal')
     },
     getUsername: function () {
       this.$store.state.username;
@@ -168,41 +169,9 @@ export default {
       if (this.firstMeasureWithoutZone !== null) {
         this.$store.dispatch('toggleExistingMusicMode')
       }
-      },
-      getOwner: function(){
-        console.log(this.$store.getters.getOwner )
-        return this.$store.state.owner
-
-    }
-  }
-  // async handleLogin() {
-  //     try {
-  //       const { data } = await axios.post('/api/github/login');
-  //       window.location = data.redirectUrl;
-  //     } catch (error) {
-  //       console.error(error);
-  //     }
-  //   },
-  //   async handleAuth() {
-  //     const code = new URLSearchParams(window.location.search).get('code');
-  //     if (code) {
-  //       try {
-  //         const { data } = await axios.post('/api/github/token', { code });
-  //         this.$store.commit('setAccessToken', data.accessToken);
-  //         this.fetchDirectories();
-  //       } catch (error) {
-  //         console.error(error);
-  //       }
-  //     }
-  //   },
-  //   async created() {
-  //   await this.handleAuth();
-  // }  
-
-   }
-
-
-
+    },
+  },
+}
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
