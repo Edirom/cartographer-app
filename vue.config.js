@@ -1,9 +1,8 @@
-
 // Dev-only OAuth token-exchange credentials. These are read here in the Node
-// dev-server process and never inlined into the client bundle (CLIENT_SECRET is
-// intentionally NOT prefixed with VUE_APP_, so Vue CLI does not expose it).
+// dev-server process and never inlined into the client bundle (GH_APP_CLIENT_SECRET
+// is intentionally NOT prefixed with VUE_APP_, so Vue CLI does not expose it).
 const GH_CLIENT_ID = process.env.VUE_APP_CLIENT_ID
-const GH_CLIENT_SECRET = process.env.CLIENT_SECRET
+const GH_CLIENT_SECRET = process.env.GH_APP_CLIENT_SECRET
 
 // When building/serving inside Tauri, the app is served from the origin root,
 // so assets must resolve from "/". Tauri sets TAURI_ENV_PLATFORM during the

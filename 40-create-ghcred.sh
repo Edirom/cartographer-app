@@ -2,17 +2,17 @@
 set -e
 
 # Accept empty = root
-VUE_APP_PUBLIC_PATH="${VUE_APP_PUBLIC_PATH:-}"
+APP_PUBLIC_PATH="${APP_PUBLIC_PATH:-}"
 
 # Normalize: allow "", "/" (root) or "/subpath"
-case "$VUE_APP_PUBLIC_PATH" in
+case "$APP_PUBLIC_PATH" in
   ""|"/") NORMALIZED_PATH="/" ;;   # empty or "/" means root
-  /*)     NORMALIZED_PATH="${VUE_APP_PUBLIC_PATH%/}" ;;  # already starts with / but strip off trailing /
-  *)      NORMALIZED_PATH="/${VUE_APP_PUBLIC_PATH%/}" ;; # prepend / and strip off trailing /
+  /*)     NORMALIZED_PATH="${APP_PUBLIC_PATH%/}" ;;  # already starts with / but strip off trailing /
+  *)      NORMALIZED_PATH="/${APP_PUBLIC_PATH%/}" ;; # prepend / and strip off trailing /
 esac
 
 
-echo "Using VUE_APP_PUBLIC_PATH='${VUE_APP_PUBLIC_PATH}' (normalized='${NORMALIZED_PATH}')"
+echo "Using APP_PUBLIC_PATH='${APP_PUBLIC_PATH}' (normalized='${NORMALIZED_PATH}')"
 
 # Create symlink for subpath so /demo works by pointing to /
 if [ "$NORMALIZED_PATH" != "/" ]; then
@@ -25,22 +25,22 @@ PLACEHOLDER="/myAppPlaceholder"          # ensures single trailing slash
 
 # ---- Step 1: GitHub OAuth values (from env) ----
 # Pass these at docker run time:
-#   -e VUE_APP_CLIENT_ID=your_client_id
-#   -e CLIENT_SECRET=your_client_secret
-#   -e VUE_APP_CALL_BACK=http://localhost:8080/myAppPlaceholder/callback
+#   -e GH_APP_CLIENT_ID=your_client_id
+#   -e GH_APP_CLIENT_SECRET=your_client_secret
+#   -e GH_APP_CALL_BACK=http://localhost:8080/myAppPlaceholder/callback
 # Using /myAppPlaceholder in the callback URL allows the PUBLIC_PATH replacement
 # below to rewrite it to the actual subpath automatically.
-GH_CLIENT_ID="${VUE_APP_CLIENT_ID:-}"
-GH_CLIENT_SECRET="${CLIENT_SECRET:-}"
-GH_CALLBACK_URL="${VUE_APP_CALL_BACK:-}"
+GH_CLIENT_ID="${GH_APP_CLIENT_ID:-}"
+GH_CLIENT_SECRET="${GH_APP_CLIENT_SECRET:-}"
+GH_CALLBACK_URL="${GH_APP_CALL_BACK:-}"
 
 # Runtime nginx variables consumed by nginx.conf (PUBLIC_PATH + OAuth creds).
 # The client secret lives only inside the container here — never in the SPA.
 cat > /GH_OAUTH_CLIENT.conf <<EOT
-set \$PUBLIC_PATH $NORMALIZED_PATH;
-set \$CLIENT_ID $GH_CLIENT_ID;
-set \$CLIENT_SECRET $GH_CLIENT_SECRET;
-set \$CALLBACK_URL $GH_CALLBACK_URL;
+set \$PUBLIC_PATH "$NORMALIZED_PATH";
+set \$CLIENT_ID "$GH_CLIENT_ID";
+set \$CLIENT_SECRET "$GH_CLIENT_SECRET";
+set \$CALLBACK_URL "$GH_CALLBACK_URL";
 EOT
 
 CLIENT_ID_PREFIX=$(printf '%.4s' "$GH_CLIENT_ID")
