@@ -80,7 +80,7 @@ npm run test:unit
 npm run lint
 ```
 
-### Other approaach to linting which automatically fixes code and gives a nicer rendition of errors using snazzy
+### Other approach to linting which automatically fixes code and gives a nicer rendition of errors using snazzy
 ```
 npm run test:lint
 ```
@@ -88,14 +88,19 @@ npm run test:lint
 ### Customize configuration
 See [Configuration Reference](https://cli.vuejs.org/config/).
 
-### Biuld your image 
+## Docker Deployment
+
+All deployment-specific configuration (subpath, imprint) is injected at
+**runtime** via environment variables — the same image works for any host,
+subpath, and institution.
+
+### Build your image
 Replace **`cartographer`** with your preferred image name.
 ```
 docker build -t cartographer .
-
 ```
 
-### Run 
+### Run
 
 Replace **demo** with your desired subpath.
 
@@ -104,3 +109,43 @@ Replace **cartographer** with the image name you used when building.
 docker run --rm -p 8080:80 -e VUE_APP_PUBLIC_PATH=/demo cartographer
 ```
 
+### Configuring the imprint
+
+The About dialog shows an imprint. By default this is the ZenMEM / Paderborn
+University imprint. Institutions hosting their own instance can (and should)
+replace it with their own details at runtime — no rebuild required:
+
+```
+docker run --rm -p 8080:80 \
+  -e VUE_APP_PUBLIC_PATH=/demo \
+  -e APP_IMPRINT_INSTITUTION='' \
+  -e APP_IMPRINT_STREET='' \
+  -e APP_IMPRINT_ZIP='' \
+  -e APP_IMPRINT_CITY='' \
+  -e APP_IMPRINT_COUNTRY='' \
+  -e APP_IMPRINT_CONTACT_PERSON='' \
+  -e APP_IMPRINT_EMAIL='' \
+  -e APP_IMPRINT_PHONE='' \
+  -e APP_IMPRINT_LINK='' \
+  cartographer
+```
+
+All imprint variables are optional and independent: set only the ones you need
+(fields left unset are simply not displayed). If **none** of them is set, the
+built-in default imprint is shown. `APP_IMPRINT_LINK` can also be used on its
+own to point to an institution's existing imprint page.
+
+### Environment variables
+
+| Variable | Description |
+|---|---|
+| `VUE_APP_PUBLIC_PATH` | Subpath the app is served under (e.g. `/demo`). Defaults to `/`. |
+| `APP_IMPRINT_INSTITUTION` | Institution name shown in the imprint. |
+| `APP_IMPRINT_STREET` | Street and number. |
+| `APP_IMPRINT_ZIP` | Postal code. |
+| `APP_IMPRINT_CITY` | City. |
+| `APP_IMPRINT_COUNTRY` | Country. |
+| `APP_IMPRINT_CONTACT_PERSON` | Contact person's name. |
+| `APP_IMPRINT_EMAIL` | Contact e-mail address (rendered as a mailto link). |
+| `APP_IMPRINT_PHONE` | Phone number (rendered as a tel link). |
+| `APP_IMPRINT_LINK` | URL of a full imprint page (rendered as "Full imprint" link). |

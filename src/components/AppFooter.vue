@@ -3,18 +3,28 @@
 
     <div class="container gapless oneline">
       <div class="columns">
-        <div class="column col-5 text-left">
+        <div class="column col-3 text-left">
           <span @click="showMdivModal" v-if="mdivLabel !== ''">
             <font-awesome-icon icon="fa-solid fa-sitemap" /> {{ mdivLabel }}
           </span>
         </div>
+        <div class="column col-4">
+          <span @click="showPrevPage" :disabled="!prevAvailable">
+            <font-awesome-icon icon="fa-solid fa-angle-left" />
+          </span>
+          <input type="text" class="ml-2 input pageInput" v-model="inputPage" v-on:keyup.enter="jumpToPage()" :placeholder="currentPage"/> / {{ maxPage }}
+          <span @click="showNextPage" :disabled="!nextAvailable">
+            <font-awesome-icon icon="fa-solid fa-angle-right" />
+          </span>
+          <button class="ml-2 btn jumpBtn" @click="jumpToPage()">Go</button>
+        </div>
         <div class="column col-2">
           zones: {{ zonesCount }}
         </div>
-        <div class="column col-2">
+        <div class="column col-1">
           <progress v-if="isLoading" class="progress" max="100"></progress>
         </div>
-        <div class="column col-3 text-right footerBrand">
+        <div class="column col-2 text-right footerBrand">
           <span class="aboutLink" title="About Cartographer" @click="showAbout">
             <font-awesome-icon icon="fa-solid fa-circle-info" /> <span>About</span>
           </span>
@@ -34,16 +44,33 @@ export default {
   components: {
 
   },
+  data: function () {
+    return {
+      inputPage: ''
+    }
+  },
   computed: {
     docsUrl: function () {
       // Derive the docs URL from the current host (e.g. https://host/docs).
       return window.location.origin + '/docs'
+    },
+    currentPage: function () {
+      return this.$store.getters.currentPageIndexOneBased
+    },
+    maxPage: function () {
+      return this.$store.getters.maxPageNumber
     },
     isReady: function () {
       return this.$store.getters.isReady
     },
     isLoading: function () {
       return this.$store.getters.isLoading
+    },
+    prevAvailable: function () {
+      return this.$store.getters.currentPageIndexZeroBased > 0
+    },
+    nextAvailable: function () {
+      return this.$store.getters.currentPageIndexOneBased < this.$store.getters.maxPageNumber
     },
     zonesCount: function () {
       return this.$store.getters.zonesOnCurrentPage.length
@@ -56,12 +83,39 @@ export default {
       return (mdiv.index + 1) + ': ' + mdiv.label
     }
   },
+  watch: {
+    currentPage: function (newPage) {
+      this.inputPage = newPage
+    }
+  },
   methods: {
+    showPrevPage: function () {
+      const prev = this.$store.getters.currentPageIndexZeroBased - 1
+      if (prev >= 0) {
+        this.$store.dispatch('setCurrentPage', prev)
+        this.$store.dispatch('setCurrentPageZone', this.$store.getters.zonesOnCurrentPage.length)
+      }
+    },
+    showNextPage: function () {
+      const next = this.$store.getters.currentPageIndexZeroBased + 1
+      if (next < this.$store.getters.maxPageNumber) {
+        this.$store.dispatch('setCurrentPage', next)
+      }
+    },
     showMdivModal: function () {
       this.$store.dispatch('toggleMdivModal')
     },
     showAbout: function () {
       this.$store.dispatch('toggleAboutModal')
+    },
+    jumpToPage: function () {
+      const page = this.inputPage === NaN ? 0 : parseInt(this.inputPage) - 1
+      if (page >= 0 && page < this.$store.getters.maxPageNumber) {
+        this.$store.dispatch('setCurrentPage', page)
+      }
+      else {
+        console.info('Invalid page number: ', this.inputPage)
+      }
     }
   }
 }
@@ -102,6 +156,21 @@ export default {
   button {
     color: $fontColorDark;
     border-color: $fontColorDark;
+  }
+
+  .pageInput {
+    width: 2rem;
+    height: 1rem;
+    text-align: center;
+    border: $thinBorder;
+    border-radius: .2rem;
+    padding: .1rem;
+  }
+
+  .jumpBtn {
+    padding: 0 .1rem;
+    height: 1rem;
+    margin: 0 .2rem;
   }
 
   .footerBrand {
@@ -154,14 +223,14 @@ export default {
       width: auto;
     }
 
-    // Page navigation and zone count keep their natural width (most useful);
-    // the progress column absorbs any remaining space.
-    .col-4:not(.text-left),
+    // Page navigation and zone count keep their natural width (most useful).
+    .col-4,
     .col-2:not(.footerBrand) {
       flex: 0 0 auto;
       width: auto;
     }
 
+    // The progress column absorbs any remaining space.
     .col-1 {
       flex: 1 1 auto;
       width: auto;

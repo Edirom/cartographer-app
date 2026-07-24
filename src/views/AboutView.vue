@@ -45,9 +45,7 @@
           <address class="imprint">
             <p>
               <template v-if="imprint.institution">{{ imprint.institution }}<br /></template>
-              <template v-if="imprint.street">{{ imprint.street }}<br /></template>
-              <template v-if="imprint.zip || imprint.city">{{ imprint.zip }} {{ imprint.city }}<br /></template>
-              <template v-if="imprint.country">{{ imprint.country }}</template>
+              <template v-if="imprint.address"><span class="imprintAddress">{{ imprint.address }}</span></template>
             </p>
             <p>
               <template v-if="imprint.contactPerson">Contact: {{ imprint.contactPerson }}<br /></template>
@@ -58,6 +56,15 @@
               <a :href="imprint.link" target="_blank" rel="noopener noreferrer">Full imprint</a>
             </p>
           </address>
+
+          <div class="partnerLogos">
+            <a href="https://zenmem.de" target="_blank" rel="noopener noreferrer" title="Zentrum Musik – Edition – Medien (ZenMEM)">
+              <img :src="zenmemLogo" alt="ZenMEM logo" />
+            </a>
+            <a href="https://nfdi4culture.de" target="_blank" rel="noopener noreferrer" title="NFDI4Culture">
+              <img :src="nfdiLogo" alt="NFDI4Culture logo" />
+            </a>
+          </div>
 
           <p class="license">
             Licensed under the
@@ -74,15 +81,15 @@
 </template>
 
 <script>
+import zenmemLogo from '@/assets/logos/zenmem_logo_de_einfarbig_ultrablau.png'
+import nfdiLogo from '@/assets/logos/NFDI4C_Logo_DyptichText.png'
+
 // Placeholders replaced with deployer-provided values by 40-create-ghcred.sh at
 // container start (env vars APP_IMPRINT_*). A value still starting with '__'
 // means no override was configured — the built-in default below is used then.
 const RAW_IMPRINT = {
   institution:   '__APP_IMPRINT_INSTITUTION__',
-  street:        '__APP_IMPRINT_STREET__',
-  zip:           '__APP_IMPRINT_ZIP__',
-  city:          '__APP_IMPRINT_CITY__',
-  country:       '__APP_IMPRINT_COUNTRY__',
+  address:       '__APP_IMPRINT_ADDRESS__',
   phone:         '__APP_IMPRINT_PHONE__',
   contactPerson: '__APP_IMPRINT_CONTACT_PERSON__',
   email:         '__APP_IMPRINT_EMAIL__',
@@ -91,10 +98,7 @@ const RAW_IMPRINT = {
 
 const DEFAULT_IMPRINT = {
   institution:   'Paderborn University, Center for Music, Edition, Media (ZenMEM)',
-  street:        'Warburger Str. 100',
-  zip:           '33098',
-  city:          'Paderborn',
-  country:       'Germany',
+  address:       'Warburger Str. 100, 33098 Paderborn, Germany',
   phone:         '',
   contactPerson: '',
   email:         'peter.stadler@uni-paderborn.de',
@@ -120,6 +124,8 @@ export default {
   name: 'AboutModal',
   data () {
     return {
+      zenmemLogo,
+      nfdiLogo,
       imprint: resolveImprint()
     }
   },
@@ -199,6 +205,28 @@ export default {
     &:hover {
       text-decoration: underline;
     }
+  }
+}
+
+.partnerLogos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin-top: .75rem;
+
+  a {
+    display: inline-flex;
+    transition: transform .1s ease-in-out;
+
+    &:hover {
+      transform: translateY(-2px);
+    }
+  }
+
+  img {
+    height: 44px;
+    width: auto;
   }
 }
 
