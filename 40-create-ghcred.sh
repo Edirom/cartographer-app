@@ -38,3 +38,32 @@ done
 # replace myAppPlaceholder in nginx configuration
 sed -i "s|${PLACEHOLDER}/|${NORMALIZED_PATH%/}/|g" /etc/nginx/nginx.conf # %/ removes trailing slash for correct replacement
 sed -i "s|${PLACEHOLDER}|${NORMALIZED_PATH}|g" /etc/nginx/nginx.conf
+
+
+# ---- Imprint override (optional, structured) ----
+# Pass any of: APP_IMPRINT_INSTITUTION, APP_IMPRINT_ADDRESS, APP_IMPRINT_PHONE,
+# APP_IMPRINT_CONTACT_PERSON, APP_IMPRINT_EMAIL, APP_IMPRINT_LINK
+# If none is set, the placeholders remain and the app shows its built-in
+# default imprint.
+replace_imprint_var () {
+  # $1 = placeholder, $2 = value
+  [ -z "$2" ] && return 0
+  ESCAPED=$(printf '%s' "$2" | sed -e 's/[&|\\"]/\\&/g' | tr '\n' ' ')
+  find /usr/share/nginx/html -type f -name "*.js" -print0 \
+  | while IFS= read -r -d '' f; do
+    sed -i "s|$1|${ESCAPED}|g" "$f"
+  done
+}
+replace_imprint_var '__APP_IMPRINT_INSTITUTION__'    "${APP_IMPRINT_INSTITUTION:-}"
+replace_imprint_var '__APP_IMPRINT_STREET__'         "${APP_IMPRINT_STREET:-}"
+replace_imprint_var '__APP_IMPRINT_ZIP__'            "${APP_IMPRINT_ZIP:-}"
+replace_imprint_var '__APP_IMPRINT_CITY__'           "${APP_IMPRINT_CITY:-}"
+replace_imprint_var '__APP_IMPRINT_COUNTRY__'        "${APP_IMPRINT_COUNTRY:-}"
+replace_imprint_var '__APP_IMPRINT_PHONE__'          "${APP_IMPRINT_PHONE:-}"
+replace_imprint_var '__APP_IMPRINT_CONTACT_PERSON__' "${APP_IMPRINT_CONTACT_PERSON:-}"
+replace_imprint_var '__APP_IMPRINT_EMAIL__'          "${APP_IMPRINT_EMAIL:-}"
+replace_imprint_var '__APP_IMPRINT_LINK__'           "${APP_IMPRINT_LINK:-}"
+
+if [ -n "${APP_IMPRINT_INSTITUTION:-}${APP_IMPRINT_STREET:-}${APP_IMPRINT_ZIP:-}${APP_IMPRINT_CITY:-}${APP_IMPRINT_COUNTRY:-}${APP_IMPRINT_PHONE:-}${APP_IMPRINT_CONTACT_PERSON:-}${APP_IMPRINT_EMAIL:-}${APP_IMPRINT_LINK:-}" ]; then
+  echo "Injecting custom imprint"
+fi

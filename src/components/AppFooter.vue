@@ -3,7 +3,7 @@
 
     <div class="container gapless oneline">
       <div class="columns">
-        <div class="column col-4 text-left">
+        <div class="column col-3 text-left">
           <span @click="showMdivModal" v-if="mdivLabel !== ''">
             <font-awesome-icon icon="fa-solid fa-sitemap" /> {{ mdivLabel }}
           </span>
@@ -18,11 +18,19 @@
           </span>
           <button class="ml-2 btn jumpBtn" @click="jumpToPage()">Go</button>
         </div>
-        <div class="column col-3">
+        <div class="column col-2">
           zones: {{ zonesCount }}
         </div>
         <div class="column col-1">
           <progress v-if="isLoading" class="progress" max="100"></progress>
+        </div>
+        <div class="column col-2 text-right footerBrand">
+          <span class="aboutLink" title="About Cartographer" @click="showAbout">
+            <font-awesome-icon icon="fa-solid fa-circle-info" /> <span>About</span>
+          </span>
+          <a :href="docsUrl" target="_blank" rel="noopener noreferrer" class="aboutLink" title="Documentation">
+            <font-awesome-icon icon="fa-solid fa-book" /> <span>Docs</span>
+          </a>
         </div>
       </div>
     </div>
@@ -31,7 +39,6 @@
 </template>
 
 <script>
-
 export default {
   name: 'AppFooter',
   components: {
@@ -43,6 +50,10 @@ export default {
     }
   },
   computed: {
+    docsUrl: function () {
+      // Derive the docs URL from the current host (e.g. https://host/docs).
+      return window.location.origin + '/docs'
+    },
     currentPage: function () {
       return this.$store.getters.currentPageIndexOneBased
     },
@@ -94,6 +105,9 @@ export default {
     showMdivModal: function () {
       this.$store.dispatch('toggleMdivModal')
     },
+    showAbout: function () {
+      this.$store.dispatch('toggleAboutModal')
+    },
     jumpToPage: function () {
       const page = this.inputPage === NaN ? 0 : parseInt(this.inputPage) - 1
       if (page >= 0 && page < this.$store.getters.maxPageNumber) {
@@ -103,9 +117,6 @@ export default {
         console.info('Invalid page number: ', this.inputPage)
       }
     }
-    /* showImageSelectionOverlay: function () {
-      this.$store.dispatch('showImageSelectionModal')
-    } */
   }
 }
 </script>
@@ -126,6 +137,13 @@ export default {
   font-size: .7rem;
   font-weight: 300;
 
+  // Keep all footer content on a single, vertically centred row.
+  .container,
+  .columns {
+    height: 100%;
+    align-items: center;
+  }
+
   progress {
     color: $fontColorDark;
     height: .3rem;
@@ -139,7 +157,7 @@ export default {
     color: $fontColorDark;
     border-color: $fontColorDark;
   }
-  
+
   .pageInput {
     width: 2rem;
     height: 1rem;
@@ -150,10 +168,30 @@ export default {
   }
 
   .jumpBtn {
-      padding: 0 .1rem;
-      height: 1rem;
-      margin: 0 .2rem;
+    padding: 0 .1rem;
+    height: 1rem;
+    margin: 0 .2rem;
+  }
+
+  .footerBrand {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 1rem;
+    height: 100%;
+
+    .aboutLink {
+      color: $fontColorDark;
+      text-decoration: none;
+      white-space: nowrap;
+      font-weight: 400;
+      cursor: pointer;
+
+      &:hover {
+        text-decoration: underline;
+      }
     }
+  }
 }
 
 // Small screens (phones): keep the footer on a single row and make its
@@ -180,22 +218,34 @@ export default {
 
     // The mdiv label is supplementary (also reachable via the mdiv modal),
     // so let it shrink/truncate first to give the page navigation room.
-    .col-4.text-left {
+    .col-3.text-left {
       flex: 0 1 auto;
       width: auto;
     }
 
-    // Page navigation and zone count keep their natural width (most useful);
-    // the progress column absorbs any remaining space.
-    .col-4:not(.text-left),
-    .col-3 {
+    // Page navigation and zone count keep their natural width (most useful).
+    .col-4,
+    .col-2:not(.footerBrand) {
       flex: 0 0 auto;
       width: auto;
     }
 
+    // The progress column absorbs any remaining space.
     .col-1 {
       flex: 1 1 auto;
       width: auto;
+    }
+
+    // On phones the footer is tight: drop the "Docs"/"About" text labels and
+    // keep just the icons (still fully clickable).
+    .footerBrand {
+      flex: 0 0 auto;
+      width: auto;
+      gap: .35rem;
+
+      .aboutLink span {
+        display: none;
+      }
     }
 
     .pageInput {
