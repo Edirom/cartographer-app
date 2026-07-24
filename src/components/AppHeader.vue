@@ -1,7 +1,7 @@
 <template>
   <header class="navbar appHeader">
     <section class="navbar-section">
-      <span class="navbar-brand mr-2">CartographerApp</span>
+      <span class="navbar-brand mr-2">cartographer-app</span>
     </section>
     <section class="navbar-section">
       <div class="input-group input-inline">
