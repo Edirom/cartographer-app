@@ -7,5 +7,5 @@ In the Cartographer App, the footer contains:
 3. **Button to jump into a new page** (see number 3 in Image 9)  
 4. **Display of the total number of zones in a page** (see number 4 in Image 9)  
 
-![Cartographer App Footer](images/footer.png)  
+![Cartographer App Footer](./images/footer.png)  
 *Image 9: Cartographer App Footer*

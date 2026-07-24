@@ -37,7 +37,8 @@ export default {
 @import '@/css/_variables.scss';
 
 .appHeader {
-  height: $appHeaderHeight;
+  height: calc(#{$appHeaderHeight} + env(safe-area-inset-top, 0px));
+  padding-top: env(safe-area-inset-top, 0px);
   background-color: $appColor;
   border-bottom: $thickBorder;
   box-sizing: border-box;
@@ -53,6 +54,18 @@ export default {
       color: $fontColorDark;
       border-color: $fontColorDark;
       margin-left: .3rem;
+    }
+  }
+}
+
+// Small screens (phones): shrink the brand so it fits the header height and
+// leaves room for the menu button.
+@media (max-width: 599px) {
+  .appHeader {
+    .navbar-brand {
+      padding-left: .5rem;
+      font-size: .95rem;
+      white-space: nowrap;
     }
   }
 }

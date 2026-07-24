@@ -9,7 +9,7 @@ The Cartographer App window consists of the following parts:
 3. **Main Working Area** — the central editing space (see number 3 in Image 1).  
 4. **Footer (Bottom Bar)** — displays status information about mdivs, page numbers, and zones (see number 4 in Image 1).  
 
-![Cartographer App Window](images/window.png)  
+![Cartographer App Window](./images/window.png)  
 *Image 1: Layout of the Cartographer App interface*  
 
 ---
@@ -21,7 +21,7 @@ The header contains a **title** (see number 1 in Image 2) and a **dropdown menu 
 Clicking the menu reveals options for uploading or downloading MEI files, and importing IIIF image files.  
 Additionally, the header includes buttons to open the **Page Overview** and toggle the **Measure List**.
 
-![Cartographer App Header](images/header.png)  
+![Cartographer App Header](./images/header.png)  
 *Image 2: Layout of the Cartographer App header*  
 
 ---
@@ -37,7 +37,7 @@ Clicking the dropdown menu in the header opens the following options (see Image 
 5. **Show Page Overview** — display all imported images and add more images (see number 5 in Image 3).  
 6. **Toggle Measure List** — show or hide a list of all movements and measures in a sidebar (see number 6 in Image 3).  
 
-![Header Menu Bar](images/menubar2.png)  
+![Header Menu Bar](./images/menubar2.png)  
 *Image 3: Header Menu Bar*  
 
 ---
@@ -51,7 +51,7 @@ The footer contains:
 3. **Button to jump to a new page** (see number 3 in Image 9).  
 4. **Zone counter** — shows the total number of zones on the current page (see number 4 in Image 9).  
 
-![Cartographer App Footer](images/footer.png)  
+![Cartographer App Footer](./images/footer.png)  
 *Image 9: Cartographer App Footer*  
 
 ---
@@ -69,7 +69,7 @@ The sidebar contains the following tools:
 7. **Automatic Measure Detection** — run the detector to identify measures automatically (see number 5 in Image 10).  
 8. **Page Navigation** — move between pages of the document (see number 6 in Image 10).  
 
-![Sidebar](images/menu_bar.png)  
+![Sidebar](./images/menu_bar.png)  
 *Image 10: The Cartographer App sidebar*  
 
 ---
