@@ -12,12 +12,14 @@
         <div class="content">
 
           <p>
-            <strong>Cartographer</strong> is a browser-based tool for linking the musical
-            content of an <abbr title="Music Encoding Initiative">MEI</abbr> file to the
-            corresponding regions on digital facsimiles. It lets editors draw and manage
-            zones for measures and movements on page images (served locally or via
+            <strong>Cartographer</strong> is a platform-independent tool for linking the
+            musical content of an <abbr title="Music Encoding Initiative">MEI</abbr> file
+            to the corresponding regions on digital facsimiles. It lets editors draw and
+            manage zones for measures and movements on page images (served locally or via
             <abbr title="International Image Interoperability Framework">IIIF</abbr>) and
-            exports the resulting mapping back into MEI.
+            exports the resulting mapping back into MEI. Built from a single web-based
+            codebase, it runs in any modern browser, as an institutionally hosted web
+            service (Docker), or as a native desktop and Android application (via Tauri).
           </p>
 
           <h6>Resources</h6>
@@ -39,7 +41,26 @@
             </li>
           </ul>
 
-          <h6>Funding &amp; Partners</h6>
+          <h6>Imprint</h6>
+          <!-- Custom imprint injected at container start via the APP_IMPRINT env
+               var (40-create-ghcred.sh replaces __APP_IMPRINT__ in the bundle).
+               Content comes from the deployer's own configuration — same trust
+               level as the OAuth secrets — never from user input. -->
+          <address v-if="customImprint" class="imprint" v-html="customImprint"></address>
+          <address v-else class="imprint">
+            <p>
+              Paderborn University<br />
+              Center for Music, Edition, Media (ZenMEM)<br />
+              Warburger Str. 100<br />
+              33098 Paderborn<br />
+              Germany
+            </p>
+            <p>
+              E-Mail:
+              <a href="mailto:peter.stadler@uni-paderborn.de">peter.stadler@uni-paderborn.de</a>
+            </p>
+          </address>
+
           <div class="partnerLogos">
             <a href="https://zenmem.de" target="_blank" rel="noopener noreferrer" title="Zentrum Musik – Edition – Medien (ZenMEM)">
               <img :src="zenmemLogo" alt="ZenMEM logo" />
@@ -48,6 +69,11 @@
               <img :src="nfdiLogo" alt="NFDI4Culture logo" />
             </a>
           </div>
+
+          <p class="license">
+            Licensed under the
+            <a href="https://github.com/Edirom/cartographer-app/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">MIT License</a>.
+          </p>
 
         </div>
       </div>
@@ -62,11 +88,13 @@
 import zenmemLogo from '@/assets/logos/zenmem_logo_de_einfarbig_ultrablau.png'
 import nfdiLogo from '@/assets/logos/NFDI4C_Logo_DyptichText.png'
 
+// Placeholder replaced with deployer-provided HTML by 40-create-ghcred.sh at
+// container start. If it still starts with '__', no override was configured
+// (local dev, or APP_IMPRINT unset) and the default imprint below is shown.
+const IMPRINT_PLACEHOLDER = '__APP_IMPRINT__'
+
 export default {
   name: 'AboutModal',
-  components: {
-
-  },
   data () {
     return {
       zenmemLogo,
@@ -76,6 +104,9 @@ export default {
   computed: {
     appVersion () {
       return process.env.VUE_APP_VERSION || ''
+    },
+    customImprint () {
+      return IMPRINT_PLACEHOLDER.startsWith('__') ? null : IMPRINT_PLACEHOLDER
     }
   },
   methods: {
@@ -89,81 +120,92 @@ export default {
 <style lang="scss" scoped>
 @import '@/css/_variables.scss';
 
-.aboutModal {
-  .modal-container {
-    max-width: 480px;
-    text-align: left;
+.aboutModal .content {
+  text-align: left;
+
+  p {
+    line-height: 1.5;
   }
 
-  .modal-title .version {
-    color: #999999;
-    font-weight: 400;
-    font-size: .8rem;
+  h6 {
+    margin-top: 1.25rem;
+    margin-bottom: .5rem;
+  }
+}
+
+.modal-title .version {
+  color: #666666;
+  font-size: .9rem;
+  font-weight: normal;
+}
+
+.linkList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  li {
+    margin: .35rem 0;
   }
 
-  .modal-body {
-    padding: 0 .8rem;
-  }
+  a {
+    color: $appColor;
+    text-decoration: none;
 
-  .modal-footer {
-    padding: 0 .8rem .8rem;
-  }
-
-  .content {
-    font-size: .8rem;
-
-    p {
-      line-height: 1.5;
+    &:hover {
+      text-decoration: underline;
     }
 
-    h6 {
-      margin: 1rem 0 .4rem;
+    svg {
+      margin-right: .4rem;
+    }
+  }
+}
+
+.imprint {
+  font-style: normal;
+
+  p {
+    margin: 0 0 .75rem;
+  }
+
+  a {
+    color: $appColor;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.partnerLogos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin-top: .75rem;
+
+  a {
+    display: inline-flex;
+    transition: transform .1s ease-in-out;
+
+    &:hover {
+      transform: translateY(-2px);
     }
   }
 
-  .linkList {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-
-    li {
-      margin: .3rem 0;
-    }
-
-    a {
-      color: $appColor;
-      text-decoration: none;
-
-      &:hover {
-        text-decoration: underline;
-      }
-
-      svg {
-        margin-right: .4rem;
-      }
-    }
+  img {
+    height: 44px;
+    width: auto;
   }
+}
 
-  .partnerLogos {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 1rem;
-    margin-top: .4rem;
-
-    a {
-      display: inline-flex;
-      transition: transform .1s ease-in-out;
-
-      &:hover {
-        transform: translateY(-2px);
-      }
-    }
-
-    img {
-      height: 40px;
-      width: auto;
-    }
-  }
+.license {
+  border-top: $thinBorder;
+  margin-top: 1.25rem;
+  padding-top: .75rem;
+  color: #888888;
+  font-size: .8rem;
 }
 </style>

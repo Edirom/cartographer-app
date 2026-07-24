@@ -38,3 +38,19 @@ done
 # replace myAppPlaceholder in nginx configuration
 sed -i "s|${PLACEHOLDER}/|${NORMALIZED_PATH%/}/|g" /etc/nginx/nginx.conf # %/ removes trailing slash for correct replacement
 sed -i "s|${PLACEHOLDER}|${NORMALIZED_PATH}|g" /etc/nginx/nginx.conf
+
+
+# ---- Imprint override (optional) ----
+# Pass -e APP_IMPRINT='<p>Your institution<br />Street 1<br />City</p>'
+# If unset, the placeholder stays and the app shows the built-in default.
+APP_IMPRINT="${APP_IMPRINT:-}"
+if [ -n "$APP_IMPRINT" ]; then
+  # escape sed-special characters (&, |, \) and flatten newlines
+  IMPRINT_ESCAPED=$(printf '%s' "$APP_IMPRINT" | sed -e 's/[&|\\]/\\&/g' | tr '\n' ' ')
+  find /usr/share/nginx/html \
+    -type f -name "*.js" -print0 \
+  | while IFS= read -r -d '' f; do
+    sed -i "s|__APP_IMPRINT__|${IMPRINT_ESCAPED}|g" "$f"
+  done
+  echo "Injecting custom imprint"
+fi
