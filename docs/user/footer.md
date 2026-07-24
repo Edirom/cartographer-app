@@ -9,5 +9,5 @@ In the Cartographer App, the footer contains:
 
 > Page navigation has moved to the sidebar (see the **AppSidebar** documentation).
 
-![Cartographer App Footer](images/footer.png)  
+![Cartographer App Footer](./images/footer.png)  
 *Image 9: Cartographer App Footer*
