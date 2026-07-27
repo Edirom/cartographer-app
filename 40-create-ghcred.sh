@@ -1,69 +1,35 @@
 #!/bin/sh
 set -e
 
-# Accept empty = root
-VUE_APP_PUBLIC_PATH="${VUE_APP_PUBLIC_PATH:-}"
+# =============================================================================
+# GitHub OAuth configuration: injects client credentials into nginx config and
+# the SPA bundle. Runs before 50-configure-app.sh, whose public-path
+# replacement rewrites the /myAppPlaceholder token in the callback URL.
+# =============================================================================
 
-# Normalize: allow "", "/" (root) or "/subpath"
-case "$VUE_APP_PUBLIC_PATH" in
-  ""|"/") NORMALIZED_PATH="/" ;;   # empty or "/" means root
-  /*)     NORMALIZED_PATH="${VUE_APP_PUBLIC_PATH%/}" ;;  # already starts with / but strip off trailing /
-  *)      NORMALIZED_PATH="/${VUE_APP_PUBLIC_PATH%/}" ;; # prepend / and strip off trailing /
-esac
+# Pass these at docker run time:
+#   -e GH_APP_CLIENT_ID=your_client_id
+#   -e GH_APP_CLIENT_SECRET=your_client_secret
+#   -e GH_APP_CALL_BACK=http://localhost:8080/myAppPlaceholder/callback
+GH_CLIENT_ID="${GH_APP_CLIENT_ID:-}"
+GH_CLIENT_SECRET="${GH_APP_CLIENT_SECRET:-}"
+GH_CALLBACK_URL="${GH_APP_CALL_BACK:-}"
 
-
-echo "Using VUE_APP_PUBLIC_PATH='${VUE_APP_PUBLIC_PATH}' (normalized='${NORMALIZED_PATH}')"
-
-# Create symlink for subpath so /demo works by pointing to /
-if [ "$NORMALIZED_PATH" != "/" ]; then
-  # create parent directories if needed for subsubpaths like /foo/bar/buz
-  mkdir -p /usr/share/nginx/html`dirname $NORMALIZED_PATH`
-  ln -snf /usr/share/nginx/html "/usr/share/nginx/html$NORMALIZED_PATH"
-fi
-
+# Runtime nginx variables consumed by nginx.conf. Created here (>) —
+# 50-configure-app.sh appends the PUBLIC_PATH variable afterwards.
+# The client secret lives only inside the container — never in the SPA.
 cat > /GH_OAUTH_CLIENT.conf <<EOT
-set \$PUBLIC_PATH $NORMALIZED_PATH;
+set \$CLIENT_ID "$GH_CLIENT_ID";
+set \$CLIENT_SECRET "$GH_CLIENT_SECRET";
+set \$CALLBACK_URL "$GH_CALLBACK_URL";
 EOT
 
-# ---- Replace placeholders in built files ----
-PLACEHOLDER="/myAppPlaceholder"          # ensures single trailing slash
+CLIENT_ID_PREFIX=$(printf '%.4s' "$GH_CLIENT_ID")
+echo "Injecting GitHub OAuth config: CLIENT_ID=${CLIENT_ID_PREFIX}**** CALLBACK=${GH_CALLBACK_URL}"
 
 find /usr/share/nginx/html \
-  -type f \( -name "*.html" -o -name "*.js" -o -name "*.css" \) -print0 \
+  -type f \( -name "*.js" -o -name "*.html" \) -print0 \
 | while IFS= read -r -d '' f; do
-  sed -i "s|${PLACEHOLDER}/|${NORMALIZED_PATH%/}/|g" "$f" # %/ removes trailing slash for correct replacement
-  sed -i "s|${PLACEHOLDER}|${NORMALIZED_PATH}|g" "$f"
+  sed -i "s|__GH_CLIENT_ID__|${GH_CLIENT_ID}|g" "$f"
+  sed -i "s|__GH_CALLBACK_URL__|${GH_CALLBACK_URL}|g" "$f"
 done
-
-# replace myAppPlaceholder in nginx configuration
-sed -i "s|${PLACEHOLDER}/|${NORMALIZED_PATH%/}/|g" /etc/nginx/nginx.conf # %/ removes trailing slash for correct replacement
-sed -i "s|${PLACEHOLDER}|${NORMALIZED_PATH}|g" /etc/nginx/nginx.conf
-
-
-# ---- Imprint override (optional, structured) ----
-# Pass any of: APP_IMPRINT_INSTITUTION, APP_IMPRINT_ADDRESS, APP_IMPRINT_PHONE,
-# APP_IMPRINT_CONTACT_PERSON, APP_IMPRINT_EMAIL, APP_IMPRINT_LINK
-# If none is set, the placeholders remain and the app shows its built-in
-# default imprint.
-replace_imprint_var () {
-  # $1 = placeholder, $2 = value
-  [ -z "$2" ] && return 0
-  ESCAPED=$(printf '%s' "$2" | sed -e 's/[&|\\"]/\\&/g' | tr '\n' ' ')
-  find /usr/share/nginx/html -type f -name "*.js" -print0 \
-  | while IFS= read -r -d '' f; do
-    sed -i "s|$1|${ESCAPED}|g" "$f"
-  done
-}
-replace_imprint_var '__APP_IMPRINT_INSTITUTION__'    "${APP_IMPRINT_INSTITUTION:-}"
-replace_imprint_var '__APP_IMPRINT_STREET__'         "${APP_IMPRINT_STREET:-}"
-replace_imprint_var '__APP_IMPRINT_ZIP__'            "${APP_IMPRINT_ZIP:-}"
-replace_imprint_var '__APP_IMPRINT_CITY__'           "${APP_IMPRINT_CITY:-}"
-replace_imprint_var '__APP_IMPRINT_COUNTRY__'        "${APP_IMPRINT_COUNTRY:-}"
-replace_imprint_var '__APP_IMPRINT_PHONE__'          "${APP_IMPRINT_PHONE:-}"
-replace_imprint_var '__APP_IMPRINT_CONTACT_PERSON__' "${APP_IMPRINT_CONTACT_PERSON:-}"
-replace_imprint_var '__APP_IMPRINT_EMAIL__'          "${APP_IMPRINT_EMAIL:-}"
-replace_imprint_var '__APP_IMPRINT_LINK__'           "${APP_IMPRINT_LINK:-}"
-
-if [ -n "${APP_IMPRINT_INSTITUTION:-}${APP_IMPRINT_STREET:-}${APP_IMPRINT_ZIP:-}${APP_IMPRINT_CITY:-}${APP_IMPRINT_COUNTRY:-}${APP_IMPRINT_PHONE:-}${APP_IMPRINT_CONTACT_PERSON:-}${APP_IMPRINT_EMAIL:-}${APP_IMPRINT_LINK:-}" ]; then
-  echo "Injecting custom imprint"
-fi

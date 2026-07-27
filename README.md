@@ -126,9 +126,9 @@ See [Configuration Reference](https://cli.vuejs.org/config/).
 
 ## Docker Deployment
 
-All deployment-specific configuration (subpath, imprint) is injected at
-**runtime** via environment variables — the same image works for any host,
-subpath, and institution.
+All deployment-specific configuration (subpath, imprint, collaborator logos)
+is injected at **runtime** via environment variables — the same image works
+for any host, subpath, and institution.
 
 ### Build your image
 Replace **`cartographer`** with your preferred image name.
@@ -147,24 +147,26 @@ Replace **cartographer** with the image name you used when building.
 docker run --rm -p 8080:80 -e VUE_APP_PUBLIC_PATH=/demo cartographer
 ```
 
-### Configuring the imprint
+### Configuring the imprint and collaborators
 
-The About dialog shows an imprint. By default this is the ZenMEM / Paderborn
-University imprint. Institutions hosting their own instance can (and should)
-replace it with their own details at runtime — no rebuild required:
+The About dialog shows an imprint and a row of collaborator logos. By default
+these are the ZenMEM / Paderborn University imprint and the ZenMEM and
+NFDI4Culture logos. Institutions hosting their own instance can (and should)
+replace them with their own details at runtime — no rebuild required:
 
 ```
 docker run --rm -p 8080:80 \
   -e VUE_APP_PUBLIC_PATH=/demo \
-  -e APP_IMPRINT_INSTITUTION='' \
-  -e APP_IMPRINT_STREET='' \
-  -e APP_IMPRINT_ZIP='' \
-  -e APP_IMPRINT_CITY='' \
-  -e APP_IMPRINT_COUNTRY='' \
-  -e APP_IMPRINT_CONTACT_PERSON='' \
-  -e APP_IMPRINT_EMAIL='' \
-  -e APP_IMPRINT_PHONE='' \
-  -e APP_IMPRINT_LINK='' \
+  -e APP_IMPRINT_INSTITUTION='Some University, Institute for Music' \
+  -e APP_IMPRINT_STREET='Musikweg 1' \
+  -e APP_IMPRINT_ZIP='12345' \
+  -e APP_IMPRINT_CITY='Musikstadt' \
+  -e APP_IMPRINT_COUNTRY='Germany' \
+  -e APP_IMPRINT_CONTACT_PERSON='Jane Doe' \
+  -e APP_IMPRINT_EMAIL='info@example.org' \
+  -e APP_IMPRINT_PHONE='+49 123 456789' \
+  -e APP_IMPRINT_LINK='https://example.org/imprint' \
+  -e APP_COLLABORATORS='[{"name":"Some University","logo":"https://example.org/logo.png","url":"https://example.org"},{"name":"ZenMEM","logo":"/demo/logos/zenmem_logo_de_einfarbig_ultrablau.png","url":"https://zenmem.de"}]' \
   cartographer
 ```
 
@@ -172,6 +174,17 @@ All imprint variables are optional and independent: set only the ones you need
 (fields left unset are simply not displayed). If **none** of them is set, the
 built-in default imprint is shown. `APP_IMPRINT_LINK` can also be used on its
 own to point to an institution's existing imprint page.
+
+`APP_COLLABORATORS` is a JSON array of objects with `name`, `logo`, and `url`.
+Logo values must be URLs the browser can resolve: an absolute URL (e.g. hosted
+on the institution's own website), or a path served by this container
+**including the configured subpath** — e.g.
+`/demo/logos/zenmem_logo_de_einfarbig_ultrablau.png` when running with
+`VUE_APP_PUBLIC_PATH=/demo`, or `/logos/...` when running at the root path.
+The built-in logos are available under `<subpath>/logos/` with their original
+filenames. If `APP_COLLABORATORS` is not set, the default logos are shown; if
+it is set but not valid JSON, a warning is logged in the browser console and
+the default logos are shown.
 
 ### Environment variables
 
@@ -187,3 +200,4 @@ own to point to an institution's existing imprint page.
 | `APP_IMPRINT_EMAIL` | Contact e-mail address (rendered as a mailto link). |
 | `APP_IMPRINT_PHONE` | Phone number (rendered as a tel link). |
 | `APP_IMPRINT_LINK` | URL of a full imprint page (rendered as "Full imprint" link). |
+| `APP_COLLABORATORS` | Collaborator logos as a JSON array of `{"name", "logo", "url"}` objects. Defaults to the ZenMEM and NFDI4Culture logos. |

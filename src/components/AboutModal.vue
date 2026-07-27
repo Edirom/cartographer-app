@@ -59,6 +59,14 @@
             </p>
           </address>
 
+          <h6 v-if="collaborators.length">Collaborators</h6>
+          <div v-if="collaborators.length" class="partnerLogos">
+            <a v-for="collab in collaborators" :key="collab.url"
+               :href="collab.url" target="_blank" rel="noopener noreferrer" :title="collab.name">
+              <img :src="collab.logo" :alt="`${collab.name} logo`" />
+            </a>
+          </div>
+
           <p class="license">
             Licensed under the
             <a href="https://github.com/Edirom/cartographer-app/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">MIT License</a>.
@@ -74,9 +82,13 @@
 </template>
 
 <script>
-// Placeholders replaced with deployer-provided values by 40-create-ghcred.sh at
-// container start (env vars APP_IMPRINT_*). A value still starting with '__'
-// means no override was configured — the built-in default below is used then.
+import zenmemLogo from '@/assets/logos/zenmem_logo_de_einfarbig_ultrablau.png'
+import nfdiLogo from '@/assets/logos/NFDI4C_Logo_DyptichText.png'
+
+// Placeholders replaced with deployer-provided values by 50-configure-app.sh at
+// container start (env vars APP_IMPRINT_* / APP_COLLABORATORS). A value still
+// starting with '__' means no override was configured — the built-in defaults
+// below are used then.
 const RAW_IMPRINT = {
   institution:   '__APP_IMPRINT_INSTITUTION__',
   street:        '__APP_IMPRINT_STREET__',
@@ -89,6 +101,12 @@ const RAW_IMPRINT = {
   link:          '__APP_IMPRINT_LINK__'
 }
 
+// JSON array of collaborator objects, e.g.
+//   APP_COLLABORATORS='[{"name":"Some Uni","logo":"https://example.org/logo.png","url":"https://example.org"}]'
+// Logo URLs may use the /myAppPlaceholder/ prefix; it is rewritten to the
+// actual subpath at container start.
+const RAW_COLLABORATORS = '__APP_COLLABORATORS__'
+
 const DEFAULT_IMPRINT = {
   institution:   'Paderborn University, Center for Music, Edition, Media (ZenMEM)',
   street:        'Warburger Str. 100',
@@ -100,6 +118,11 @@ const DEFAULT_IMPRINT = {
   email:         'peter.stadler@uni-paderborn.de',
   link:          ''
 }
+
+const DEFAULT_COLLABORATORS = [
+  { name: 'Zentrum Musik – Edition – Medien (ZenMEM)', logo: zenmemLogo, url: 'https://zenmem.de' },
+  { name: 'NFDI4Culture', logo: nfdiLogo, url: 'https://nfdi4culture.de' }
+]
 
 function resolveImprint () {
   const overridden = {}
@@ -116,11 +139,38 @@ function resolveImprint () {
   return anySet ? overridden : DEFAULT_IMPRINT
 }
 
+
+
+function resolveCollaborators () {
+  if (RAW_COLLABORATORS.startsWith('__')) {
+    return DEFAULT_COLLABORATORS
+  }
+  try {
+    // decode base64 (UTF-8 safe)
+    const json = decodeURIComponent(escape(atob(RAW_COLLABORATORS)))
+    const parsed = JSON.parse(json)
+    if (!Array.isArray(parsed)) {
+      console.warn('APP_COLLABORATORS is not a JSON array, showing default collaborators')
+      return DEFAULT_COLLABORATORS
+    }
+    const base = (process.env.BASE_URL || '/').replace(/\/$/, '')
+    return parsed
+      .filter(c => c && c.name && c.logo && c.url)
+      .map(c => ({
+        ...c,
+        logo: c.logo.replace(/^\/myAppPlaceholder/, base)
+      }))
+  } catch (e) {
+    console.warn('APP_COLLABORATORS could not be decoded/parsed, showing default collaborators', e)
+    return DEFAULT_COLLABORATORS
+  }
+}
 export default {
   name: 'AboutModal',
   data () {
     return {
-      imprint: resolveImprint()
+      imprint: resolveImprint(),
+      collaborators: resolveCollaborators()
     }
   },
   computed: {
@@ -199,6 +249,28 @@ export default {
     &:hover {
       text-decoration: underline;
     }
+  }
+}
+
+.partnerLogos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin-top: .75rem;
+
+  a {
+    display: inline-flex;
+    transition: transform .1s ease-in-out;
+
+    &:hover {
+      transform: translateY(-2px);
+    }
+  }
+
+  img {
+    height: 44px;
+    width: auto;
   }
 }
 
