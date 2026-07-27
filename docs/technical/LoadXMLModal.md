@@ -9,7 +9,7 @@ Displays a modal dialog for importing a IIIF manifest URL and converting it to a
 The `LoadXMLModal` component:
 - Shows a modal dialog for the user to input a IIIF manifest URL.
 - Provides a button to autofill a test IIIF manifest URL.
-- On import, triggers an action to convert the IIIF manifest to an MEI file for the Mercator app.
+- On import, triggers an action to convert the IIIF manifest to an MEI file for the cartographer-app.
 - Modal can be closed with the Cancel button or overlay.
 - Uses Vuex store for state management and actions.
 
