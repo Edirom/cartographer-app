@@ -4,55 +4,47 @@
 
 The Cartographer App window consists of the following parts:
 
-1. **Header (Top Bar)** — contains the title and a dropdown menu button (see number 1 in Image 1).  
-2. **Sidebar (Right Panel)** — contains tools for editing and navigation (see number 2 in Image 1).  
-3. **Main Working Area** — the central editing space (see number 3 in Image 1).  
-4. **Footer (Bottom Bar)** — displays status information about mdivs, page numbers, and zones (see number 4 in Image 1).  
-
-![Cartographer App Window](./images/window.png)  
-*Image 1: Layout of the Cartographer App interface*  
+1. **Header (Top Bar)** — contains the title and a dropdown menu button.
+2. **Sidebar (Right Panel)** — contains tools for editing and page navigation.
+3. **Main Working Area** — the central editing space.
+4. **Footer (Bottom Bar)** — displays status information about mdivs and zones, along with the About and Docs links and partner logos.
 
 ---
 
 ## Header
 
-The header contains a **title** (see number 1 in Image 2) and a **dropdown menu button** (see number 2 in Image 2).  
+The header contains a **title** and a **dropdown menu button**. Once you are logged in with GitHub, your **GitHub avatar** also appears in the header, and clicking the avatar shows the **Logout** option.
 
-Clicking the menu reveals options for uploading or downloading MEI files, and importing IIIF image files.  
+Clicking the menu reveals options for uploading or downloading MEI files, importing IIIF image files, and logging in with GitHub. When logged in, the menu additionally contains an option to load files from GitHub.
 Additionally, the header includes buttons to open the **Page Overview** and toggle the **Measure List**.
-
-![Cartographer App Header](./images/header.png)  
-*Image 2: Layout of the Cartographer App header*  
 
 ---
 
 ### Menu Bar
 
-Clicking the dropdown menu in the header opens the following options (see Image 3):
+Clicking the dropdown menu in the header opens the following options:
 
-1. **Upload MEI File** — upload an MEI file from your local repository (see number 1 in Image 3).  
-2. **Import IIIF Manifest** — import an IIIF manifest from a server (see number 2 in Image 3).  
-3. **Import Local Image** — import images directly from a folder on your computer (see number 3 in Image 3).  
-4. **Download MEI File** — download a rendered MEI file from Cartographer (see number 4 in Image 3).  
-5. **Show Page Overview** — display all imported images and add more images (see number 5 in Image 3).  
-6. **Toggle Measure List** — show or hide a list of all movements and measures in a sidebar (see number 6 in Image 3).  
-
-![Header Menu Bar](./images/menubar2.png)  
-*Image 3: Header Menu Bar*  
+1. **Upload MEI File** — upload an MEI file from your local repository.
+2. **Import IIIF Manifest** — import an IIIF manifest from a server.
+3. **Import Local Image** — import images directly from a folder on your computer.
+4. **Login with GitHub** — sign in with your GitHub account.
+5. **Load from GitHub** — import MEI files and images from your GitHub repositories (only visible when logged in with GitHub).
+6. **Download MEI File** — download a rendered MEI file from Cartographer.
+7. **Show Page Overview** — display all imported images and add more images.
+8. **Toggle Measure List** — show or hide a list of all movements and measures in a sidebar.
 
 ---
 
 ## Footer
 
-The footer contains:
+The footer is a single row containing:
 
-1. **Mdiv status display** (see number 1 in Image 9).  
-2. **Page navigation buttons** (see number 2 in Image 9).  
-3. **Button to jump to a new page** (see number 3 in Image 9).  
-4. **Zone counter** — shows the total number of zones on the current page (see number 4 in Image 9).  
+1. **Mdiv status display** — shows the current mdiv (movement), only appears when there is a zone drawen on the image.
+2. **Zone counter** — shows the total number of zones on the current page.
+3. **Loading indicator** — shown while the app is processing.
+4. **About** — opens the About dialog with the app description, version, and resource links.
+5. **Docs** — opens this documentation.
 
-![Cartographer App Footer](./images/footer.png)  
-*Image 9: Cartographer App Footer*  
 
 ---
 
@@ -60,17 +52,14 @@ The footer contains:
 
 The sidebar contains the following tools:
 
-1. **Select Regions** — choose and adjust existing regions (see number 1 in Image 10).  
-2. **Draw Rectangles** — create new rectangular zones (see number 2 in Image 10).  
-3. **Undo** — revert the last change (disabled when there is nothing to undo).  
-4. **Redo** — reapply a change that was undone (disabled when there is nothing to redo).  
-5. **Add Measures to Zone** — insert additional measures within the same zone (see number 3 in Image 10).  
-6. **Erase Measures** — remove selected measures (see number 4 in Image 10).  
-7. **Automatic Measure Detection** — run the detector to identify measures automatically (see number 5 in Image 10).  
-8. **Page Navigation** — move between pages of the document (see number 6 in Image 10).  
-
-![Sidebar](./images/menu_bar.png)  
-*Image 10: The Cartographer App sidebar*  
+1. **Select Regions** — choose and adjust existing regions.
+2. **Draw Rectangles** — create new rectangular zones.
+3. **Undo** — revert the last change (disabled when there is nothing to undo).
+4. **Redo** — reapply a change that was undone (disabled when there is nothing to redo).
+5. **Add Measures to Zone** — insert additional measures within the same zone.
+6. **Erase Measures** — remove selected measures.
+7. **Automatic Measure Detection** — run the detector to identify measures automatically.
+8. **Page Navigation** — move between pages using the previous/next arrows, or type a page number into the current-page field and press **Enter** to jump directly to that page.
 
 ---
 

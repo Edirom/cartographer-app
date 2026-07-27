@@ -42,7 +42,8 @@ const EN_SIDEBAR = [
           "/technical/OsdComponent.md",
           "/technical/PageImportModal.md",
           "/technical/PagesListEntry.md",
-          "/technical/PagesModal.md"
+          "/technical/PagesModal.md",
+         "/technical/storeIndex.md" 
         ]
       },
       {
@@ -67,6 +68,9 @@ const EN_SIDEBAR = [
 export default defineUserConfig({
   base: '/myAppPlaceholder/docs/',
 
+  head: [
+    ['link', { rel: 'stylesheet', href: 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css' }]
+  ],
   bundler: viteBundler(),
 
   locales: {
