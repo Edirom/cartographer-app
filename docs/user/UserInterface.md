@@ -32,7 +32,7 @@ Clicking the dropdown menu in the header opens five options (see Image 3):
 
 1. **Upload MEI File** — upload an MEI file from your local repository (see number 1 in Image 3).  
 2. **Import IIIF Manifest** — import an IIIF manifest from a server (see number 2 in Image 3).  
-3. **Download MEI File** — download a rendered MEI file from Cartographer (see number 3 in Image 3).  
+3. **Download MEI File** — download a rendered MEI file from Cartographer App (see number 3 in Image 3).  
 4. **Show Page Overview** — display all imported images and add more images (see number 4 in Image 3).  
 5. **Toggle Measure List** — show or hide a list of all movements and measures in a sidebar (see number 5 in Image 3).  
 

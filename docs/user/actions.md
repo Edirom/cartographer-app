@@ -27,7 +27,7 @@ Select **"Upload MEI File"** to import an MEI XML file.
 
 1. Click the **menu button** in the header.  
 2. Choose one of the following:  
-   - **"Load Test Data"** → imports the sample dataset provided with Cartographer.  
+   - **"Load Test Data"** → imports the sample dataset provided with Cartographer App.
    - **"Choose File"** → opens a dialog to select a file from your computer.  
 
    ![Import image window](./images/load_mei.png)  

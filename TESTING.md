@@ -21,7 +21,7 @@ Test at **320px, 375px, 412px, 768px, and desktop**:
 - [ ] Red **footer is visible at the bottom** on every size (the original iPhone mini bug).
 - [ ] Footer contents (page nav, `zones: N`, mdiv label, progress) **fit without being cut off**.
 - [ ] No **horizontal scrollbar** on the page.
-- [ ] Header title **"CartographerApp" isn't clipped**; menu button reachable.
+- [ ] Header title **"cartographer-app" isn't clipped**; menu button reachable.
 - [ ] Rotate to **landscape** — footer still pinned to the bottom.
 - [ ] Desktop layout is **unchanged** from before.
 
