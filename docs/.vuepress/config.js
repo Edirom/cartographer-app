@@ -70,7 +70,7 @@ export default defineUserConfig({
   locales: {
     '/': {
       lang: 'en-US',
-      title: 'Cartographer User and Technical Documentation',
+      title: 'Cartographer App User and Technical Documentation',
       description: 'User and Technical Documentation',
     },
   },

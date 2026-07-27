@@ -51,7 +51,7 @@
         "fullscreen": false,
         "height": 600,
         "resizable": true,
-        "title": "CartographerApp",
+        "title": "cartographer-app",
         "width": 800,
         "useHttpsScheme": true
       }
