@@ -2,7 +2,7 @@ name: Release desktop app
 
 # Builds installable desktop apps (macOS .dmg / .app, Windows .exe / .msi,
 # Linux .deb / .AppImage) and attaches them to a GitHub Release so users can
-# download and run Cartographer locally without a browser or dev server.
+# download and run Cartographer App locally without a browser or dev server.
 #
 # Trigger by pushing a version tag, e.g.:
 #   git tag v0.1.0 && git push origin v0.1.0
@@ -78,7 +78,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ github.ref_type == 'tag' && github.ref_name || format('v{0}', github.run_number) }}
-          releaseName: "Cartographer ${{ github.ref_type == 'tag' && github.ref_name || github.run_number }}"
+          releaseName: "Cartographer App ${{ github.ref_type == 'tag' && github.ref_name || github.run_number }}"
           releaseBody: "Download the installer for your platform below. See the assets for macOS (.dmg), Windows (.exe/.msi) and Linux (.deb/.AppImage)."
           releaseDraft: true
           prerelease: false
