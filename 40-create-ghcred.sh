@@ -11,6 +11,8 @@ set -e
 #   -e GH_APP_CLIENT_ID=your_client_id
 #   -e GH_APP_CLIENT_SECRET=your_client_secret
 #   -e GH_APP_CALL_BACK=http://localhost:8080/myAppPlaceholder/callback
+# Using /myAppPlaceholder in the callback URL allows the public-path
+# replacement in 50-configure-app.sh to rewrite it to the actual subpath.
 GH_CLIENT_ID="${GH_APP_CLIENT_ID:-}"
 GH_CLIENT_SECRET="${GH_APP_CLIENT_SECRET:-}"
 GH_CALLBACK_URL="${GH_APP_CALL_BACK:-}"

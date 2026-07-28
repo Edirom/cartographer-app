@@ -15,6 +15,15 @@ COPY . .
 
 # ---- 2) Build frontend (SPA) ----
 FROM base AS build-app
+
+# Build-time only: vue.config.js (DefinePlugin) inlines these into the bundle.
+# They hold placeholder strings that 40-create-ghcred.sh replaces with real
+# values at container start. NOTE: the runtime stage below declares variables
+# with the SAME names — there they carry the real values. The stages are
+# isolated; the name reuse is intentional (one variable vocabulary), but don't
+# confuse build-time placeholder with runtime real value.
+ENV GH_APP_CLIENT_ID=__GH_CLIENT_ID__
+ENV GH_APP_CALL_BACK=__GH_CALLBACK_URL__
 RUN npm run build
 
 # ---- 3) Build VuePress docs ----
@@ -25,7 +34,11 @@ RUN npm run docs:build
 FROM nginx:alpine
 
 # Default public path; can be overridden at runtime
-ENV VUE_APP_PUBLIC_PATH="/"
+ENV APP_PUBLIC_PATH=""
+# GitHub OAuth credentials — injected at runtime via 40-create-ghcred.sh
+ENV GH_APP_CLIENT_ID=""
+ENV GH_APP_CALL_BACK=""
+ENV GH_APP_CLIENT_SECRET=""
 
 # Imprint & collaborators — optional runtime overrides, injected by
 # 50-configure-app.sh. Empty = show the built-in defaults.

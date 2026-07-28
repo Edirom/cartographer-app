@@ -2,6 +2,8 @@
   <div>
     <LoadXMLModal v-if="showLoadXMLModal"/>
     <LoadIIIFModal v-if="showLoadIIIFModal"/>
+    <LoadGitModal v-if="showLoadGitModal"/>
+    <CommitModal v-if="showCommitModal"/>
     <LoadLocalImage v-if="showLoadLocalImage"/>
     <ImageMismatchModal v-if="showImageMismatchModal"/>
     <div v-if="loading" class="loading-overlay">
@@ -36,6 +38,8 @@ import PageImportModal from '@/components/PageImportModal.vue'
 import MdivModal from '@/components/MdivModal.vue'
 import LoadXMLModal from '@/components/LoadXMLModal.vue'
 import LoadIIIFModal from '@/components/LoadIIIFModal.vue'
+import LoadGitModal from '@/components/LoadGitModal.vue'
+import CommitModal from '@/components/CommitModal.vue'
 import LoadLocalImage from '@/components/LoadLocalImage.vue'
 import ImageMismatchModal from '@/components/ImageMismatchModal.vue'
 import AboutModal from '@/components/AboutModal.vue'
@@ -56,6 +60,8 @@ export default {
     MdivModal,
     LoadXMLModal,
     LoadIIIFModal,
+    LoadGitModal,
+    CommitModal,
     LoadLocalImage,
     ImageMismatchModal,
     AboutModal
@@ -64,6 +70,8 @@ export default {
     ...mapGetters([
       'showLoadXMLModal',
       'showLoadIIIFModal',
+      'showLoadGitModal',
+      'showCommitModal',
       'showLoadLocalImage',
       'showMeasureModal',
       'showMdivModal',
