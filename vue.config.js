@@ -2,6 +2,7 @@
 // GH_APP_CLIENT_SECRET is intentionally never exposed to the client bundle;
 // GH_APP_CLIENT_ID / GH_APP_CALL_BACK are explicitly exposed via DefinePlugin below.
 const GH_CLIENT_ID = process.env.GH_APP_CLIENT_ID
+const GH_CALL_BACK = process.env.GH_APP_CALL_BACK
 const GH_CLIENT_SECRET = process.env.GH_APP_CLIENT_SECRET
 
 module.exports = {
@@ -11,8 +12,8 @@ module.exports = {
   // VUE_APP_ prefix convention). Client ID and callback URL are public values.
   chainWebpack: config => {
     config.plugin('define').tap(args => {
-      args[0]['process.env'].GH_APP_CLIENT_ID = JSON.stringify(process.env.GH_APP_CLIENT_ID)
-      args[0]['process.env'].GH_APP_CALL_BACK = JSON.stringify(process.env.GH_APP_CALL_BACK)
+        args[0]['process.env'].GH_APP_CLIENT_ID = JSON.stringify(GH_CLIENT_ID)
+        args[0]['process.env'].GH_APP_CALL_BACK = JSON.stringify(GH_CALL_BACK)
       return args   
     })
   },
