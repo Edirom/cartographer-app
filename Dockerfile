@@ -16,11 +16,14 @@ COPY . .
 # ---- 2) Build frontend (SPA) ----
 FROM base AS build-app
 
-# Build-time only: Vue CLI inlines VUE_APP_* vars into the bundle. These hold
-# placeholder strings that 40-create-ghcred.sh replaces with real values at
-# container start — the runtime interface uses the GH_APP_* names below.
-ENV VUE_APP_CLIENT_ID=__GH_CLIENT_ID__
-ENV VUE_APP_CALL_BACK=__GH_CALLBACK_URL__
+# Build-time only: vue.config.js (DefinePlugin) inlines these into the bundle.
+# They hold placeholder strings that 40-create-ghcred.sh replaces with real
+# values at container start. NOTE: the runtime stage below declares variables
+# with the SAME names — there they carry the real values. The stages are
+# isolated; the name reuse is intentional (one variable vocabulary), but don't
+# confuse build-time placeholder with runtime real value.
+ENV GH_APP_CLIENT_ID=__GH_CLIENT_ID__
+ENV GH_APP_CALL_BACK=__GH_CALLBACK_URL__
 RUN npm run build
 
 # ---- 3) Build VuePress docs ----

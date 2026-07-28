@@ -1,33 +1,32 @@
-// Dev-only OAuth token-exchange credentials. These are read here in the Node
-// dev-server process and never inlined into the client bundle (GH_APP_CLIENT_SECRET
-// is intentionally NOT prefixed with VUE_APP_, so Vue CLI does not expose it).
-const GH_CLIENT_ID = process.env.VUE_APP_CLIENT_ID
+// OAuth credentials, read here in the Node dev-server process.
+// GH_APP_CLIENT_SECRET is intentionally never exposed to the client bundle;
+// GH_APP_CLIENT_ID / GH_APP_CALL_BACK are explicitly exposed via DefinePlugin below.
+const GH_CLIENT_ID = process.env.GH_APP_CLIENT_ID
 const GH_CLIENT_SECRET = process.env.GH_APP_CLIENT_SECRET
 
-// When building/serving inside Tauri, the app is served from the origin root,
-// so assets must resolve from "/". Tauri sets TAURI_ENV_PLATFORM during the
-// beforeBuildCommand / beforeDevCommand hooks. For the web deployment we keep
-// the "/myAppPlaceholder" subpath.
 module.exports = {
   publicPath: process.env.TAURI_ENV_PLATFORM ? '/' : '/myAppPlaceholder',
+
+  // Expose the GitHub-flavored variable names to client code (replaces the
+  // VUE_APP_ prefix convention). Client ID and callback URL are public values.
+  chainWebpack: config => {
+    config.plugin('define').tap(args => {
+      args[0]['process.env'].GH_APP_CLIENT_ID = JSON.stringify(process.env.GH_APP_CLIENT_ID)
+      args[0]['process.env'].GH_APP_CALL_BACK = JSON.stringify(process.env.GH_APP_CALL_BACK)
+      return args   
+    })
+  },
+
   devServer: {
-    host: '0.0.0.0',
-    allowedHosts: 'all',
-    // Pin the dev server port so it matches the registered GitHub OAuth
-    // callback URL (VUE_APP_CALL_BACK) exactly.
+    host: 'localhost',
+    // Pin the port so it matches the registered GitHub OAuth callback
+    // (GH_APP_CALL_BACK) exactly.
     port: 8080,
-    // The app is served under the publicPath subpath, so history-mode deep
-    // links (e.g. the OAuth /callback route) must fall back to the app's
-    // index.html at that subpath rather than the default '/index.html'.
     historyApiFallback: {
       rewrites: [
         { from: /./, to: '/myAppPlaceholder/index.html' },
       ],
     },
-    // Dev stand-in for the nginx `location = /auth` token exchange: proxy
-    // /auth to GitHub's token endpoint, injecting client_id + client_secret
-    // server-side (GitHub requires the secret, and its token endpoint has no
-    // CORS). The secret stays in this Node process.
     proxy: {
       '/auth': {
         target: 'https://github.com',

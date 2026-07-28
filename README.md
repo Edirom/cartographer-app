@@ -136,8 +136,8 @@ See [Configuration Reference](https://cli.vuejs.org/config/).
    cp .env .env.local
 ```
 ```ini
-   VUE_APP_CLIENT_ID=<your-client-id>
-   VUE_APP_CALL_BACK=http://localhost:8080/myAppPlaceholder/callback
+   GH_APP_CLIENT_ID=<your-client-id>
+   GH_APP_CALL_BACK=http://localhost:8080/myAppPlaceholder/callback
    GH_APP_CLIENT_SECRET=<your-client-secret>
 ```
    `.env.local` is gitignored, so your secret never gets committed.

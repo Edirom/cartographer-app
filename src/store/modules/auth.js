@@ -138,8 +138,8 @@ export default {
   actions: {
     /** Redirect the browser to the GitHub OAuth authorization page. */
     login () {
-      const clientId = process.env.VUE_APP_CLIENT_ID
-      const callbackUrl = process.env.VUE_APP_CALL_BACK
+      const clientId = process.env.GH_APP_CLIENT_ID      // was GH_APP_CLIENT_ID
+      const callbackUrl = process.env.GH_APP_CALL_BACK   // was GH_APP_CALL_BACK
       const state = generateOAuthState()
       setStoredOAuthState(state)
       const params = new URLSearchParams({
