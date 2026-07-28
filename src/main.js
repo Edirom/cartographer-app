@@ -22,3 +22,6 @@ createApp(App).use(router)
   .component('font-awesome-icon', FontAwesomeIcon)
   .component('font-awesome-layers', FontAwesomeLayers)
   .mount('#app')
+
+// Restore the GitHub session from a previously stored token (fire-and-forget)
+store.dispatch('auth/restoreSession')
