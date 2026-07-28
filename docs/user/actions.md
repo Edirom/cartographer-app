@@ -132,8 +132,8 @@ Click **"Automatic Detection"** to run measure detection on the current page.  (
 ---
 
 ## Navigate Through Pages
-Use the **"Previous"** and **"Next"** navigation buttons in the sidebar or footer.  (See number 6 in image 6) 
-To jump to a specific page, type the page number in the footer’s input box and click **"Go"**.  (See number 3 in image 7) 
+Use the **"Previous"** and **"Next"** navigation arrows in the sidebar.  (See number 6 in image 6) 
+To jump to a specific page, type the page number in the sidebar’s page input box (under **"Page"**) and press **Enter**.  
 
 ---
 

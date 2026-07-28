@@ -1,5 +1,6 @@
 <template>
   <div class="appSidebar">
+    <div class="toolButtons">
     <!-- SELECT -->
     <button class="btn btn-action" :class="{'activeMode': mode === 'selection'}"
       title="select measure (s)" :disabled="!isReady"
@@ -106,9 +107,14 @@
 
     </div>
 
+    </div>
+
     <div class="pageNav">
       <label>Page</label>
-      <span class="currentPage">{{ currentPage }}</span>
+      <input type="text" class="currentPageInput" v-model="inputPage"
+        :placeholder="String(currentPage)"
+        v-on:keyup.enter="jumpToPage()"
+        title="Enter a page number and press Enter to jump"/>
       <span class="maxPage">of {{ maxPage }}</span>
       <span class="pageBtn" @click="showPrevPage" :disabled="!prevAvailable">
         <font-awesome-icon icon="fa-solid fa-angle-left" />
@@ -151,6 +157,11 @@ export default {
   components: {
 
   },
+  data: function () {
+    return {
+      inputPage: ''
+    }
+  },
   computed: {
     isReady: function () {
       return this.$store.getters.isReady
@@ -186,7 +197,24 @@ export default {
       return this.$store.getters.imageSelectionModalVisible
     } */
   },
+  watch: {
+    currentPage: function (newPage) {
+      this.inputPage = newPage
+    }
+  },
+  mounted: function () {
+    this.inputPage = this.currentPage
+  },
   methods: {
+    jumpToPage: function () {
+      const page = this.inputPage === '' ? NaN : parseInt(this.inputPage) - 1
+      if (!isNaN(page) && page >= 0 && page < this.$store.getters.maxPageNumber) {
+        this.$store.dispatch('setCurrentPage', page)
+      } else {
+        console.info('Invalid page number: ', this.inputPage)
+        this.inputPage = this.currentPage
+      }
+    },
     showPrevPage: function () {
       this.$store.dispatch('setCurrentPage', this.$store.getters.currentPageIndexZeroBased - 1)
     },
@@ -238,6 +266,20 @@ export default {
   background-color: $appColor;
   float: right;
   padding-top: .4rem;
+  box-sizing: border-box;
+  // Lay the sidebar out as a column so the page navigation can be pinned to
+  // the bottom and stay clickable, while the tool buttons take the remaining
+  // space and scroll on short viewports (instead of overflowing behind the
+  // footer, which would swallow the prev/next clicks).
+  display: flex;
+  flex-direction: column;
+
+  .toolButtons {
+    flex: 0 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
 
   button {
     color: $fontColorDark;
@@ -258,6 +300,7 @@ export default {
   }
 
   .pageNav {
+    flex: 0 0 auto;
     background-color: #ffffff;
     border: 0.05rem solid #000000;
     border-radius: 2px;
@@ -268,9 +311,18 @@ export default {
       font-weight: 100;
       font-size: .5rem;
     }
-    .currentPage {
+    .currentPageInput {
       display: block;
+      width: 80%;
+      margin: 0 auto;
       font-weight: 300;
+      text-align: center;
+      border: $thinBorder;
+      border-radius: 2px;
+      padding: 0;
+      font-size: .7rem;
+      line-height: 1rem;
+      box-sizing: border-box;
     }
 
     .maxPage {

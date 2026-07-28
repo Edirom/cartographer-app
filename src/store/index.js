@@ -127,6 +127,7 @@ function getDefaultState() {
       showMdivModal: false,          // Show/hide modal for movement (mdiv) management
       showPagesModal: false,         // Show/hide modal for page management
       showPageImportModal: false,    // Show/hide modal for importing pages/images
+      showAboutModal: false,         // Show/hide the About/info modal
       showMeasureList: false,        // Show/hide the measure list panel
       loading: false,                // Indicates if the app is currently loading data
       processing: false,             // Indicates if the app is processing data
@@ -258,6 +259,9 @@ export default createStore({
     },
     TOGGLE_MDIV_MODAL(state) {
       state.showMdivModal = !state.showMdivModal
+    },
+    TOGGLE_ABOUT_MODAL(state) {
+      state.showAboutModal = !state.showAboutModal
     },
     HIDE_MODALS(state) {
       state.showMeasureModal = false
@@ -678,6 +682,12 @@ export default createStore({
     },
     toggleMdivModal({ commit }) {
       commit('TOGGLE_MDIV_MODAL')
+    },
+    toggleMdivModal({ commit }) {
+      commit('TOGGLE_MDIV_MODAL')
+    },
+    toggleAboutModal({ commit }) {
+      commit('TOGGLE_ABOUT_MODAL')
     },
     toggleLoadGitModal ({ commit }) {
       commit('TOGGLE_LOADGIT_MODAL')
@@ -1682,6 +1692,7 @@ export default createStore({
     showPageImportModal: state => state.showPageImportModal,
     showImageMismatchModal: state => state.showImageMismatchModal,
     showMdivModal: state => state.showMdivModal,
+    showAboutModal: state => state.showAboutModal,
     showMeasureList: state => state.showMeasureList,
     loading: state => state.loading,
     importingImages: state => state.importingImages,

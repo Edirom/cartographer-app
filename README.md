@@ -116,7 +116,6 @@ npm run lint
 ```
 
 ### Other approach to linting which automatically fixes code and gives a nicer rendition of errors using snazzy
-
 ```
 npm run test:lint
 ```
@@ -200,30 +199,57 @@ http://localhost:8081/demo/callback
 https://myapp.example.org/callback
 ```
 
-## Native Applications (Tauri)
+### Configuring the imprint and collaborators
 
-The repository includes a Tauri setup (`src-tauri`) that wraps the web
-application into native applications for Windows, macOS, Linux, and Android.
+The About dialog shows an imprint and a row of collaborator logos. By default
+these are the ZenMEM / Paderborn University imprint and the ZenMEM and
+NFDI4Culture logos. Institutions hosting their own instance can (and should)
+replace them with their own details at runtime — no rebuild required:
 
-To run the desktop app in development mode:
-
-```bash
-npx tauri dev
+```
+docker run --rm -p 8080:80 \
+  -e VUE_APP_PUBLIC_PATH=/demo \
+  -e APP_IMPRINT_INSTITUTION='Some University, Institute for Music' \
+  -e APP_IMPRINT_STREET='Musikweg 1' \
+  -e APP_IMPRINT_ZIP='12345' \
+  -e APP_IMPRINT_CITY='Musikstadt' \
+  -e APP_IMPRINT_COUNTRY='Germany' \
+  -e APP_IMPRINT_CONTACT_PERSON='Jane Doe' \
+  -e APP_IMPRINT_EMAIL='info@example.org' \
+  -e APP_IMPRINT_PHONE='+49 123 456789' \
+  -e APP_IMPRINT_LINK='https://example.org/imprint' \
+  -e APP_COLLABORATORS='[{"name":"Some University","logo":"https://example.org/logo.png","url":"https://example.org"},{"name":"ZenMEM","logo":"/demo/logos/zenmem_logo_de_einfarbig_ultrablau.png","url":"https://zenmem.de"}]' \
+  cartographer
 ```
 
-To build a distributable desktop application:
+All imprint variables are optional and independent: set only the ones you need
+(fields left unset are simply not displayed). If **none** of them is set, the
+built-in default imprint is shown. `APP_IMPRINT_LINK` can also be used on its
+own to point to an institution's existing imprint page.
 
-```bash
-npx tauri build
-```
+`APP_COLLABORATORS` is a JSON array of objects with `name`, `logo`, and `url`.
+Logo values must be URLs the browser can resolve: an absolute URL (e.g. hosted
+on the institution's own website), or a path served by this container
+**including the configured subpath** — e.g.
+`/demo/logos/zenmem_logo_de_einfarbig_ultrablau.png` when running with
+`VUE_APP_PUBLIC_PATH=/demo`, or `/logos/...` when running at the root path.
+The built-in logos are available under `<subpath>/logos/` with their original
+filenames. If `APP_COLLABORATORS` is not set, the default logos are shown; if
+it is set but not valid JSON, a warning is logged in the browser console and
+the default logos are shown.
 
-To run and build the Android app:
+### Environment variables
 
-```bash
-npx tauri android dev
-npx tauri android build
-```
-
-See the [Tauri documentation](https://tauri.app/) for platform-specific
-prerequisites (e.g., Rust toolchain, system dependencies, and for Android
-the Android SDK/NDK).
+| Variable | Description |
+|---|---|
+| `VUE_APP_PUBLIC_PATH` | Subpath the app is served under (e.g. `/demo`). Defaults to `/`. |
+| `APP_IMPRINT_INSTITUTION` | Institution name shown in the imprint. |
+| `APP_IMPRINT_STREET` | Street and number. |
+| `APP_IMPRINT_ZIP` | Postal code. |
+| `APP_IMPRINT_CITY` | City. |
+| `APP_IMPRINT_COUNTRY` | Country. |
+| `APP_IMPRINT_CONTACT_PERSON` | Contact person's name. |
+| `APP_IMPRINT_EMAIL` | Contact e-mail address (rendered as a mailto link). |
+| `APP_IMPRINT_PHONE` | Phone number (rendered as a tel link). |
+| `APP_IMPRINT_LINK` | URL of a full imprint page (rendered as "Full imprint" link). |
+| `APP_COLLABORATORS` | Collaborator logos as a JSON array of `{"name", "logo", "url"}` objects. Defaults to the ZenMEM and NFDI4Culture logos. |

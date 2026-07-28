@@ -14,6 +14,7 @@
     <MdivModal v-if="showMdivModal"/>
     <PagesModal v-if="showPagesModal"/>
     <PageImportModal v-if="showPageImportModal"/>
+    <AboutModal v-if="showAboutModal"/>
     <AppHeader/>
     <OsdComponent/>
     <ContentPreviewPane/>
@@ -41,6 +42,7 @@ import LoadGitModal from '@/components/LoadGitModal.vue'
 import CommitModal from '@/components/CommitModal.vue'
 import LoadLocalImage from '@/components/LoadLocalImage.vue'
 import ImageMismatchModal from '@/components/ImageMismatchModal.vue'
+import AboutModal from '@/components/AboutModal.vue'
 
 
 export default {
@@ -61,7 +63,8 @@ export default {
     LoadGitModal,
     CommitModal,
     LoadLocalImage,
-    ImageMismatchModal
+    ImageMismatchModal,
+    AboutModal
   },
   computed: {
     ...mapGetters([
@@ -75,6 +78,7 @@ export default {
       'showPagesModal',
       'showPageImportModal',
       'showImageMismatchModal',
+      'showAboutModal',
       'loading',
     ])
   },
