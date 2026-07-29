@@ -20,7 +20,9 @@ The Cartographer App is used by historical digital edition projects,
 including but not limited to:
 
 * [VerDigital](https://verdigital-unipv.github.io/) — a model for an interactive digital critical edition of Italian 19th-century opera (University of Pavia)
-
+* [Beethoven in the House](https://domestic-beethoven.eu/) — research project on domestic arrangements of Beethoven's music and their digital exploration (University of Oxford, Beethoven-Haus Bonn, University of Paderborn)
+* [Carl-Maria-von-Weber-Gesamtausgabe](https://weber-gesamtausgabe.de/en/Index) — complete scholarly edition of Carl Maria von Weber's musical works, letters, diaries, and writings (Academy of Sciences and Literature Mainz / University of Paderborn)
+* [Tanz/Musik digital](https://www.muwi-detmold-paderborn.de/forschung/tanz-musik-digital) — DFG-funded project developing an edition method that digitally links the diverse sources on historical dance — iconographic documents, music sources, and texts — in a multimodal structural model  (Musikwissenschaftliches Seminar Detmold/Paderborn)
 ## Platform Independence
 
 The Cartographer App is platform independent in the sense that a single,
