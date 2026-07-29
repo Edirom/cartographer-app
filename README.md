@@ -23,6 +23,7 @@ including but not limited to:
 * [Beethoven in the House](https://domestic-beethoven.eu/) — research project on domestic arrangements of Beethoven's music and their digital exploration (University of Oxford, Beethoven-Haus Bonn, University of Paderborn)
 * [Carl-Maria-von-Weber-Gesamtausgabe](https://weber-gesamtausgabe.de/en/Index) — complete scholarly edition of Carl Maria von Weber's musical works, letters, diaries, and writings (Academy of Sciences and Literature Mainz / University of Paderborn)
 * [Tanz/Musik digital](https://www.muwi-detmold-paderborn.de/forschung/tanz-musik-digital) — DFG-funded project developing an edition method that digitally links the diverse sources on historical dance — iconographic documents, music sources, and texts — in a multimodal structural model  (Musikwissenschaftliches Seminar Detmold/Paderborn)
+
 ## Platform Independence
 
 The Cartographer App is platform independent in the sense that a single,
@@ -37,7 +38,8 @@ app can be delivered through three channels:
 * **Native application**: packaged via the Tauri integration as an
   installable application for Windows, macOS, Linux, and Android — e.g., for
   offline use or for environments where locally installed software is
-  preferred
+  preferred. GitHub login works natively via the device flow, see
+  [Native application development](#native-application-development-tauri).
 
 ## Features
 
@@ -59,7 +61,7 @@ available at: https://cartographer-app.zenmem.de/docs/
 * Vectre, which is a VueJS version of Spectre CSS. See https://vectrejs.github.io/docs/#/pages/getting-started
 * OpenSeadragon. See http://openseadragon.github.io/
 * Annotorious OpenSeadragon Plugin. See https://recogito.github.io/annotorious/getting-started/osd-plugin/
-* Tauri, used to package the app as a native desktop application. See https://tauri.app/
+* Tauri, used to package the app as a native desktop and Android application. See https://tauri.app/
 
 ## Prerequisites
 
@@ -152,7 +154,81 @@ See [Configuration Reference](https://cli.vuejs.org/config/).
    process and is never bundled into the browser, mirroring what nginx does in
    production.
 
-  
+### Native application development (Tauri)
+
+The app can be packaged as a native application via [Tauri](https://tauri.app/).
+The Rust core lives in `src-tauri/`; the frontend is the same Vue codebase.
+
+#### Prerequisites
+
+In addition to Node.js v20+:
+
+* **Rust** (stable) — install via [rustup](https://rustup.rs/)
+* **For Android builds additionally:**
+  * JDK 17 (e.g. Temurin; newer JDKs may work, but the Android Gradle Plugin
+    targets 17 — Java 8/11 will fail)
+  * Android SDK with platform-tools, build-tools, and the **NDK**
+  * Rust Android targets:
+    `rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android`
+  * Environment variables (e.g. in `~/.zshrc`):
+    ```sh
+    export JAVA_HOME=$(/usr/libexec/java_home -v 17)   # macOS
+    export ANDROID_HOME="$HOME/Library/Android/sdk"
+    export NDK_HOME="$ANDROID_HOME/ndk/<version>"
+    export PATH="$ANDROID_HOME/platform-tools:$PATH"
+    ```
+
+#### Desktop (Windows/macOS/Linux)
+
+```sh
+npm run tauri:dev                        # development with hot reload
+npm run tauri:build                      # installable package for the host OS
+npm run tauri:build -- --bundles app     # macOS: skip DMG creation (the DMG
+                                         # step needs Finder automation
+                                         # permission for your terminal)
+```
+
+Note: `tauri:build` only produces packages for the OS it runs on — there is
+no desktop cross-compilation.
+
+#### Android
+
+```sh
+npm run tauri android dev                # run on a connected device/emulator
+npm run tauri android build -- --apk     # unsigned release APK
+```
+
+The unsigned APK (under
+`src-tauri/gen/android/app/build/outputs/apk/universal/release/`) must be
+signed before it can be installed — create a keystore with `keytool` and sign
+with `zipalign`/`apksigner`, or configure `signingConfigs` in the generated
+Gradle project. Keep the keystore and its password out of the repository, and
+back them up: app updates must be signed with the same key. The keystore
+password must be ASCII-only (`apksigner` cannot read PKCS12 keystores with
+non-ASCII passwords).
+
+The Rust core uses `reqwest` with **rustls** (pure-Rust TLS) so it
+cross-compiles for Android without an OpenSSL sysroot — keep this in mind
+when adding HTTP-related dependencies.
+
+#### GitHub login in native builds
+
+Native builds use the **GitHub Device Flow** instead of the browser redirect:
+the app displays a one-time code, the user confirms it at
+`github.com/login/device`, and the app polls for the token. This requires no
+client secret and no server — the packaged app is fully self-contained.
+
+Setup:
+
+1. In the GitHub OAuth App settings, check **"Enable Device Flow"**.
+2. Set `GH_APP_CLIENT_ID` in `.env.local` **before building** — the value is
+   baked into the bundle at build time (unlike Docker, there is no runtime
+   injection; changing the OAuth app requires a rebuild).
+
+The callback URL and client secret are **not used** by native builds. The
+web deployments (dev server, Docker) are unaffected and keep the redirect
+flow described above.
+
 ### Docker Deployment
 
 All configuration is injected at **runtime** via environment variables — the same image works for any subpath, host, or GitHub OAuth App.
