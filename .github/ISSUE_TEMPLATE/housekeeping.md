@@ -1,5 +1,5 @@
 ---
-name: House Cleaning
+name: Housekeeping
 about: Propose a maintenance, refactoring, or cleanup task
 title: "[Housekeeping] "
 labels: maintenance
