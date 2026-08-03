@@ -45,8 +45,8 @@ _None_
 | maxPage       | Maximum page number                                 |
 | prevAvailable | Whether the previous page is available              |
 | nextAvailable | Whether the next page is available                  |
-| workingMode   | Current working mode (e.g., preprocessing, editing) |
 | mode          | Current sidebar mode (selection, drawing, etc.)     |
+| measures      | Measures on the current page (from the store)       |
 | canUndo       | Whether there is a previous state that can be undone |
 | canRedo       | Whether there is an undone state that can be redone  |
 
