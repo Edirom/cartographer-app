@@ -24,7 +24,7 @@ Select **“Upload MEI File”** to import an MEI XML file.
 
 1. Click the **menu button** in the header.  
 2. Choose one of the following:  
-   - **Load Test Data** → imports the sample dataset provided with Cartographer.  
+   - **Load Test Data** → imports the sample dataset provided with Cartographer App.  
    - **Choose File** → opens a dialog where you can select a file from your computer.  
    ![Import image window](./images/load_mei.png)  
 3. Click **Import** to import the file.  
@@ -50,7 +50,7 @@ When you select **Import IIIF Manifest**, a dialog appears:
 
 1. Click the **menu button** in the header.  
 2. Choose one of the following:  
-   - **Get Test URI** → use the sample manifest provided with Cartographer.  
+   - **Get Test URI** → use the sample manifest provided with Cartographer App.
    - **Paste Your URI** → enter your own IIIF manifest URI in the input field.  
       ![Import IIIF Manifest](./images/IIIF_Import.png)  
 3. Click **Import** to load the images.  

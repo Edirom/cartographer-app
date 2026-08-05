@@ -116,7 +116,6 @@ npm run lint
 ```
 
 ### Other approach to linting which automatically fixes code and gives a nicer rendition of errors using snazzy
-
 ```
 npm run test:lint
 ```
@@ -125,50 +124,132 @@ npm run test:lint
 
 See [Configuration Reference](https://cli.vuejs.org/config/).
 
-## Docker
+### Local development with GitHub authentication
 
-### Build your image
-
-Replace **`cartographer`** with your preferred image name.
-
+1. Register a GitHub OAuth App at **GitHub → Settings → Developer settings → OAuth Apps → New OAuth App**:
+   - **Homepage URL:** `http://localhost:8080`
+   - **Authorization callback URL:** `http://localhost:8080/myAppPlaceholder/callback`
+   - Click **Generate a new client secret** and copy it.
+2. Create your local env file from the tracked example and fill in your credentials:
+```sh
+   cp .env .env.local
 ```
-docker build -t cartographer .
+```ini
+   GH_APP_CLIENT_ID=<your-client-id>
+   GH_APP_CALL_BACK=http://localhost:8080/myAppPlaceholder/callback
+   GH_APP_CLIENT_SECRET=<your-client-secret>
 ```
-
-### Run
-
-Replace **demo** with your desired subpath.
-
-Replace **cartographer** with the image name you used when building.
-
+   `.env.local` is gitignored, so your secret never gets committed.
+3. Install and run:
+```sh
+   npm install
+   npm run serve
 ```
-docker run --rm -p 8080:80 -e VUE_APP_PUBLIC_PATH=/demo cartographer
-```
+   The dev server proxies `/auth` to GitHub's token endpoint with the
+   `client_secret` injected server-side — it stays in the Node dev-server
+   process and is never bundled into the browser, mirroring what nginx does in
+   production.
 
-## Native Applications (Tauri)
+  
+### Docker Deployment
 
-The repository includes a Tauri setup (`src-tauri`) that wraps the web
-application into native applications for Windows, macOS, Linux, and Android.
+All configuration is injected at **runtime** via environment variables — the same image works for any subpath, host, or GitHub OAuth App.
 
-To run the desktop app in development mode:
+#### 1. Build the image
 
-```bash
-npx tauri dev
-```
-
-To build a distributable desktop application:
-
-```bash
-npx tauri build
-```
-
-To run and build the Android app:
-
-```bash
-npx tauri android dev
-npx tauri android build
+```sh
+docker build -t cartographer-app .
 ```
 
-See the [Tauri documentation](https://tauri.app/) for platform-specific
-prerequisites (e.g., Rust toolchain, system dependencies, and for Android
-the Android SDK/NDK).
+#### 2. Start the app
+
+nginx serves the SPA **and** performs the GitHub OAuth token exchange
+server-side (it injects the `client_secret`), so no separate auth container is
+needed.
+
+```sh
+docker run -d \
+  --name app1 \
+  -e APP_PUBLIC_PATH=/demo \
+  -e GH_APP_CLIENT_ID=<your-github-client-id> \
+  -e GH_APP_CLIENT_SECRET=<your-github-client-secret> \
+  -e GH_APP_CALL_BACK=http://localhost:8081/myAppPlaceholder/callback \
+  -p 8081:80 \
+  cartographer-app
+```
+
+Then open http://localhost:8081/demo.
+
+#### Environment variables
+
+| Variable | Description |
+|---|---|
+| `APP_PUBLIC_PATH` | Subpath the app is served under (e.g. `/demo`). Defaults to `/`. |
+| `GH_APP_CLIENT_ID` | GitHub OAuth App client ID (public; safe in the browser). |
+| `GH_APP_CALL_BACK` | OAuth callback URL. Use `/myAppPlaceholder/callback` and it will be rewritten to the actual subpath automatically. |
+| `GH_APP_CLIENT_SECRET` | GitHub OAuth App client secret. Consumed only by nginx for the token exchange — never bundled into the SPA. |
+
+#### GitHub OAuth App setup
+
+In **GitHub → Settings → Developer settings → OAuth Apps**, register one callback URL per deployment. Use multiple lines if needed:
+
+```
+http://localhost:8081/callback
+http://localhost:8081/demo/callback
+https://myapp.example.org/callback
+```
+
+### Configuring the imprint and collaborators
+
+The About dialog shows an imprint and a row of collaborator logos. By default
+these are the ZenMEM / Paderborn University imprint and the ZenMEM and
+NFDI4Culture logos. Institutions hosting their own instance can (and should)
+replace them with their own details at runtime — no rebuild required:
+
+```
+docker run --rm -p 8080:80 \
+  -e VUE_APP_PUBLIC_PATH=/demo \
+  -e APP_IMPRINT_INSTITUTION='Some University, Institute for Music' \
+  -e APP_IMPRINT_STREET='Musikweg 1' \
+  -e APP_IMPRINT_ZIP='12345' \
+  -e APP_IMPRINT_CITY='Musikstadt' \
+  -e APP_IMPRINT_COUNTRY='Germany' \
+  -e APP_IMPRINT_CONTACT_PERSON='Jane Doe' \
+  -e APP_IMPRINT_EMAIL='info@example.org' \
+  -e APP_IMPRINT_PHONE='+49 123 456789' \
+  -e APP_IMPRINT_LINK='https://example.org/imprint' \
+  -e APP_COLLABORATORS='[{"name":"Some University","logo":"https://example.org/logo.png","url":"https://example.org"},{"name":"ZenMEM","logo":"/demo/logos/zenmem_logo_de_einfarbig_ultrablau.png","url":"https://zenmem.de"}]' \
+  cartographer
+```
+
+All imprint variables are optional and independent: set only the ones you need
+(fields left unset are simply not displayed). If **none** of them is set, the
+built-in default imprint is shown. `APP_IMPRINT_LINK` can also be used on its
+own to point to an institution's existing imprint page.
+
+`APP_COLLABORATORS` is a JSON array of objects with `name`, `logo`, and `url`.
+Logo values must be URLs the browser can resolve: an absolute URL (e.g. hosted
+on the institution's own website), or a path served by this container
+**including the configured subpath** — e.g.
+`/demo/logos/zenmem_logo_de_einfarbig_ultrablau.png` when running with
+`VUE_APP_PUBLIC_PATH=/demo`, or `/logos/...` when running at the root path.
+The built-in logos are available under `<subpath>/logos/` with their original
+filenames. If `APP_COLLABORATORS` is not set, the default logos are shown; if
+it is set but not valid JSON, a warning is logged in the browser console and
+the default logos are shown.
+
+### Environment variables
+
+| Variable | Description |
+|---|---|
+| `VUE_APP_PUBLIC_PATH` | Subpath the app is served under (e.g. `/demo`). Defaults to `/`. |
+| `APP_IMPRINT_INSTITUTION` | Institution name shown in the imprint. |
+| `APP_IMPRINT_STREET` | Street and number. |
+| `APP_IMPRINT_ZIP` | Postal code. |
+| `APP_IMPRINT_CITY` | City. |
+| `APP_IMPRINT_COUNTRY` | Country. |
+| `APP_IMPRINT_CONTACT_PERSON` | Contact person's name. |
+| `APP_IMPRINT_EMAIL` | Contact e-mail address (rendered as a mailto link). |
+| `APP_IMPRINT_PHONE` | Phone number (rendered as a tel link). |
+| `APP_IMPRINT_LINK` | URL of a full imprint page (rendered as "Full imprint" link). |
+| `APP_COLLABORATORS` | Collaborator logos as a JSON array of `{"name", "logo", "url"}` objects. Defaults to the ZenMEM and NFDI4Culture logos. |

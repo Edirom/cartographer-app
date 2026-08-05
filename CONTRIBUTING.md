@@ -10,7 +10,7 @@
 
 ## How to contribute
 
-Cartographer is a free and open-source software and we appreciate to receive contributions from our community!  
+Cartographer App is a free and open-source software and we appreciate to receive contributions from our community!  
 So first of all, thank you for considering contributing to Cartographer! When you do so, please try to follow these guidelines.
 
 ### Bug reports
@@ -19,11 +19,11 @@ If you think you found a bug in Cartographer, first please search our [issues li
 
 ### Feature requests
 
-If you think, Cartographer should have a feature that does not exist already, please search our [issues list](https://github.com/Edirom/cartographer-app/issues) in case a wish for a similar feature was already reported. If not, please [open an issue](https://github.com/Edirom/cartographer-app/issues/new?assignees=&labels=&projects=&template=problem-report.md&title=%5BFeature%5D) and describe the feature using our [template](https://github.com/Edirom/cartographer-app/blob/dev/.github/ISSUE_TEMPLATE/feature_request.md) for new features. 
+If you think, Cartographer App should have a feature that does not exist already, please search our [issues list](https://github.com/Edirom/cartographer-app/issues) in case a wish for a similar feature was already reported. If not, please [open an issue](https://github.com/Edirom/cartographer-app/issues/new?assignees=&labels=&projects=&template=problem-report.md&title=%5BFeature%5D) and describe the feature using our [template](https://github.com/Edirom/cartographer-app/blob/dev/.github/ISSUE_TEMPLATE/feature_request.md) for new features. 
 
 ### Contributing code and documentation
 
-If you would like to contribute to Cartographer developing a new feature or working on a bug fix, your contribution is highly appreciated and we kindly ask you to take the following guidelines into concern. 
+If you would like to contribute to Cartographer App developing a new feature or working on a bug fix, your contribution is highly appreciated and we kindly ask you to take the following guidelines into concern. 
 The active contributors have agreed to organise their work along the so-called 'git-flow-workflow' ([Driessen 2010](https://nvie.com/posts/a-successful-git-branching-model/)) to foster a clean and traceable development process. The following instructions will ensure this workflow.
 
 * Check the [network graph](https://github.com/Edirom/cartographer-app/network) to see all the other forks of other persons to make sure, nobody else is already working on the topic, you want to start to address.
@@ -48,7 +48,7 @@ Please make sure to provide meaningful and understandable commit messsages, that
 
 Releases are discussed and declared by the Edirom community. The planned scope of features and bug fixes of upcoming releases can be read from corresponding [milestones](https://github.com/Edirom/cartographer-app/issues?q=is%3Aissue%20state%3Aopen%20milestone), and eventually you can also see here  where contributions are most urgent needed. 
 
-The most recent 'stable' version of Cartographer is always found on the 'main' branch, where all releases are tagged from. The most recent 'work in progress' is found on the 'develop' branch. 
+The most recent 'stable' version of Cartographer App is always found on the 'main' branch, where all releases are tagged from. The most recent 'work in progress' is found on the 'develop' branch. 
 
 ## Versioning
 
