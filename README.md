@@ -95,34 +95,60 @@ rm -rf node_modules package-lock.json
 npm install --legacy-peer-deps
 ```
 
-### Compiles and hot-reloads for development
+### Run the web app in development
 
-```
+```sh
 npm run serve
 ```
 
-### Compiles and minifies for production
+The development server is available at
+<http://localhost:8080/myAppPlaceholder/>.
 
-```
+### Build the web app for production
+
+```sh
 npm run build
 ```
 
-### Run your unit tests
+### Run the unit tests
 
-```
+```sh
 npm run test:unit
 ```
 
-### Lints and fixes files
+### Lint and fix files
 
-```
+```sh
 npm run lint
 ```
 
-### Other approach to linting which automatically fixes code and gives a nicer rendition of errors using snazzy
-```
+To run Standard with automatic fixes and format its output with Snazzy:
+
+```sh
 npm run test:lint
 ```
+
+### Run the documentation locally
+
+```sh
+npm run docs:dev
+```
+
+VuePress prints the local documentation URL when the server is ready. The
+configured documentation path is `/myAppPlaceholder/docs/`. If port 8080 is
+already used by the web app, choose another port:
+
+```sh
+npm run docs:dev -- --port 8081
+```
+
+Build the production documentation with:
+
+```sh
+npm run docs:build
+```
+
+The generated static site is written to `docs/.vuepress/dist/`.
 
 ### Customize configuration
 
@@ -136,7 +162,7 @@ See [Configuration Reference](https://cli.vuejs.org/config/).
    - Click **Generate a new client secret** and copy it.
 2. Create your local env file from the tracked example and fill in your credentials:
 ```sh
-   cp .env .env.local
+   cp .env.local.example .env.local
 ```
 ```ini
    GH_APP_CLIENT_ID=<your-client-id>
@@ -269,13 +295,18 @@ Then open http://localhost:8081/demo.
 
 #### GitHub OAuth App setup
 
-In **GitHub → Settings → Developer settings → OAuth Apps**, register one callback URL per deployment. Use multiple lines if needed:
+In **GitHub → Settings → Developer settings → OAuth Apps**, configure the
+callback URL that matches the deployment. For example:
 
-```
-http://localhost:8081/callback
+```text
 http://localhost:8081/demo/callback
-https://myapp.example.org/callback
 ```
+
+For a root deployment, use `http://localhost:8081/callback`. For production,
+use the corresponding HTTPS URL, such as
+`https://myapp.example.org/demo/callback`. A GitHub OAuth App has one callback
+URL setting, so deployments requiring different callback origins should use
+separate OAuth Apps.
 
 ### Configuring the imprint and collaborators
 
@@ -284,9 +315,9 @@ these are the ZenMEM / Paderborn University imprint and the ZenMEM and
 NFDI4Culture logos. Institutions hosting their own instance can (and should)
 replace them with their own details at runtime — no rebuild required:
 
-```
+```sh
 docker run --rm -p 8080:80 \
-  -e VUE_APP_PUBLIC_PATH=/demo \
+  -e APP_PUBLIC_PATH=/demo \
   -e APP_IMPRINT_INSTITUTION='Some University, Institute for Music' \
   -e APP_IMPRINT_STREET='Musikweg 1' \
   -e APP_IMPRINT_ZIP='12345' \
@@ -297,7 +328,7 @@ docker run --rm -p 8080:80 \
   -e APP_IMPRINT_PHONE='+49 123 456789' \
   -e APP_IMPRINT_LINK='https://example.org/imprint' \
   -e APP_COLLABORATORS='[{"name":"Some University","logo":"https://example.org/logo.png","url":"https://example.org"},{"name":"ZenMEM","logo":"/demo/logos/zenmem_logo_de_einfarbig_ultrablau.png","url":"https://zenmem.de"}]' \
-  cartographer
+  cartographer-app
 ```
 
 All imprint variables are optional and independent: set only the ones you need
@@ -310,17 +341,20 @@ Logo values must be URLs the browser can resolve: an absolute URL (e.g. hosted
 on the institution's own website), or a path served by this container
 **including the configured subpath** — e.g.
 `/demo/logos/zenmem_logo_de_einfarbig_ultrablau.png` when running with
-`VUE_APP_PUBLIC_PATH=/demo`, or `/logos/...` when running at the root path.
+`APP_PUBLIC_PATH=/demo`, or `/logos/...` when running at the root path.
 The built-in logos are available under `<subpath>/logos/` with their original
 filenames. If `APP_COLLABORATORS` is not set, the default logos are shown; if
 it is set but not valid JSON, a warning is logged in the browser console and
 the default logos are shown.
 
-### Environment variables
+#### Imprint and collaborator environment variables
+
+`APP_PUBLIC_PATH` and the GitHub OAuth variables are described in the Docker
+deployment table above. The following optional variables customize the About
+dialog:
 
 | Variable | Description |
 |---|---|
-| `VUE_APP_PUBLIC_PATH` | Subpath the app is served under (e.g. `/demo`). Defaults to `/`. |
 | `APP_IMPRINT_INSTITUTION` | Institution name shown in the imprint. |
 | `APP_IMPRINT_STREET` | Street and number. |
 | `APP_IMPRINT_ZIP` | Postal code. |
