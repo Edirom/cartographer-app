@@ -27,11 +27,31 @@ Clicking the dropdown menu in the header opens the following options:
 1. **Upload MEI File** — upload an MEI file from your local repository.
 2. **Import IIIF Manifest** — import an IIIF manifest from a server.
 3. **Import Local Image** — import images directly from a folder on your computer.
-4. **Login with GitHub** — sign in with your GitHub account.
+4. **Login with GitHub** — sign in with your GitHub account. Browser builds use
+   an OAuth redirect; Android and desktop Tauri builds use Device Flow.
 5. **Load from GitHub** — import MEI files and images from your GitHub repositories (only visible when logged in with GitHub).
 6. **Download MEI File** — download a rendered MEI file from Cartographer.
 7. **Show Page Overview** — display all imported images and add more images.
 8. **Toggle Measure List** — show or hide a list of all movements and measures in a sidebar.
+
+### Native GitHub login prompt
+
+After selecting **Login with GitHub** in an Android or desktop Tauri build, a
+sign-in card appears near the top-right corner. It contains:
+
+- The GitHub verification URL
+- A temporary device code
+- A button for copying the code
+- A waiting-for-authorization status message
+
+Open the verification URL, enter the code, and authorize Cartographer. Keep the
+application open while it waits for GitHub. The card closes when login
+succeeds. If an error is shown or the request times out, start the login again
+to request a new code.
+
+Only enter the code if you initiated the login from Cartographer. See
+[Actions](./actions.md#importing-from-a-github-repository) for step-by-step
+instructions.
 
 ---
 

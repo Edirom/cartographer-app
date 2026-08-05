@@ -20,6 +20,7 @@ const EN_SIDEBAR = [
     collapsible: true,
     link: "/technical/README.md",
     children: [
+      "/technical/Auth.md",
       {
         text: "Components",
         collapsible: true,
@@ -94,3 +95,4 @@ export default defineUserConfig({
     },
   }),
 });
+
