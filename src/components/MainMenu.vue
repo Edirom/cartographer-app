@@ -85,12 +85,29 @@
         </li>
       </template>
     </ul>
+
+    <!-- GitHub Device Flow prompt (native/Tauri builds). Lives outside the
+         dropdown list so it survives the menu closing while the user enters
+         the code at github.com/login/device. Cleared automatically by the
+         auth/loginDevice action on success, error, or timeout. -->
+    <div v-if="devicePrompt" class="device-login-card">
+      <p class="device-login-title">Sign in with GitHub</p>
+      <p>Visit
+        <a :href="devicePrompt.uri" target="_blank" rel="noopener">{{ devicePrompt.uri }}</a>
+        and enter this code:
+      </p>
+      <div class="device-code-row">
+        <code class="device-code">{{ devicePrompt.userCode }}</code>
+        <button class="btn btn-sm" @click="copyDeviceCode" title="Copy code">
+          <font-awesome-icon icon="fa-solid fa-copy"/>
+        </button>
+      </div>
+      <p class="device-login-hint">Waiting for authorization… Only enter this code if you just requested it here.</p>
+    </div>
   </div>
 </template>
 
 <script>
-import { mapGetters, mapActions } from 'vuex'
-
 export default {
   name: 'MainMenu',
   props: {
@@ -129,6 +146,9 @@ export default {
         (this.selectedBranch && this.selectedBranch.name)
       return branch ? 'GitHub · ' + branch : 'GitHub'
     },
+    devicePrompt: function () {
+      return this.$store.state.auth.devicePrompt
+    },
   },
   methods: {
     importXML: function () {
@@ -144,7 +164,18 @@ export default {
       this.$store.dispatch('toggleLoadGitModal')
     },
     loginToGithub: function () {
-      this.$store.dispatch('auth/login')
+      if (window.__TAURI_INTERNALS__) {
+        this.$store.dispatch('auth/loginDevice').catch(err => {
+          alert('GitHub login failed: ' + err.message)
+        })
+      } else {
+        this.$store.dispatch('auth/login')
+      }
+    },
+    copyDeviceCode: function () {
+      if (this.devicePrompt) {
+        navigator.clipboard.writeText(this.devicePrompt.userCode)
+      }
     },
     commitToGithub: function () {
       this.$store.dispatch('toggleCommitModal')
@@ -224,6 +255,46 @@ button {
     position: relative;
     top: -1px;
     padding-right: 5px;
+  }
+}
+
+.device-login-card {
+  position: fixed;
+  top: 4rem;
+  right: 1rem;
+  z-index: 400;
+  width: 280px;
+  padding: .8rem;
+  background: #fff;
+  border: 1px solid $fontColorDark;
+  border-radius: .3rem;
+  box-shadow: 0 .2rem .5rem rgba(0,0,0,.2);
+  color: $fontColorDark;
+  text-align: left;
+
+  .device-login-title {
+    font-weight: 600;
+    margin-bottom: .4rem;
+  }
+
+  .device-code-row {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    margin: .4rem 0;
+  }
+
+  .device-code {
+    font-size: 1.1rem;
+    letter-spacing: .15em;
+    padding: .2rem .5rem;
+    background: rgba(0, 0, 0, .05);
+  }
+
+  .device-login-hint {
+    font-size: .65rem;
+    opacity: .75;
+    margin-top: .4rem;
   }
 }
 </style>
