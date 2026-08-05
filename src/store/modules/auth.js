@@ -445,30 +445,6 @@ export default {
       commit('SET_REPO_CONTENTS', [])
       commit('CLEAR_SELECTED_REPO')
     },
-    async loginDevice ({ commit, dispatch }) {
-  const { invoke } = await import('@tauri-apps/api/core')
-  const clientId = process.env.GH_APP_CLIENT_ID
-  const dc = await invoke('gh_device_code', { clientId })
-
-  // Show dc.user_code + dc.verification_uri in the UI (copy button recommended)
-  commit('SET_DEVICE_PROMPT', { userCode: dc.user_code, uri: dc.verification_uri })
-
-  let interval = (dc.interval || 5) * 1000
-  const deadline = Date.now() + dc.expires_in * 1000
-  while (Date.now() < deadline) {
-    await new Promise(r => setTimeout(r, interval))
-    const res = await invoke('gh_poll_token', { clientId, deviceCode: dc.device_code })
-    if (res.access_token) {
-      commit('SET_DEVICE_PROMPT', null)
-      commit('SET_TOKEN', res.access_token)   // reuses existing mutation
-      return dispatch('fetchUser')            // everything downstream unchanged
-    }
-    if (res.error === 'authorization_pending') continue
-    if (res.error === 'slow_down') { interval += 5000; continue }
-    throw new Error(res.error_description || res.error)
-  }
-  throw new Error('Device flow timed out — please try again')
-  }
   },
 
   getters: {
