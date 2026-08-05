@@ -7,7 +7,7 @@ Displays a dropdown menu with actions for file import/export and toggling app fe
 ## Overview
 
 The `MainMenu` component provides:
-- A dropdown menu for importing MEI files and IIIF manifests
+- A dropdown menu for importing MEI files, IIIF manifests, and local images
 - Downloading the current MEI file
 - Showing the page overview modal
 - Toggling the measure list pane
@@ -20,7 +20,7 @@ The `MainMenu` component provides:
 
 - **Dropdown Menu**: Triggered by a button with a bars icon
 - **Sections**:
-  - **Data**: Upload MEI, Import IIIF Manifest, Download MEI File
+  - **User**: Upload MEI File, Import IIIF Manifest, Import Local Image, Download MEI File
   - **Actions**: Show Page Overview, Toggle Measure List
   - **Options**: Toggle Merge Mode (if available)
 
@@ -55,6 +55,7 @@ _None_
 |-----------------------|------------------------------------------------------------------|
 | importXML             | Opens the modal to upload an MEI file                            |
 | importManifest        | Opens the modal to import a IIIF manifest                        |
+| importLocalImage      | Opens the modal to import a local image                          |
 | xmlDataUrl            | Returns the data URL for downloading the MEI file                |
 | toggleMeasureList     | Toggles the measure list pane                                    |
 | showPagesModal        | Opens the page overview modal                                    |

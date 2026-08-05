@@ -11,7 +11,7 @@ The `LoadLocalImage` component:
 - Automatically filters and displays supported image files.
 - Allows the user to preview the list of detected images before importing.
 - On confirmation, converts local images to pages and imports them into the application.
-- Preserves existing zones and measures if an MEI file is already loaded.
+- Loads the selected images as a fresh set (previously loaded MEI zones and measures are not preserved).
 - Uses Vuex store for state management and actions.
 - Supports various image formats: JPG, JPEG, PNG, GIF, WebP, SVG, BMP, and TIFF.
 
@@ -22,9 +22,9 @@ The `LoadLocalImage` component:
 - **Header**: Modal title ("Load Local Images") and close button.
 - **Body**:
   - File input field with label "Choose Folder" (webkitdirectory for folder selection).
-  - Image info section showing the count of selected images.
+  - Image info section showing the count of detected images (and a note about how many non-image files were ignored).
   - Scrollable list of detected image files with their paths.
-- **Footer**: Cancel and Import buttons (Import button is disabled if no images are selected).
+- **Footer**: Cancel and Import buttons.
 
 ---
 
@@ -40,6 +40,7 @@ _None_
 |---------------------|--------|---------------------------------------------|
 | selectedImages      | Array  | Array of image file objects with name and file properties |
 | selectedFolderPath  | String | Path of the selected folder                  |
+| totalFilesSelected  | Number | Total number of files chosen in the folder (including non-image files) |
 
 ---
 
@@ -47,8 +48,8 @@ _None_
 
 | Name                 | Description                                                      |
 |----------------------|------------------------------------------------------------------|
-| handleFolderSelection| Processes folder selection, filters image files, and populates selectedImages array |
-| importImages         | Converts images to pages, preserves existing MEI data, and dispatches to store |
+| handleFolderSelection| Processes folder selection, records the total file count, filters image files, and populates the selectedImages array |
+| importImages         | Sorts and converts the selected images to pages and dispatches them to the store as a fresh load (no MEI preservation); dispatches an empty import when no images are selected |
 | closeModal           | Closes the modal and resets data to initial state |
 
 ---
@@ -66,9 +67,10 @@ _None_
 
 ### Mutations
 - `TOGGLE_LOADLOCALIMAGE_MODAL(state, value)`: Sets or toggles the modal visibility state
+- `SET_LOADING(state, value)`: Toggles the global loading indicator (set while images are converted, cleared on error)
 
 ### Actions
-- `addLocalImagePages({ pages, originalMei })`: Adds imported images as pages to the store, preserving existing MEI zones/measures if available
+- `addLocalImagePages(pages)`: Adds the converted images as pages to the store. This component dispatches the pages array directly (or `[]` when no images are selected) so images are loaded as a fresh set without preserving prior MEI data
 - `toggleLoadLocalImage()`: Toggles the modal visibility
 
 ---
@@ -97,9 +99,9 @@ Non-image files are ignored during folder selection.
 5. Detected images are displayed in a scrollable list.
 6. User reviews the image list and clicks "Import" to proceed.
 7. Images are converted to pages using `convertLocalImagesToPages()` utility.
-8. If an existing MEI file is loaded, zones and measures are preserved.
+8. Images are loaded as a fresh set; previously loaded MEI zones and measures are not preserved.
 9. Pages are added to the store via `addLocalImagePages` action.
-10. Modal automatically closes when import is complete.
+10. The modal closes as soon as Import is clicked (before conversion completes).
 
 ---
 
@@ -108,7 +110,7 @@ Non-image files are ignored during folder selection.
 - **Folder-based selection**: Uses `webkitdirectory` attribute for selecting entire folders.
 - **Image filtering**: Automatically detects and filters only image files.
 - **Preview before import**: Users can see all detected images before importing.
-- **MEI preservation**: If an MEI file is already loaded, existing zones and measures are maintained.
+- **Fresh load**: Images are always imported as a new set; any previously loaded MEI zones and measures are not preserved.
 - **Error handling**: Displays alerts if image loading fails and logs errors to console.
 - **Sorted imports**: Images are sorted by filename using `sortImageFiles()` utility before import.
 
@@ -124,13 +126,13 @@ Non-image files are ignored during folder selection.
 
 ### Dependencies
 
-- Vue 3
+- Vue 2
 - Vuex (for state management)
 - localImages.js utility functions
 
 ### Browser Support
 
-The component relies on the File System Access API and `webkitdirectory` attribute, which are supported in:
+The component relies on the `webkitdirectory` attribute for folder selection, which is supported in:
 - Chrome/Edge 50+
 - Firefox 50+
 - Safari 13.1+
@@ -145,15 +147,15 @@ The component relies on the File System Access API and `webkitdirectory` attribu
 | Select folder | Populates image list if images are found |
 | Click "Cancel" | Closes modal, clears selections |
 | Click modal overlay | Closes modal (same as Cancel button) |
-| Click "Import" | Converts and imports images, then closes modal |
+| Click "Import" | Closes the modal and imports the converted images |
 
 ---
 
 ## Error Handling
 
-- If no images are found in the selected folder, the Import button remains disabled.
+- If no images are found in the selected folder, clicking Import dispatches an empty import (`addLocalImagePages([])`) instead of loading any pages.
 - If image conversion fails, an alert is shown and error details are logged to the browser console.
-- The modal remains open if import fails, allowing the user to select a different folder or try again.
+- The modal closes as soon as Import is clicked, so conversion errors surface via an alert after the modal has already closed.
 
 ---
 
@@ -180,6 +182,6 @@ methods: {
 
 ## Notes
 
-- The component automatically closes after a successful import via the `HIDE_MODALS` commit triggered by the `addLocalImagePages` action.
+- The component closes immediately when Import is clicked; `importImages()` calls `closeModal()` (committing `TOGGLE_LOADLOCALIMAGE_MODAL`) before the image conversion completes.
 - Image paths are preserved with their relative folder structure (e.g., "folderName/subfolder/image.jpg").
 - The component works best with reasonably-sized image folders; very large folders (1000+ images) may take time to process.
