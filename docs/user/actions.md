@@ -81,12 +81,35 @@ so the difference can be resolved before continuing.
 
 ### Importing from a GitHub Repository
 
-To load files from GitHub, you first need to log in:
+To load files from GitHub, you first need to log in. The login steps depend on
+how you run Cartographer.
 
-1. Click the **menu button** in the header and select **"Login with GitHub"**.
-2. You are redirected to GitHub to authorize the app, then returned to Cartographer. Your GitHub avatar appears in the header.
+#### Browser login
 
-Once logged in, select **"Load from GitHub"** in the header menu:
+1. Click the **menu button** in the header and select **Login with GitHub**.
+2. Authorize Cartographer on GitHub.
+3. GitHub redirects you back to Cartographer. Your GitHub avatar appears in the
+   header when login is complete.
+
+#### Android and native application login
+
+The Android and desktop Tauri applications use GitHub Device Flow instead of a
+browser callback:
+
+1. Click the **menu button** and select **Login with GitHub**.
+2. Cartographer displays a temporary device code and a GitHub verification URL.
+3. Copy the code using the button beside it.
+4. Open <https://github.com/login/device> in a browser. This can be on the same
+   device or another trusted device.
+5. Enter the code and authorize Cartographer.
+6. Return to Cartographer. The app waits for authorization and completes login
+   automatically; your GitHub avatar then appears in the header.
+
+Only enter a device code when you initiated the login from Cartographer. Device
+codes expire; start the login again if the code expires or the request times
+out.
+
+Once logged in, select **Load from GitHub** in the header menu:
 
 1. Select the repository you want to load from (private repositories are supported).
 2. Choose the **branch** to load from.
