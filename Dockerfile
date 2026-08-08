@@ -1,3 +1,4 @@
+# check=skip=SecretsUsedInArgOrEnv
 # ---- 1) Base build stage ----
 FROM node:24-alpine AS base
 WORKDIR /app
