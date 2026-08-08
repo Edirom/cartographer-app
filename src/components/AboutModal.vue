@@ -154,11 +154,15 @@ function resolveCollaborators () {
       return DEFAULT_COLLABORATORS
     }
     const base = (process.env.BASE_URL || '/').replace(/\/$/, '')
+    // Built from parts so the "/myAppPlaceholder" token never appears as a
+    // contiguous literal here — the container's public-path sed pass would
+    // otherwise rewrite it and corrupt this file.
+    const placeholder = ['', 'myAppPlaceholder'].join('/')
     return parsed
       .filter(c => c && c.name && c.logo && c.url)
       .map(c => ({
         ...c,
-        logo: c.logo.replace(/^\/myAppPlaceholder/, base)
+        logo: c.logo.indexOf(placeholder) === 0 ? base + c.logo.slice(placeholder.length) : c.logo
       }))
   } catch (e) {
     console.warn('APP_COLLABORATORS could not be decoded/parsed, showing default collaborators', e)

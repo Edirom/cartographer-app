@@ -13,16 +13,16 @@ set -e
 
 # ---- Public path (normalize only; replacement happens further down) ----
 # Accept empty = root
-VUE_APP_PUBLIC_PATH="${VUE_APP_PUBLIC_PATH:-}"
+APP_PUBLIC_PATH="${APP_PUBLIC_PATH:-}"
 
 # Normalize: allow "", "/" (root) or "/subpath"
-case "$VUE_APP_PUBLIC_PATH" in
+case "$APP_PUBLIC_PATH" in
   ""|"/") NORMALIZED_PATH="/" ;;   # empty or "/" means root
-  /*)     NORMALIZED_PATH="${VUE_APP_PUBLIC_PATH%/}" ;;  # already starts with / but strip off trailing /
-  *)      NORMALIZED_PATH="/${VUE_APP_PUBLIC_PATH%/}" ;; # prepend / and strip off trailing /
+  /*)     NORMALIZED_PATH="${APP_PUBLIC_PATH%/}" ;;  # already starts with / but strip off trailing /
+  *)      NORMALIZED_PATH="/${APP_PUBLIC_PATH%/}" ;; # prepend / and strip off trailing /
 esac
 
-echo "Using VUE_APP_PUBLIC_PATH='${VUE_APP_PUBLIC_PATH}' (normalized='${NORMALIZED_PATH}')"
+echo "Using APP_PUBLIC_PATH='${APP_PUBLIC_PATH}' (normalized='${NORMALIZED_PATH}')"
 
 # Create symlink for subpath so /demo works by pointing to /
 if [ "$NORMALIZED_PATH" != "/" ]; then
