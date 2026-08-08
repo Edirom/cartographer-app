@@ -1,66 +1,35 @@
-# Cartographer App
+# Getting Started
 
-The Cartographer App is used to provide placement information of zones of interest
-in (historical) documents. The first and foremost use case is the identification
-of bounding boxes of measures in music documents. It is a successor of the
-*Vertaktoid*, but other than that uses web technology and is thus platform
-independent. It optionally uses the *Measure Detector* for automatic recognition
-of measure positions, but allows manual correction of these results.
+Choose the option appropriate for your platform.
 
+## Browser
 
-## Important Tools and their Documentation
+No installation is required. Open the application URL provided by your
+institution, for example <https://cartographer-app.zenmem.de/>.
 
-* Vectre, which is a VueJS version of Spectre CSS. See https://vectrejs.github.io/docs/#/pages/getting-started
-* OpenSeadragon. See http://openseadragon.github.io/
-* Annotorious OpenSeadragon Plugin. See https://recogito.github.io/annotorious/getting-started/osd-plugin/
+## Native application
 
+Cartographer can be distributed as a native application for Windows, macOS,
+Linux, and Android. Download the package for your platform from the
+[releases page](https://github.com/Edirom/cartographer-app/releases) or use the
+download provided by your institution.
 
-## Project setup
-```
-npm install
-```
+Only install native packages from a trusted source. Android packages may need
+to be approved for installation if they are distributed outside an app store;
+follow your institution's installation guidance.
 
-### Compiles and hot-reloads for development
-```
-npm run serve
-```
+## GitHub login on Android and desktop
 
-### Compiles and minifies for production
-```
-npm run build
-```
+Native Tauri applications use GitHub Device Flow rather than redirecting back
+to the application through a callback URL:
 
-### Run your unit tests
-```
-npm run test:unit
-```
+1. Open the application menu and select **Login with GitHub**.
+2. Copy the temporary code displayed by Cartographer.
+3. Open <https://github.com/login/device> in a browser.
+4. Enter the code and authorize Cartographer.
+5. Return to Cartographer and wait for login to complete automatically.
 
-### Lints and fixes files
-```
-npm run lint
-```
-
-### Other approaach to linting which automatically fixes code and gives a nicer rendition of errors using snazzy
-```
-npm run test:lint
-```
-
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
-
-### Biuld your image 
-Replace **`cartographer`** with your preferred image name.
-```
-docker build -t cartographer .
-
-```
-
-### Run 
-
-Replace **demo** with your desired subpath.
-
-Replace **cartographer** with the image name you used when building.
-```
-docker run --rm -p 8080:80 -e VUE_APP_PUBLIC_PATH=/demo cartographer
-```
-
+The browser can be on the same device or another trusted device. Only enter a
+code when you initiated the login yourself. See
+[Importing from a GitHub repository](./actions.md#importing-from-a-github-repository)
+for the complete workflow.

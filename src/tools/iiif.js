@@ -16,7 +16,6 @@ function addPage(canvas, canvases, dimension, n, file, meiSurfaceTemplate, hasIt
 
   // Use provided dimensions if available
   if (n <= canvases.length) {
-    console.log("number is", n, "dimension", dimension, "canvas width", canvas.width, "canvas height", canvas.height)
     height = dimension[1]
     width = dimension[0]
   }
@@ -25,10 +24,8 @@ function addPage(canvas, canvases, dimension, n, file, meiSurfaceTemplate, hasIt
   let uri = ""
   if (hasItems === true) {
     // IIIF Presentation 3
-    console.log("has item is true")
     uri = canvas?.items[0]?.items[0]?.body?.service[0].id
   }else{
-    console.log("has item is false")
      uri = canvas?.images[0]?.resource?.service['@id']
   }
 
@@ -110,9 +107,7 @@ export async function iiifManifest2mei (json, url, parser, state) {
 
         const composer = metadata.find(entry => { return entry.label === 'Autor' }).value
         file.querySelector('composer persName').textContent = composer
-      } catch (err) {
-        console.log('Apparently, there is no metadata for this IIIF Manifest.')
-      }
+      } catch (_) {}
       // Add each page as a surface
       if(json.sequences){
         json.sequences[0].canvases.forEach((canvas, i) => {
@@ -145,7 +140,6 @@ export function checkIiifManifest (json) {
   const hasId = typeof json['@id'] === 'string' && json['@id'].length > 0
   const hasSequences = Array.isArray(json.sequences)
   const hasItems = Array.isArray(json.items)
-  console.log("has items is " , claimsManifest)
 
   if (hasItems == true) {
     return true
@@ -167,12 +161,36 @@ export function getPageArray (mei) {
   mei.querySelectorAll('surface').forEach((surface, n) => {
     const graphic = surface.querySelector('graphic')
     const obj = {}
-    obj.uri = graphic.getAttributeNS('', 'target').trim()
-    obj.id = surface.getAttribute('xml:id').trim()
-    obj.n = surface.getAttributeNS('', 'n').trim()
-    // obj.label = surface.getAttributeNS('', 'label').trim() // Uncomment if label is needed
-    obj.width = parseInt(graphic.getAttributeNS('', 'width').trim(), 10)
-    obj.height = parseInt(graphic.getAttributeNS('', 'height').trim(), 10)
+
+    // Try multiple ways to get the target attribute
+    let target = null
+    if (graphic) {
+      target = graphic.getAttribute('target') || 
+               graphic.getAttributeNS('', 'target') ||
+               graphic.getAttributeNS('http://www.music-encoding.org/ns/mei', 'target')
+    }
+    
+    obj.uri = target ? target.trim() : null
+    obj.id = surface.getAttribute('xml:id') ? surface.getAttribute('xml:id').trim() : null
+    obj.n = surface.getAttribute('n') ? surface.getAttribute('n').trim() : null
+    obj.label = surface.getAttribute('label') ? surface.getAttribute('label').trim() : null
+    
+    // Get width and height from graphic
+    if (graphic) {
+      const width = graphic.getAttribute('width') || graphic.getAttributeNS('', 'width')
+      const height = graphic.getAttribute('height') || graphic.getAttributeNS('', 'height')
+      obj.width = width ? parseInt(width.trim(), 10) : 0
+      obj.height = height ? parseInt(height.trim(), 10) : 0
+    }
+    
+    // Get width/height from surface as fallback
+    if (!obj.width && surface.getAttribute('lrx')) {
+      obj.width = parseInt(surface.getAttribute('lrx'), 10) - (parseInt(surface.getAttribute('ulx'), 10) || 0)
+    }
+    if (!obj.height && surface.getAttribute('lry')) {
+      obj.height = parseInt(surface.getAttribute('lry'), 10) - (parseInt(surface.getAttribute('uly'), 10) || 0)
+    }
+    
     obj.hasSvg = surface.querySelector('svg') !== null // true if an SVG exists in this surface
     obj.hasZones = surface.querySelector('zone') !== null // true if any zone exists in this surface
 
