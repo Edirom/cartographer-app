@@ -324,6 +324,10 @@ export default {
             baseBranch: this.githubFile ? this.githubFile.branch : undefined,
           } : {}),
         })
+        this.$store.dispatch('notifications/notify', {
+          message: 'Changes committed to GitHub successfully.',
+          type: 'success',
+        })
         this.closeModal()
       } catch (err) {
         if (err.isConflict) {
@@ -331,6 +335,12 @@ export default {
         } else {
           this.errorMsg = err.message || 'Failed to commit to GitHub.'
         }
+        this.$store.dispatch('notifications/notify', {
+          message: this.isConflict
+            ? 'Commit failed: the file was modified on GitHub after you loaded it.'
+            : (this.errorMsg || 'Failed to commit to GitHub.'),
+          type: 'error',
+        })
       } finally {
         this.committing = false
       }
