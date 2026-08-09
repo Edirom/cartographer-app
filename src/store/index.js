@@ -433,7 +433,7 @@ export default createStore({
         .find(m => m.getAttribute('xml:id') === state.currentMeasureId);
       if (!measure) return;
 
-      if (val == null || val === '') {
+      if (val == null) {
         measure.removeAttribute('label');
       } else {
         measure.setAttribute('label', String(val));
