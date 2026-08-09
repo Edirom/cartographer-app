@@ -1,5 +1,6 @@
 import { createStore } from 'vuex'
 import authModule from '@/store/modules/auth.js'
+import notificationsModule from '@/store/modules/notifications.js'
 import { iiifManifest2mei, checkIiifManifest, getPageArray } from '@/tools/iiif.js'
 import { meiZone2annotorious, annotorious2meiZone, measureDetector2meiZone, generateMeasure, insertMeasure, deleteZone, setMultiRest, createNewMdiv, moveContentToMdiv, toggleAdditionalZone, addImportedPage, findZoneInsertionPositionForXmlZone, createAdditionalZone } from '@/tools/meiMappings.js'
 import { uuid } from '@/tools/uuid.js'
@@ -167,6 +168,7 @@ function getDefaultState() {
 export default createStore({
   modules: {
     auth: authModule,
+    notifications: notificationsModule,
   },
     state: getDefaultState(),
   /**

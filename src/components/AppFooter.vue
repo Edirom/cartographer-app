@@ -109,13 +109,26 @@ export default {
       this.$store.dispatch('toggleAboutModal')
     },
     jumpToPage: function () {
-      const page = this.inputPage === NaN ? 0 : parseInt(this.inputPage) - 1
-      if (page >= 0 && page < this.$store.getters.maxPageNumber) {
-        this.$store.dispatch('setCurrentPage', page)
+      const raw = String(this.inputPage).trim()
+      const maxPage = this.$store.getters.maxPageNumber
+      let message = null
+      if (raw === '') {
+        message = 'Please enter a page number.'
+      } else if (!/^-?\d+$/.test(raw)) {
+        message = 'Page must be a whole number.'
+      } else {
+        const page = parseInt(raw, 10)
+        if (page <= 0) {
+          message = 'Page number must be 1 or greater.'
+        } else if (page > maxPage) {
+          message = `Page number is out of range. Enter a value between 1 and ${maxPage}.`
+        } else {
+          this.$store.dispatch('setCurrentPage', page - 1)
+          return
+        }
       }
-      else {
-        console.info('Invalid page number: ', this.inputPage)
-      }
+      this.$store.dispatch('notifications/notify', { message, type: 'warning' })
+      this.inputPage = this.currentPage
     }
   }
 }

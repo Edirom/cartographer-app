@@ -81,6 +81,10 @@ export default {
     logout () {
       this.menuOpen = false
       this.$store.dispatch('auth/logout')
+      this.$store.dispatch('notifications/notify', {
+        message: 'You have been signed out.',
+        type: 'success',
+      })
     },
     handleOutsideClick (e) {
       if (!this.$el.contains(e.target)) this.menuOpen = false
