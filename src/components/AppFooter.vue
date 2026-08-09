@@ -9,11 +9,11 @@
           </span>
         </div>
         <div class="column col-4">
-          <span @click="showPrevPage" :disabled="!prevAvailable">
+          <span class="pageBtn" :class="{ disabled: !prevAvailable }" @click="showPrevPage">
             <font-awesome-icon icon="fa-solid fa-angle-left" />
           </span>
           <input type="text" class="ml-2 input pageInput" v-model="inputPage" v-on:keyup.enter="jumpToPage()" :placeholder="currentPage"/> / {{ maxPage }}
-          <span @click="showNextPage" :disabled="!nextAvailable">
+          <span class="pageBtn" :class="{ disabled: !nextAvailable }" @click="showNextPage">
             <font-awesome-icon icon="fa-solid fa-angle-right" />
           </span>
           <button class="ml-2 btn jumpBtn" @click="jumpToPage()">Go</button>
@@ -178,6 +178,16 @@ export default {
     border: $thinBorder;
     border-radius: .2rem;
     padding: .1rem;
+  }
+
+  .pageBtn {
+    cursor: pointer;
+
+    &.disabled {
+      opacity: .35;
+      cursor: default;
+      pointer-events: none;
+    }
   }
 
   .jumpBtn {
