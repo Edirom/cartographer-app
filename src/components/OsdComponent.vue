@@ -316,7 +316,20 @@ export default {
           this.viewer.close()
           return
         }
-        this.viewer.open(newArr)
+        // A string tile source is a IIIF Image API service base. OpenSeadragon
+        // does not append /info.json itself, so add it here (some servers, e.g.
+        // Gallica, return 404 for the bare service base). Object tile sources
+        // (plain/local images) are passed through unchanged.
+        const normalized = newArr.map(page => {
+          const ts = page.tileSource
+          if (typeof ts === 'string') {
+            const base = ts.replace(/\/$/, '')
+            const src = /\/info\.json$/i.test(base) ? base : base + '/info.json'
+            return { ...page, tileSource: src }
+          }
+          return page
+        })
+        this.viewer.open(normalized)
         this.$store.dispatch('setCurrentPage', 0)
       })
 

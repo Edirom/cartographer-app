@@ -901,79 +901,38 @@ export default createStore({
     setCurrentPageZone({ commit }, j) {
       commit('SET_TOTAL_ZONES_COUNT', j)
     },
-    importIIIF({ commit, dispatch, state }, url) {
+    importIIIF({ commit, dispatch }, url) {
       commit('SET_LOADING', true);
 
-      // Fetch the IIIF manifest
+      // Fetch the IIIF manifest, validate it, convert it to MEI and load it.
+      // Handles both IIIF Presentation 2 (sequences/canvases) and Presentation 3
+      // (items) manifests; conversion happens in iiifManifest2mei/addPage.
       fetch(url)
-        .then(res => res.json())
+        .then(res => {
+          if (!res.ok) {
+            throw new Error(`the manifest could not be fetched (HTTP ${res.status}).`);
+          }
+          return res.json();
+        })
         .then(json => {
+          if (!checkIiifManifest(json)) {
+            throw new Error('the provided URL does not point to a valid IIIF manifest.');
+          }
           commit('SET_LOADING', false);
           commit('SET_PROCESSING', true);
-    
-          let canvases = json.sequences[0].canvases;
-    
-          // Map all canvas images to their info.json URLs
-          const infoJsonUrls = canvases.map(canvas => {
-            return canvas.images[0].resource.service['@id'];
-          });
-    
-          // Store all fetch promises for info.json
-          const fetchPromises = infoJsonUrls.map((infoUrl) => {
-            return fetch(infoUrl)
-              .then(res => res.json())
-              .then(result => {
-                // Check if this is a proper IIIF Manifest
-                const isManifest = checkIiifManifest(json);
-                if (!isManifest) {
-                  throw new Error("Invalid IIIF manifest");
-                }
-    
-                // Extract the width and height from the result
-                const width = result.width;
-                const height = result.height;
-    
-                // Return both the infoUrl and the dimensions
-                return { infoUrl, dimensions: [width, height] };
-              })
-              .catch(error => {
-                console.error(`Error fetching ${infoUrl}:`, error);
-                // Return a fallback object in case of error, to keep the promise chain going
-                return { infoUrl, dimensions: [null, null], error: true };
-              });
-          });
-    
-          // Use Promise.allSettled to fetch all info.json files concurrently and wait for all of them
-          Promise.allSettled(fetchPromises)
-            .then((results) => {
-              // Update state.infoJson and state.pageDimension in batches
-              results.forEach(result => {
-                if (result.status === 'fulfilled') {
-                  state.infoJson.push(result.value.infoUrl);
-                  state.pageDimension.push(result.value.dimensions);
-                }
-              });
-    
-              // After processing all canvases, convert the manifest to MEI
-              return iiifManifest2mei(json, url, parser, state);
-            })
-            .then(mei => {
-              // Dispatch setData with the generated MEI
-              dispatch('setData', mei);
-            })
-            .catch(err => {
-              console.error('Error processing IIIF manifest or canvases:', err);
-              commit('SET_LOADING', false);
-              // Add any additional error messaging here
-            })
-            .finally(() => {
-              commit('SET_PROCESSING', false); // Ensure processing is set to false after completion
-            });
+          return iiifManifest2mei(json, url, parser);
+        })
+        .then(mei => {
+          dispatch('setData', mei);
         })
         .catch(error => {
-          // Handle errors in the initial IIIF manifest fetch
+          // Surface a clear, human-readable reason for the failure.
           console.error('Error fetching IIIF manifest:', error);
           commit('SET_LOADING', false);
+          window.alert('The IIIF manifest could not be loaded: ' + error.message);
+        })
+        .finally(() => {
+          commit('SET_PROCESSING', false);
         });
     },
         
@@ -1491,7 +1450,7 @@ export default createStore({
           tileSource = { type: 'image', url: page.imageUrl }
           if (page.width > 0) tileSource.width = page.width
           if (page.height > 0) tileSource.height = page.height
-        } else if (isDirectImage) {
+        } else if (isDirectImage || page.isPlainImage) {
           tileSource = { type: 'image', url: page.uri }
           if (page.width > 0) tileSource.width = page.width
           if (page.height > 0) tileSource.height = page.height
@@ -1521,7 +1480,7 @@ export default createStore({
           tileSource = { type: 'image', url: page.imageUrl }
           if (page.width > 0) tileSource.width = page.width
           if (page.height > 0) tileSource.height = page.height
-        } else if (isDirectImage) {
+        } else if (isDirectImage || page.isPlainImage) {
           tileSource = { type: 'image', url: uri }
         } else {
           tileSource = page.uri
