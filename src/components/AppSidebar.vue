@@ -116,10 +116,10 @@
         v-on:keyup.enter="jumpToPage()"
         title="Enter a page number and press Enter to jump"/>
       <span class="maxPage">of {{ maxPage }}</span>
-      <span class="pageBtn" @click="showPrevPage" :disabled="!prevAvailable">
+      <span class="pageBtn" :class="{ disabled: !prevAvailable }" @click="showPrevPage">
         <font-awesome-icon icon="fa-solid fa-angle-left" />
       </span>
-      <span class="pageBtn" @click="showNextPage" :disabled="!nextAvailable">
+      <span class="pageBtn" :class="{ disabled: !nextAvailable }" @click="showNextPage">
         <font-awesome-icon icon="fa-solid fa-angle-right" />
       </span>
     </div>
@@ -229,9 +229,15 @@ export default {
       this.inputPage = this.currentPage
     },
     showPrevPage: function () {
+      if (!this.prevAvailable) {
+        return
+      }
       this.$store.dispatch('setCurrentPage', this.$store.getters.currentPageIndexZeroBased - 1)
     },
     showNextPage: function () {
+      if (!this.nextAvailable) {
+        return
+      }
       this.$store.dispatch('setCurrentPage', this.$store.getters.currentPageIndexZeroBased + 1)
     },
     autoDetect: function () {
@@ -347,6 +353,13 @@ export default {
 
     .pageBtn {
       padding: 0 .1rem;
+      cursor: pointer;
+
+      &.disabled {
+        opacity: .35;
+        cursor: default;
+        pointer-events: none;
+      }
     }
   }
 }
