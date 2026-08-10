@@ -1,8 +1,9 @@
-name: Release desktop app
+name: Release apps
 
 # Builds installable desktop apps (macOS .dmg / .app, Windows .exe / .msi,
-# Linux .deb / .AppImage) and attaches them to a GitHub Release so users can
-# download and run Cartographer App locally without a browser or dev server.
+# Linux .deb / .AppImage) and a signed Android APK / AAB, then attaches them to
+# a GitHub Release so users can download and install Cartographer App without a
+# browser or dev server.
 #
 # Trigger by pushing a version tag, e.g.:
 #   git tag v0.1.0 && git push origin v0.1.0
@@ -12,6 +13,9 @@ on:
   push:
     tags:
       - "v*"
+    branches:
+      # Temporary: lets us test the Android release job by pushing this branch.
+      - "test/android-release-ci"
   workflow_dispatch:
 
 # Needed so tauri-action can create the GitHub Release and upload assets.
@@ -20,6 +24,9 @@ permissions:
 
 jobs:
   build:
+    # Skip the heavy desktop matrix on plain branch pushes (used for CI testing);
+    # only build desktop installers on version tags or manual runs.
+    if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
     strategy:
       fail-fast: false
       matrix:
@@ -83,3 +90,101 @@ jobs:
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
+
+  # Builds a signed Android APK (direct install) and AAB (Play Store) and
+  # attaches them to the same GitHub Release. Requires these repository secrets:
+  #   ANDROID_KEYSTORE_BASE64    - the release.keystore, base64-encoded
+  #   ANDROID_KEYSTORE_PASSWORD  - keystore (store) password
+  #   ANDROID_KEY_ALIAS          - key alias (e.g. "upload")
+  #   ANDROID_KEY_PASSWORD       - key password
+  android:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 20
+
+      - name: Setup Java (JDK 17)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android NDK
+        run: |
+          sdkmanager --install "ndk;27.2.12479018"
+          echo "NDK_HOME=$ANDROID_SDK_ROOT/ndk/27.2.12479018" >> "$GITHUB_ENV"
+
+      - name: Setup Rust toolchain (Android targets)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+
+      - name: Cache Rust build artifacts
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
+
+      - name: Install frontend dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Decode signing keystore and write keystore.properties
+        run: |
+          mkdir -p .signing
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > .signing/release.keystore
+          {
+            echo "storeFile=$GITHUB_WORKSPACE/.signing/release.keystore"
+            echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}"
+            echo "storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}"
+            echo "keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}"
+          } > .signing/keystore.properties
+
+      - name: Build signed APK + AAB
+        run: |
+          # The Android project is committed; only init if it's somehow missing.
+          [ -f src-tauri/gen/android/gradlew ] || npx tauri android init --skip-targets-install
+          ./scripts/android-sign-inject.sh
+          npx tauri android build
+
+      - name: Collect artifacts
+        id: artifacts
+        run: |
+          mkdir -p dist-android
+          ver="${{ github.ref_type == 'tag' && github.ref_name || format('v{0}', github.run_number) }}"
+          cp src-tauri/gen/android/app/build/outputs/apk/universal/release/*.apk \
+             "dist-android/Cartographer-App-${ver}-universal.apk"
+          cp src-tauri/gen/android/app/build/outputs/bundle/universalRelease/*.aab \
+             "dist-android/Cartographer-App-${ver}-universal.aab"
+          ls -lh dist-android
+
+      # Always upload as downloadable run artifacts. This lets you test the whole
+      # build+sign pipeline via a manual "Run workflow" (workflow_dispatch)
+      # WITHOUT creating any GitHub Release — grab the files from the run summary.
+      - name: Upload Android build as run artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-${{ github.ref_type == 'tag' && github.ref_name || format('run-{0}', github.run_number) }}
+          path: dist-android/*
+          if-no-files-found: error
+
+      # Only attach to a GitHub Release when a real version tag is pushed.
+      - name: Attach Android artifacts to the Release
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          draft: true
+          files: |
+            dist-android/*.apk
+            dist-android/*.aab
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+

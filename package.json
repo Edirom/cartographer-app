@@ -14,6 +14,9 @@
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
+    "android:build": "./scripts/android-build.sh",
+    "android:keystore": "./scripts/android-keystore.sh",
+    "android:dev": ". ./scripts/android-env.sh && npx tauri android dev",
     "test:lint": "npx standard --fix | npx snazzy",
     "docs:dev": "vuepress dev docs",
     "docs:build": "vuepress build docs"

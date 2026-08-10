@@ -14,6 +14,20 @@ val tauriProperties = Properties().apply {
 }
 
 android {
+    // >>> tauri-signing-injected (managed by scripts/android-sign-inject.sh) - do not edit
+    val signingPropsFile = rootProject.file("../../../.signing/keystore.properties")
+    if (signingPropsFile.exists()) {
+        val signingProps = Properties()
+        signingPropsFile.inputStream().use { signingProps.load(it) }
+        signingConfigs.create("release") {
+            keyAlias = signingProps.getProperty("keyAlias")
+            keyPassword = signingProps.getProperty("keyPassword") ?: signingProps.getProperty("password")
+            storeFile = file(signingProps.getProperty("storeFile"))
+            storePassword = signingProps.getProperty("storePassword") ?: signingProps.getProperty("password")
+        }
+        buildTypes.getByName("release").signingConfig = signingConfigs.getByName("release")
+    }
+    // <<< tauri-signing-injected
     compileSdk = 36
     namespace = "org.edirom.cartographer"
     defaultConfig {
