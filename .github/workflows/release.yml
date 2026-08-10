@@ -184,7 +184,8 @@ jobs:
         id: artifacts
         run: |
           mkdir -p dist-android
-          ver="${{ github.ref_type == 'tag' && github.ref_name || format('v{0}', github.run_number) }}"
+          # Name artifacts after the app version from package.json.
+          ver="v$(node -p "require('./package.json').version")"
           cp src-tauri/gen/android/app/build/outputs/apk/universal/release/*.apk \
              "dist-android/Cartographer-App-${ver}-universal.apk"
           cp src-tauri/gen/android/app/build/outputs/bundle/universalRelease/*.aab \

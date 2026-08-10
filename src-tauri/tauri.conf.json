@@ -42,7 +42,7 @@
   },
   "productName": "Cartographer-App",
   "mainBinaryName": "Cartographer-App",
-  "version": "0.1.0",
+  "version": "../package.json",
   "identifier": "org.edirom.cartographer",
   "plugins": {},
   "app": {
