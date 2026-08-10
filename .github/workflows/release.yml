@@ -86,6 +86,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VUE_APP_DOCS_URL: ${{ env.RELEASE_DOCS_URL }}
+          GH_APP_CLIENT_ID: ${{ secrets.GH_APP_CLIENT_ID }}
         with:
           tagName: ${{ github.ref_type == 'tag' && github.ref_name || format('v{0}', github.run_number) }}
           releaseName: "Cartographer App ${{ github.ref_type == 'tag' && github.ref_name || github.run_number }}"
@@ -179,6 +180,7 @@ jobs:
       - name: Build signed APK + AAB
         env:
           VUE_APP_DOCS_URL: ${{ env.RELEASE_DOCS_URL }}
+          GH_APP_CLIENT_ID: ${{ secrets.GH_APP_CLIENT_ID }}
         run: |
           # The Android project is committed; only init if it's somehow missing.
           [ -f src-tauri/gen/android/gradlew ] || npx tauri android init --skip-targets-install
