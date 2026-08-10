@@ -136,15 +136,37 @@ jobs:
         run: npm install --legacy-peer-deps
 
       - name: Decode signing keystore and write keystore.properties
+        # Pass secrets via env (not inline ${{ }}) so the shell never expands or
+        # mangles special characters like $, ] or & in passwords, and to avoid
+        # script injection. printf writes the values verbatim.
+        env:
+          KS_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KS_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KS_STORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KS_KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           mkdir -p .signing
-          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > .signing/release.keystore
+          printf '%s' "$KS_B64" | base64 --decode > .signing/release.keystore
           {
-            echo "storeFile=$GITHUB_WORKSPACE/.signing/release.keystore"
-            echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}"
-            echo "storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}"
-            echo "keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}"
+            printf 'storeFile=%s\n' "$GITHUB_WORKSPACE/.signing/release.keystore"
+            printf 'keyAlias=%s\n'  "$KS_ALIAS"
+            printf 'storePassword=%s\n' "$KS_STORE_PASS"
+            printf 'keyPassword=%s\n'   "$KS_KEY_PASS"
           } > .signing/keystore.properties
+
+      - name: Verify keystore and password (fail fast)
+        env:
+          KS_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KS_STORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          if ! keytool -list -keystore .signing/release.keystore \
+                -storepass "$KS_STORE_PASS" -alias "$KS_ALIAS" >/dev/null 2>err.log; then
+            echo "::error::Keystore/password/alias mismatch. Check the ANDROID_KEYSTORE_* secrets."
+            echo "--- keytool output ---"; cat err.log
+            exit 1
+          fi
+          echo "Keystore OK: alias '$KS_ALIAS' opens with the provided password."
+
 
       - name: Build signed APK + AAB
         run: |
