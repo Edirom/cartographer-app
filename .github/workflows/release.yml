@@ -146,7 +146,12 @@ jobs:
           KS_KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           mkdir -p .signing
-          printf '%s' "$KS_B64" | base64 --decode > .signing/release.keystore
+          # Strip any whitespace/newlines a copy-paste may have introduced before decoding.
+          printf '%s' "$KS_B64" | tr -d '[:space:]' | base64 -d > .signing/release.keystore
+          if [ ! -s .signing/release.keystore ]; then
+            echo "::error::ANDROID_KEYSTORE_BASE64 is empty or not valid base64."
+            exit 1
+          fi
           {
             printf 'storeFile=%s\n' "$GITHUB_WORKSPACE/.signing/release.keystore"
             printf 'keyAlias=%s\n'  "$KS_ALIAS"
