@@ -22,11 +22,17 @@ on:
 permissions:
   contents: write
 
+# Desktop/Android builds have no same-origin docs server, so the docs link in
+# the app footer is pointed at the hosted docs at build time (see AppFooter.vue).
+env:
+  RELEASE_DOCS_URL: https://cartographer-app.zenmem.de/docs/
+
 jobs:
   build:
     # Skip the heavy desktop matrix on plain branch pushes (used for CI testing);
-    # only build desktop installers on version tags or manual runs.
-    if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
+    # only build desktop installers on version tags, manual runs, or the
+    # temporary test branch (see the trigger above).
+    if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch' || github.ref_name == 'test/android-release-ci'
     strategy:
       fail-fast: false
       matrix:
@@ -83,6 +89,7 @@ jobs:
         uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VUE_APP_DOCS_URL: ${{ env.RELEASE_DOCS_URL }}
         with:
           tagName: ${{ github.ref_type == 'tag' && github.ref_name || format('v{0}', github.run_number) }}
           releaseName: "Cartographer App ${{ github.ref_type == 'tag' && github.ref_name || github.run_number }}"
@@ -174,6 +181,8 @@ jobs:
 
 
       - name: Build signed APK + AAB
+        env:
+          VUE_APP_DOCS_URL: ${{ env.RELEASE_DOCS_URL }}
         run: |
           # The Android project is committed; only init if it's somehow missing.
           [ -f src-tauri/gen/android/gradlew ] || npx tauri android init --skip-targets-install

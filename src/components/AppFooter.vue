@@ -51,8 +51,11 @@ export default {
   },
   computed: {
     docsUrl: function () {
-      // Derive the docs URL from the current host (e.g. https://host/docs).
-      return window.location.origin + '/docs'
+      // Release builds (desktop installers, Android APK/AAB) have no same-origin
+      // docs server, so VUE_APP_DOCS_URL is injected at build time (see
+      // vue.config.js / .github/workflows/release.yml) to point at the hosted
+      // docs. Falls back to same-origin /docs for the web/Docker deployment.
+      return process.env.VUE_APP_DOCS_URL || (window.location.origin + '/docs')
     },
     currentPage: function () {
       return this.$store.getters.currentPageIndexOneBased
