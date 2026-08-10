@@ -13,9 +13,6 @@ on:
   push:
     tags:
       - "v*"
-    branches:
-      # Temporary: lets us test the Android release job by pushing this branch.
-      - "test/android-release-ci"
   workflow_dispatch:
 
 # Needed so tauri-action can create the GitHub Release and upload assets.
@@ -29,10 +26,9 @@ env:
 
 jobs:
   build:
-    # Skip the heavy desktop matrix on plain branch pushes (used for CI testing);
-    # only build desktop installers on version tags, manual runs, or the
-    # temporary test branch (see the trigger above).
-    if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch' || github.ref_name == 'test/android-release-ci'
+    # Only build the full desktop matrix on version tags or manual runs (skips
+    # the heavy matrix on plain branch pushes, e.g. from pull requests).
+    if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
     strategy:
       fail-fast: false
       matrix:
