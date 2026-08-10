@@ -65,7 +65,8 @@
     "@vue/component-compiler-utils": {
       "postcss": "^8.5.10"
     },
-    "brace-expansion": "5.0.8"
+    "brace-expansion": "5.0.9",
+    "nanoid": "^3.3.17"
   },
   "description": "The Cartographer App is used to provide placement information of zones of interest in (historical) documents. The first and foremost use case is the identification of bounding boxes of measures in music documents. It is a successor of the *Vertaktoid*, but other than that uses web technology and is thus platform independent. It optionally uses the *Measure Detector* for automatic recognition of measure positions, but allows manual correction of these results.",
   "main": ".eslintrc.js",
