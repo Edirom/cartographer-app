@@ -41,7 +41,7 @@ _None_
 
 | Name           | Description                                              |
 |----------------|---------------------------------------------------------|
-| docsUrl        | URL of the documentation (derived from the current host) |
+| docsUrl        | URL of the documentation. Prefers the build-time `VUE_APP_DOCS_URL` (set for desktop/Android builds, which have no same-origin docs server); falls back to `<origin>/docs` for the web/Docker deployment. |
 | isReady        | Whether the app is ready                                |
 | isLoading      | Whether the app is currently loading                    |
 | zonesCount     | Number of zones on the current page                     |

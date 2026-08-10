@@ -220,18 +220,38 @@ no desktop cross-compilation.
 #### Android
 
 ```sh
-npm run tauri android dev                # run on a connected device/emulator
-npm run tauri android build -- --apk     # unsigned release APK
+export ANDROID_KEYSTORE_PASSWORD='your-strong-password'
+npm run android:keystore   # one-time: generates .signing/release.keystore
+npm run android:build      # signed release APK + AAB
+npm run android:dev        # run on a connected device/emulator
 ```
 
-The unsigned APK (under
-`src-tauri/gen/android/app/build/outputs/apk/universal/release/`) must be
-signed before it can be installed — create a keystore with `keytool` and sign
-with `zipalign`/`apksigner`, or configure `signingConfigs` in the generated
-Gradle project. Keep the keystore and its password out of the repository, and
-back them up: app updates must be signed with the same key. The keystore
-password must be ASCII-only (`apksigner` cannot read PKCS12 keystores with
-non-ASCII passwords).
+`npm run android:build` ([scripts/android-build.sh](scripts/android-build.sh))
+does everything needed for a reproducible signed build:
+
+1. Auto-detects `ANDROID_HOME`, the newest installed NDK, and a JDK ≥17
+   ([scripts/android-env.sh](scripts/android-env.sh)) — no manual env vars
+   required if the SDK/NDK/JDK are installed in their default locations.
+2. Runs `tauri android init` if `src-tauri/gen/android` doesn't exist yet
+   (that directory is gitignored/disposable, so this also self-heals after a
+   fresh clone).
+3. If `ANDROID_KEYSTORE_PASSWORD` is set and no keystore exists yet, generates
+   one automatically via `npm run android:keystore`
+   ([scripts/android-keystore.sh](scripts/android-keystore.sh)).
+4. Idempotently injects a release `signingConfig` into the generated
+   `build.gradle.kts` ([scripts/android-sign-inject.sh](scripts/android-sign-inject.sh))
+   that reads `.signing/keystore.properties` — so signing survives the
+   disposable `gen/android` directory being regenerated.
+5. Builds. Without a keystore configured, the output is unsigned (same as
+   plain `tauri android build`); with one, both the APK and AAB come out
+   signed.
+
+The keystore and `.signing/keystore.properties` are **gitignored** and never
+committed — back them up somewhere safe (a password manager), since app
+updates must always be signed with the same key. See
+[keystore.properties.example](keystore.properties.example) for the file
+format if you want to set it up manually instead of via
+`npm run android:keystore`.
 
 The Rust core uses `reqwest` with **rustls** (pure-Rust TLS) so it
 cross-compiles for Android without an OpenSSL sysroot — keep this in mind
@@ -254,6 +274,63 @@ Setup:
 The callback URL and client secret are **not used** by native builds. The
 web deployments (dev server, Docker) are unaffected and keep the redirect
 flow described above.
+
+#### Documentation link in native builds
+
+Desktop and Android builds have no same-origin docs server to fall back to
+(unlike the web/Docker deployment, where the footer's **Docs** link resolves
+to `<origin>/docs`). Set `VUE_APP_DOCS_URL` before running
+`npm run build` / `tauri build` / `android:build` to point the link at hosted
+docs instead:
+
+```sh
+export VUE_APP_DOCS_URL=https://cartographer-app.zenmem.de/docs/
+```
+
+The CI release workflow sets this automatically (see below); it only needs to
+be set manually for local native builds.
+
+### Release process (CI/CD)
+
+[.github/workflows/release.yml](.github/workflows/release.yml) builds and
+publishes installable packages for every platform:
+
+* **Trigger:** push a version tag (`git tag v1.2.3 && git push origin v1.2.3`),
+  or run it manually from the **Actions** tab (`workflow_dispatch`).
+* **Desktop** (macOS universal, Windows, Linux): built via `tauri-action`,
+  attached to a **draft** GitHub Release.
+* **Android**: built and signed the same way as `npm run android:build`
+  above, using repository secrets instead of a local keystore. Artifacts are
+  attached to the same Release on tag pushes, or uploaded as downloadable
+  **run artifacts** (no Release created) on manual runs — useful for testing
+  the pipeline without publishing anything.
+* **App version**: read from `package.json`'s `version` field
+  (`src-tauri/tauri.conf.json`'s `version` points at `../package.json`), so
+  bumping the release version only requires editing one file.
+
+Required repository secrets for Android signing (**Settings → Secrets and
+variables → Actions**):
+
+| Secret | Description |
+|---|---|
+| `ANDROID_KEYSTORE_BASE64` | The release keystore, base64-encoded (`base64 -i .signing/release.keystore \| tr -d '\n'`). |
+| `ANDROID_KEYSTORE_PASSWORD` | Keystore (store) password. |
+| `ANDROID_KEY_ALIAS` | Key alias (`upload` by default). |
+| `ANDROID_KEY_PASSWORD` | Key password. |
+
+Without these secrets, the Android job's fast keystore-verification step
+fails immediately with a clear error instead of running a full build.
+
+**macOS builds are currently unsigned** (no Apple Developer ID / notarization
+configured). Downloaded `.dmg`/`.app` files trigger Gatekeeper's *"Apple could
+not verify... is free of malware"* message — this is expected for any
+unsigned app downloaded via a browser (which sets the quarantine attribute),
+not a build defect. Workarounds: **System Settings → Privacy & Security →
+Open Anyway**, or `xattr -cr Cartographer-App.app`. To remove this warning
+permanently, `tauri-action` supports notarization via the `APPLE_CERTIFICATE`,
+`APPLE_CERTIFICATE_PASSWORD`, `APPLE_SIGNING_IDENTITY`, `APPLE_ID`,
+`APPLE_PASSWORD`, and `APPLE_TEAM_ID` secrets (requires a paid Apple Developer
+Program membership) — not yet configured for this project.
 
 ### Docker Deployment
 
