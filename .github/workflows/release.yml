@@ -1,9 +1,9 @@
 name: Release apps
 
-# Builds installable desktop apps (macOS .dmg / .app, Windows .exe / .msi,
-# Linux .deb / .AppImage) and a signed Android APK / AAB, then attaches them to
-# a GitHub Release so users can download and install Cartographer App without a
-# browser or dev server.
+# Builds installable desktop apps (Windows .exe / .msi, Linux .deb / .AppImage)
+# and a signed Android APK / AAB, then attaches them to a GitHub Release so
+# users can download and install Cartographer App without a browser or dev
+# server.
 #
 # Trigger by pushing a version tag, e.g.:
 #   git tag v0.1.0 && git push origin v0.1.0
@@ -33,9 +33,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Apple Silicon + Intel universal macOS build
-          - platform: macos-latest
-            args: "--target universal-apple-darwin"
           - platform: ubuntu-22.04
             args: ""
           - platform: windows-latest
@@ -67,9 +64,6 @@ jobs:
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
-        with:
-          # Include the macOS Intel target so we can build a universal binary.
-          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
       - name: Cache Rust build artifacts
         uses: swatinem/rust-cache@v2
@@ -90,7 +84,7 @@ jobs:
         with:
           tagName: ${{ github.ref_type == 'tag' && github.ref_name || format('v{0}', github.run_number) }}
           releaseName: "Cartographer App ${{ github.ref_type == 'tag' && github.ref_name || github.run_number }}"
-          releaseBody: "Download the installer for your platform below. See the assets for macOS (.dmg), Windows (.exe/.msi) and Linux (.deb/.AppImage)."
+          releaseBody: "Download the installer for your platform below. See the assets for Windows (.exe/.msi) and Linux (.deb/.AppImage)."
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
