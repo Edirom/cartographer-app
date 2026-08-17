@@ -29,11 +29,11 @@
     "@octokit/rest": "^22.0.1",
     "@recogito/annotorious-openseadragon": "^2.7.6",
     "@tauri-apps/api": "^2.11.1",
-    "core-js": "^3.49.0",
+    "core-js": "^3.50.0",
     "openseadragon": "^3.0.0",
     "spectre.css": "^0.5.9",
     "utif": "^3.1.0",
-    "vue": "^3.2.47",
+    "vue": "^3.5.41",
     "vue-router": "^4.6.4",
     "vuex": "^4.0.0"
   },
